@@ -1,17 +1,39 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import './index.css';
-import App from './App';
-import reportWebVitals from './reportWebVitals';
+import React from "react"
+import ReactDOM from "react-dom/client"
+import { BrowserRouter } from "react-router-dom"
+import App from "./App"
+import { ConfigProvider } from "antd"
+import zhCN from "antd/lib/locale/zh_CN"
+import "./index.css"
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
+// 如果需要使用MSW进行API模拟，取消下面的注释
+// import { worker } from "./mocks/browser";
+// if (process.env.NODE_ENV === "development") {
+//   worker.start();
+// }
+
+const root = ReactDOM.createRoot(document.getElementById("root"))
 root.render(
   <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);
-
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
-reportWebVitals();
+    <ConfigProvider
+      locale={zhCN}
+      theme={{
+        token: {
+          colorPrimary: "#006ffd",
+          colorSuccess: "#3ac0a0",
+          colorError: "#ffe2e5",
+          colorTextBase: "#1f2024",
+          colorTextSecondary: "#71727a",
+          colorTextTertiary: "#8f9098",
+          colorBorder: "#c5c6cc",
+          colorBgContainer: "#ffffff",
+          colorBgLayout: "#f8f9fe",
+        },
+      }}
+    >
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </ConfigProvider>
+  </React.StrictMode>,
+)
