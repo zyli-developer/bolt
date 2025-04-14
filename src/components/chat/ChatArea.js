@@ -8,7 +8,7 @@ import { useChatContext } from "../../contexts/ChatContext"
 const { Text } = Typography
 
 const ChatArea = () => {
-  const { messages, activeUser, sendMessage, closeChat } = useChatContext()
+  const { messages, activeUser, sendMessage, closeChat, loading } = useChatContext()
   const [inputValue, setInputValue] = useState("")
   const messagesEndRef = useRef(null)
 
@@ -39,7 +39,7 @@ const ChatArea = () => {
       {/* 聊天头部 */}
       <div className="chat-header">
         <div className="chat-user-info">
-          <Avatar size={48} src={activeUser.avatar} style={{ backgroundColor: "#f0f0f0" }}>
+          <Avatar size={40} src={activeUser.avatar} style={{ backgroundColor: "#f0f0f0" }}>
             {activeUser.name.charAt(0)}
           </Avatar>
           <div className="chat-user-details">
@@ -65,17 +65,21 @@ const ChatArea = () => {
 
       {/* 聊天消息区域 */}
       <div className="chat-messages">
-        {messages.map((message, index) => (
-          <div
-            key={index}
-            className={`message-container ${message.sender === "user" ? "message-right" : "message-left"}`}
-          >
-            <div className={`message-bubble ${message.sender === "user" ? "message-user" : "message-other"}`}>
-              {message.text}
+        {loading ? (
+          <div style={{ textAlign: "center", padding: "20px" }}>加载消息中...</div>
+        ) : (
+          messages.map((message, index) => (
+            <div
+              key={index}
+              className={`message-container ${message.sender === "user" ? "message-right" : "message-left"}`}
+            >
+              <div className={`message-bubble ${message.sender === "user" ? "message-user" : "message-other"}`}>
+                {message.text}
+              </div>
+              <div className="message-time">{message.timestamp}</div>
             </div>
-            <div className="message-time">{message.timestamp}</div>
-          </div>
-        ))}
+          ))
+        )}
         <div ref={messagesEndRef} />
       </div>
 
@@ -102,16 +106,6 @@ const ChatArea = () => {
             style={{ backgroundColor: "#006ffd" }}
           />
         </div>
-      </div>
-
-      {/* 右侧导航栏 - 根据Figma设计添加 */}
-      <div className="chat-sidebar">
-        <div className="chat-sidebar-item active"></div>
-        <div className="chat-sidebar-item"></div>
-        <div className="chat-sidebar-item"></div>
-        <div className="chat-sidebar-item"></div>
-        <div className="chat-sidebar-item"></div>
-        <div className="chat-sidebar-item"></div>
       </div>
     </div>
   )

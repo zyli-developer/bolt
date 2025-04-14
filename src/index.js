@@ -5,12 +5,13 @@ import App from "./App"
 import { ConfigProvider } from "antd"
 import zhCN from "antd/lib/locale/zh_CN"
 import "./index.css"
+import "./components/sidebar/sidebar-styles.css" // 导入侧边栏样式
 
-// 如果需要使用MSW进行API模拟，取消下面的注释
-// import { worker } from "./mocks/browser";
-// if (process.env.NODE_ENV === "development") {
-//   worker.start();
-// }
+// 启用MSW进行API模拟
+import { worker } from "./mocks/browser"
+if (process.env.NODE_ENV === "development") {
+  worker.start()
+}
 
 const root = ReactDOM.createRoot(document.getElementById("root"))
 root.render(

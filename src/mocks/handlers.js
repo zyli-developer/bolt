@@ -1,5 +1,5 @@
 import { rest } from "msw"
-import { menuData, chatUsers } from "./data"
+import { menuData, chatUsers, cardsData, currentUser } from "./data"
 
 export const handlers = [
   // 获取菜单数据
@@ -48,5 +48,32 @@ export const handlers = [
     }
 
     return res(ctx.status(201), ctx.json(message))
+  }),
+
+  // 获取卡片列表
+  rest.get("/api/cards", (req, res, ctx) => {
+    return res(ctx.status(200), ctx.json(cardsData))
+  }),
+
+  // 获取卡片详情
+  rest.get("/api/cards/:id", (req, res, ctx) => {
+    const { id } = req.params
+    const card = cardsData.find((card) => card.id === Number.parseInt(id))
+
+    if (!card) {
+      return res(ctx.status(404), ctx.json({ message: "卡片不存在" }))
+    }
+
+    return res(ctx.status(200), ctx.json(card))
+  }),
+
+  // 获取当前用户
+  rest.get("/api/users/current", (req, res, ctx) => {
+    return res(ctx.status(200), ctx.json(currentUser))
+  }),
+
+  // 获取用户列表
+  rest.get("/api/users", (req, res, ctx) => {
+    return res(ctx.status(200), ctx.json([currentUser, ...chatUsers]))
   }),
 ]

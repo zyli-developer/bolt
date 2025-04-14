@@ -1,28 +1,58 @@
-import { Avatar, Typography, Button } from "antd"
-import { UserOutlined, MenuOutlined } from "@ant-design/icons"
+"use client"
 
-const { Text } = Typography
+import { useEffect, useState } from "react"
+import { Avatar, Button } from "antd"
+import { MoreOutlined } from "@ant-design/icons"
+import userService from "../../services/userService"
 
 const UserInfo = () => {
-  return (
-    <div
-      className="user-info"
-      style={{
-        borderTop: "1px solid #c5c6cc",
-        padding: "16px",
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-      }}
-    >
-      <div style={{ display: "flex", alignItems: "center" }}>
-        <Avatar style={{ backgroundColor: "#006ffd" }} icon={<UserOutlined />} size={32} />
-        <div className="user-details">
-          <div className="user-name">Shadcn</div>
-          <div className="user-email">me@example.com</div>
-        </div>
+  const [user, setUser] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        setLoading(true)
+        const userData = await userService.getCurrentUser()
+        setUser(userData)
+      } catch (error) {
+        console.error("获取用户信息失败:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchCurrentUser()
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="user-info">
+        <div>加载中...</div>
       </div>
-      <Button type="text" icon={<MenuOutlined />} size="small" />
+    )
+  }
+
+  if (!user) {
+    return (
+      <div className="user-info">
+        <div>未登录</div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="user-info">
+      <div className="user-avatar-container">
+        <Avatar className="user-avatar" size={36}>
+          {user.name.charAt(0)}
+        </Avatar>
+      </div>
+      <div className="user-details">
+        <div className="user-name">{user.name}</div>
+        <div className="user-email">{user.email}</div>
+      </div>
+      <Button type="text" icon={<MoreOutlined />} className="user-more-btn" />
     </div>
   )
 }

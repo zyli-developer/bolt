@@ -1,21 +1,20 @@
 "use client"
 
-import { useState } from "react"
-import { Layout, Input, Button } from "antd"
+import { useState, useEffect } from "react"
+import { Layout, Button, Avatar } from "antd"
 import {
-  HomeOutlined,
-  FileOutlined,
-  TeamOutlined,
-  AppstoreOutlined,
   SearchOutlined,
-  CloseOutlined,
+  FileOutlined,
+  AppstoreOutlined,
   PlusOutlined,
-  MinusOutlined,
+  MoreOutlined,
   DownOutlined,
-  RightOutlined,
+  ThunderboltOutlined,
+  CaretDownOutlined,
+  CaretRightOutlined,
 } from "@ant-design/icons"
 import { useNavigate, useLocation } from "react-router-dom"
-import UserInfo from "./UserInfo"
+import menuService from "../../services/menuService"
 
 const { Sider } = Layout
 
@@ -24,6 +23,29 @@ const AppSidebar = () => {
   const location = useLocation()
   const [isSearchActive, setIsSearchActive] = useState(false)
   const [expandedKeys, setExpandedKeys] = useState(["tasks"])
+  const [menuItems, setMenuItems] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchMenuItems = async () => {
+      try {
+        setLoading(true)
+        const data = await menuService.getMenuItems()
+        setMenuItems(data)
+
+        // 设置初始展开的菜单项
+        const initialExpandedKeys = data.filter((item) => item.expanded).map((item) => item.id.toString())
+
+        setExpandedKeys(initialExpandedKeys)
+      } catch (error) {
+        console.error("获取菜单数据失败:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchMenuItems()
+  }, [])
 
   const toggleSearch = () => {
     setIsSearchActive(!isSearchActive)
@@ -32,9 +54,8 @@ const AppSidebar = () => {
   // 获取当前选中的菜单项
   const getSelectedKeys = () => {
     const path = location.pathname
-    if (path === "/") return ["home"]
+    if (path === "/" || path === "/explore") return ["explore"]
     if (path.startsWith("/tasks")) return ["tasks"]
-    if (path.startsWith("/contacts")) return ["contacts"]
     if (path.startsWith("/assets")) return ["assets"]
     return []
   }
@@ -47,159 +68,124 @@ const AppSidebar = () => {
     }
   }
 
+  const getIconComponent = (iconName) => {
+    switch (iconName) {
+      case "SearchOutlined":
+        return <SearchOutlined />
+      case "FileOutlined":
+        return <FileOutlined />
+      case "AppstoreOutlined":
+        return <AppstoreOutlined />
+      default:
+        return null
+    }
+  }
+
   const renderMenuItem = (item) => {
-    const isExpanded = expandedKeys.includes(item.key)
+    const isExpanded = expandedKeys.includes(item.id.toString())
     const hasChildren = item.children && item.children.length > 0
-    const isParent = item.level === 0
-    const isChild = item.level > 0
+    const isActive =
+      location.pathname === item.path ||
+      (item.path === "/explore" && location.pathname === "/") ||
+      (location.pathname.startsWith(item.path) && item.path !== "/")
+
+    const handleMenuItemClick = () => {
+      // 如果有子菜单，则切换展开状态
+      if (hasChildren) {
+        onExpand(item.id.toString())
+      }
+      // 无论如何都导航到对应路径
+      navigate(item.path)
+    }
 
     return (
-      <div key={item.key} className="custom-menu-item">
-        <div
-          className={`menu-item ${location.pathname === item.path ? "active" : ""}`}
-          onClick={() => navigate(item.path)}
-        >
+      <div key={item.id} className="custom-menu-item">
+        <div className={`menu-item ${isActive ? "active" : ""}`} onClick={handleMenuItemClick}>
           <div className="menu-item-content">
-            {item.icon}
-            <span>{item.label}</span>
+            {item.icon && <span className="menu-item-icon">{getIconComponent(item.icon)}</span>}
+            <span className="menu-item-title">{item.title}</span>
+            {hasChildren && (
+              <span className="menu-item-expand-icon">
+                {isExpanded ? <CaretDownOutlined /> : <CaretRightOutlined />}
+              </span>
+            )}
           </div>
           <div className="menu-item-actions">
-            {hasChildren && (
+            {hasChildren ? (
               <Button
                 type="text"
                 size="small"
-                icon={isExpanded ? <DownOutlined /> : <RightOutlined />}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onExpand(item.key)
-                }}
-                className="expand-icon"
+                icon={<PlusOutlined />}
+                onClick={(e) => e.stopPropagation()}
+                className="action-icon plus-icon"
               />
-            )}
-            {isParent && <Button type="text" size="small" icon={<PlusOutlined />} className="action-icon add-icon" />}
-            {isChild && (
-              <Button type="text" size="small" icon={<MinusOutlined />} className="action-icon remove-icon" />
+            ) : (
+              <Button
+                type="text"
+                size="small"
+                icon={<MoreOutlined />}
+                onClick={(e) => e.stopPropagation()}
+                className="action-icon more-icon"
+              />
             )}
           </div>
         </div>
 
         {hasChildren && isExpanded && (
-          <div className="submenu">
-            {item.children.map((child) => renderMenuItem({ ...child, level: (item.level || 0) + 1 }))}
-          </div>
+          <div className="submenu">{item.children.map((child) => renderMenuItem(child))}</div>
         )}
       </div>
     )
   }
 
-  const menuItems = [
-    {
-      key: "home",
-      label: "主页",
-      path: "/",
-      icon: <HomeOutlined />,
-      level: 0,
-    },
-    {
-      key: "tasks",
-      label: "任务",
-      path: "/tasks",
-      icon: <FileOutlined />,
-      level: 0,
-      children: [
-        {
-          key: "tasks-my",
-          label: "我的任务",
-          path: "/tasks/my",
-          level: 1,
-        },
-        {
-          key: "tasks-team",
-          label: "团队任务",
-          path: "/tasks/team",
-          level: 1,
-        },
-      ],
-    },
-    {
-      key: "contacts",
-      label: "联系人",
-      path: "/contacts",
-      icon: <TeamOutlined />,
-      level: 0,
-      children: [
-        {
-          key: "contacts-jackson",
-          label: "Jackson",
-          path: "/contacts/jackson",
-          level: 1,
-        },
-        {
-          key: "contacts-finance",
-          label: "财务部",
-          path: "/contacts/finance",
-          level: 1,
-        },
-      ],
-    },
-    {
-      key: "assets",
-      label: "资产",
-      path: "/assets",
-      icon: <AppstoreOutlined />,
-      level: 0,
-      children: [
-        {
-          key: "assets-templates",
-          label: "模板",
-          path: "/assets/templates",
-          level: 1,
-        },
-        {
-          key: "assets-scenes",
-          label: "场景",
-          path: "/assets/scenes",
-          level: 1,
-        },
-      ],
-    },
-  ]
-
   return (
-    <Sider
-      width={180}
-      style={{
-        background: "#fff",
-        borderRight: "1px solid #c5c6cc",
-        height: "100%",
-        position: "relative", // 添加相对定位
-        display: "flex",
-        flexDirection: "column",
-      }}
-    >
-      {/* 1. 菜单标题区域 - 固定高度 */}
+    <Sider width={228} className="app-sidebar">
+      {/* Logo区域 */}
+      <div className="sidebar-logo">
+        <div className="logo-icon">
+          <ThunderboltOutlined />
+        </div>
+        <div className="logo-text-container">
+          <div className="logo-text">可信</div>
+          <div className="logo-domain">syntrusthub.agentour.app</div>
+        </div>
+      </div>
+
+      {/* 工作区标题和搜索 */}
       <div className="workspace-header">
-        {!isSearchActive ? (
-          <>
-            <h3 className="workspace-title">Alibaba</h3>
-            <Button type="text" icon={<SearchOutlined />} onClick={toggleSearch} size="small" />
-          </>
+        <div className="workspace-title-container">
+          <Avatar size={16} className="workspace-avatar">
+            A
+          </Avatar>
+          <h3 className="workspace-title">Alibaba</h3>
+          <DownOutlined className="workspace-dropdown-icon" />
+        </div>
+        <Button type="text" icon={<SearchOutlined />} onClick={toggleSearch} size="small" />
+      </div>
+
+      {/* 菜单项区域 - 使用flex-1确保它填充剩余空间 */}
+      <div className="sidebar-menu-container">
+        {loading ? (
+          <div style={{ padding: "16px", textAlign: "center" }}>加载中...</div>
         ) : (
-          <div style={{ display: "flex", width: "100%" }}>
-            <Input placeholder="搜索..." autoFocus style={{ flex: 1 }} size="small" />
-            <Button type="text" icon={<CloseOutlined />} onClick={toggleSearch} size="small" />
-          </div>
+          menuItems.map(renderMenuItem)
         )}
       </div>
 
-      {/* 2. 菜单项区域 - 占用所有剩余高度，但不包括底部用户信息的高度 */}
-      <div className="sidebar-menu-container" style={{ paddingBottom: "64px" }}>
-        {menuItems.map(renderMenuItem)}
-      </div>
-
-      {/* 3. 个人信息区域 - 固定在底部 */}
-      <div style={{ position: "absolute", bottom: 0, left: 0, right: 0 }}>
-        <UserInfo />
+      {/* 个人信息区域 - 固定在底部 */}
+      <div className="user-info-container">
+        <div className="user-info">
+          <div className="user-avatar-container">
+            <Avatar className="user-avatar" size={36}>
+              J
+            </Avatar>
+          </div>
+          <div className="user-details">
+            <div className="user-name">Jackson</div>
+            <div className="user-email">Jcson@yahoo.com</div>
+          </div>
+          <Button type="text" icon={<MoreOutlined />} className="user-more-btn" />
+        </div>
       </div>
     </Sider>
   )

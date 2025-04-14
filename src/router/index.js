@@ -1,7 +1,6 @@
 import { Routes, Route } from "react-router-dom"
-import HomePage from "../pages/HomePage"
+import ExplorePage from "../pages/ExplorePage"
 import TaskPage from "../pages/TaskPage"
-import ContactsPage from "../pages/ContactsPage"
 import AssetsPage from "../pages/AssetsPage"
 
 // 子路由配置
@@ -16,25 +15,18 @@ const taskRoutes = [
   },
 ]
 
-const contactsRoutes = [
-  {
-    path: "/contacts/jackson",
-    element: <div>Jackson联系人页面</div>,
-  },
-  {
-    path: "/contacts/finance",
-    element: <div>财务部联系人页面</div>,
-  },
-]
-
 const assetsRoutes = [
   {
     path: "/assets/templates",
     element: <div>模板资产页面</div>,
   },
   {
-    path: "/assets/scenes",
-    element: <div>场景资产页面</div>,
+    path: "/assets/my-templates",
+    element: <div>我的模板页面</div>,
+  },
+  {
+    path: "/assets/others-templates",
+    element: <div>别人的模板页面</div>,
   },
 ]
 
@@ -42,15 +34,15 @@ const assetsRoutes = [
 const mainRoutes = [
   {
     path: "/",
-    element: <HomePage />,
+    element: <ExplorePage />,
+  },
+  {
+    path: "/explore",
+    element: <ExplorePage />,
   },
   {
     path: "/tasks",
     element: <TaskPage />,
-  },
-  {
-    path: "/contacts",
-    element: <ContactsPage />,
   },
   {
     path: "/assets",
@@ -59,7 +51,7 @@ const mainRoutes = [
 ]
 
 // 所有路由配置
-const allRoutes = [...mainRoutes, ...taskRoutes, ...contactsRoutes, ...assetsRoutes]
+const allRoutes = [...mainRoutes, ...taskRoutes, ...assetsRoutes]
 
 // 路由组件
 const AppRouter = () => {
