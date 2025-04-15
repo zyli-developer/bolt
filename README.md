@@ -1,70 +1,88 @@
-# Getting Started with Create React App
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+### 权限设计
 
-## Available Scripts
+| 分类 | 说明 | 权限范围 |
+|-----|------|---------|
+| Community | 社区 | 所有用户可见的内容 |
+| Workspace | 工作区 | 特定工作区内的用户可见 |
+| Personal | 个人 | 仅个人可见的内容 |
 
-In the project directory, you can run:
 
-### `npm start`
+### 菜单栏
+| 区域 | 功能组件 | 具体内容 | 状态/可变性 | 新增功能描述 |
+|-----|---------|---------|------------|------------|
+| Logo区域 | Logo图标 | • 闪电图标（ThunderboltOutlined）<br>• 背景色为浅灰色<br>• 圆角设计 | 固定不变 | - |
+| | Logo文字 | • 主标题："可信"<br>• 副标题：域名 "syntrusthub.agentour.app" | 固定不变 | - |
+| 工作区区域 | 工作区信息 | • 工作区头像（显示首字母）<br>• 工作区名称<br>• 下拉箭头图标 | 可点击展开 | • 点击下拉箭头显示 Popover<br>• Popover 中显示工作区详细信息<br>• 包含工作区的基本信息、成员、设置等 |
+| | 搜索功能 | • 全局搜索按钮<br>• 点击打开搜索面板 | 全局搜索 | • 搜索范围：所有权限下的卡片<br>• 不受 filter/group/sort 影响<br>• 支持快速搜索和结果预览 |
+| 菜单栏区域 | 问题菜单 | • 一级菜单项<br>• 子菜单项 | 可点击导航 | • 一级菜单可点击跳转对应页面<br>• 子菜单项保持原有展开/收起功能 |
+| | 菜单操作 | • 子菜单项可添加新项目（+图标）<br>• 普通菜单项显示更多操作（...图标）<br>• 支持菜单项展开/收起动画 | 操作按钮状态可切换 | - |
+| | 菜单图标 | • 支持多种图标类型<br>• 包括：搜索、文件、应用等图标 | 图标类型固定 | - |
+| 个人信息区域 | 用户信息 | • 用户头像（显示首字母）<br>• 用户名称<br>• 用户邮箱 | 可点击展开 | • 点击更多按钮显示 Popover<br>• Popover 中显示用户详细信息<br>• 包含个人信息、设置、退出登录等选项 |
+| | 操作按钮 | • 更多操作按钮（...图标） | 按钮状态可切换 | • 点击显示个人信息 Popover |
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
 
-### `npm test`
+### 探索页面
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+| 功能类别 | 具体功能 | 功能描述 |
+|---------|---------|---------|
+| 页面导航 | 工具栏 | • 筛选按钮（显示筛选数量）<br>• 分组按钮（显示分组数量）<br>• 排序按钮 |
+| 数据加载 | 无限滚动 | • 每页加载10条数据<br>• 自动加载更多<br>• 加载状态显示<br>• 错误状态处理 |
+| 卡片基础信息 | 标题区域 | • 可点击跳转到详情页<br>• 分支爬升按钮（创建任务） |
+| | 作者信息 | • 作者头像<br>• 作者名称<br>• 来源信息<br>• 标签展示 |
+| | 问题概要 | • 问题描述文本展示 |
+| 数据指标 | 关键指标 | • 可信度（Credibility）百分比<br>• 可信度变化趋势（正负值）<br>• 得分（Score）<br>• 得分变化趋势（正负值） |
+| 数据可视化 | 雷达图 | • 可切换显示/隐藏<br>• 多代理数据对比<br>• 选择功能（Overall/Agent1/Agent2）<br>• 维度得分展示 |
+| | 折线图 | • 置信度爬升曲线<br>• 时间轴展示<br>• 数据点标记<br>• 数据提示（Tooltip）<br>• 响应式适配 |
+| 交互功能 | 卡片操作 | • 标题点击跳转<br>• 分支爬升任务创建<br>• 维度得分展开/收起 |
+| | 数据筛选 | • 代理数据选择<br>• 数据对比功能 |
+| 更新信息 | 状态展示 | • 最后更新时间<br>• 更新者信息（头像和名称） |
+| UI/UX | 响应式设计 | • 适配不同屏幕尺寸<br>• 图表自适应<br>• 加载状态提示<br>• 错误状态提示 |
 
-### `npm run build`
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### 任务页面
+| 功能类别 | 具体功能 | 功能描述 |
+|---------|---------|---------|
+| 页面导航 | 任务分类 | • 我的任务<br>• 团队任务 |
+| | 页面标题 | • 根据当前路径动态显示对应标题<br>• 包含图标和文字说明 |
+| 工具栏功能 | 筛选功能 | • 筛选按钮（显示筛选数量）<br>• 可设置筛选条件 |
+| | 分组功能 | • 分组按钮（显示分组数量）<br>• 可设置分组条件 |
+| | 排序功能 | • 排序按钮<br>• 可设置排序规则 |
+| 任务卡片 | 基础信息 | • 任务标题（可点击跳转详情）<br>• 作者信息（头像、名称）<br>• 来源信息<br>• 标签展示 |
+| | 任务详情 | • 任务状态显示<br>• 任务目标描述<br>• 任务操作按钮 |
+| | 任务操作 | • 场景管理<br>• 添加QA<br>• 添加模板 |
+| 数据可视化 | 置信度曲线 | • 折线图展示<br>• 时间轴显示<br>• 数据点标记<br>• 网格背景 |
+| | 维度得分 | • 雷达图展示<br>• 多维度数据对比<br>• 支持多个代理数据<br>• 可选择显示不同代理 |
+| 状态管理 | 加载状态 | • 加载中提示<br>• 加载失败提示<br>• 空数据提示 |
+| | 数据更新 | • 显示更新时间<br>• 显示更新者信息 |
+| 交互功能 | 图表切换 | • 置信度曲线/维度得分切换<br>• 图表展开/收起 |
+| | 选择 | • Overall/Agent1/Agent2 选择<br>• 实时更新图表显示 |
+| 响应式设计 | 布局适配 | • 适配不同屏幕尺寸<br>• 图表自适应大小<br>• 聊天区域联动 |
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### 个人信息pop
 
-### `npm run eject`
+1. 点击头像/用户信息区域：
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+| 功能类别 | 功能项 | 功能描述 | 状态/标记 |
+|---------|--------|----------|-----------|
+| 用户基本信息 | 头像和用户名 | • 显示用户头像<br>• 显示用户名：Jackson | - |
+| | 邮箱信息 | • 显示用户邮箱：Jcson@yahoo.com | - |
+| 账户功能 | 个人版本 | • 显示当前版本状态<br>• "立即升级"按钮 | 可升级 |
+| | 个人信息 | • 个人资料管理<br>• "完善信息得奖励"标签 | 有奖励 |
+| | 获取免费token | • Token获取功能<br>• 标记为"HOT"<br>• 右侧有导航箭头 | HOT |
+| 界面设置 | 深色模式 | • 切换深色/浅色主题<br>• 显示当前模式状态 | 可切换 |
+| | 设置 | • 进入系统设置页面<br>• 包含系统相关配置 | - |
+| 支持与帮助 | 帮助文档 | • 访问系统帮助文档<br>• 用户指南和教程 | - |
+| | 客服中心 | • 联系客服支持<br>• 问题反馈通道 | - |
+| 退出 | Log out | • 退出登录功能<br>• 显示快捷键提示 "⌘⇧Q" | 有快捷键 |
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+2. 点击切换按钮（...）：
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+| 功能类别 | 功能项 | 功能描述 |
+|---------|--------|----------|
+| 工作区切换 | 当前工作区 | • 显示当前所在工作区<br>• 高亮显示当前选中的工作区 |
+| | 可用工作区列表 | • 列出用户有权限的所有工作区<br>• 每个工作区显示：<br> - 工作区名称<br> - 工作区图标/头像<br> - 用户在该工作区的角色？ |
+| | 切换功能 | • 点击工作区即可切换<br>• 切换时可能需要重新加载相关数据 |
+| | 工作区管理？ | • 可能包含创建新工作区的选项<br>• 工作区设置入口 |
