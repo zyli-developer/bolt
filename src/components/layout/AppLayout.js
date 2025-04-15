@@ -54,7 +54,10 @@ const AppLayout = ({ children }) => {
           {/* 内容和聊天区域的水平布局 */}
           <div className="content-with-chat-layout">
             {/* 内容区域 */}
-            <div className="content-layout" style={{ width: isChatOpen ? "calc(100% - 380px)" : "100%" }}>
+            <div
+              className={`content-layout ${isChatOpen ? "chat-open" : "chat-closed"}`}
+              style={{ width: isChatOpen ? "calc(100% - 380px)" : "100%" }}
+            >
               {/* 内容导航 */}
               <ContentNav selectedNav={selectedNav} onNavChange={handleNavChange} />
 

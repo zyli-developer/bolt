@@ -6,6 +6,7 @@ import { FilterOutlined, GroupOutlined } from "@ant-design/icons"
 import SortIcon from "../components/icons/SortIcon"
 import CardItem from "../components/card/CardItem"
 import cardService from "../services/cardService"
+import { useChatContext } from "../contexts/ChatContext"
 
 const ExplorePage = () => {
   const [cards, setCards] = useState([])
@@ -15,6 +16,7 @@ const ExplorePage = () => {
   const [page, setPage] = useState(1)
   const observer = useRef()
   const loadingRef = useRef(null)
+  const { isChatOpen } = useChatContext()
 
   // 初始加载数据
   useEffect(() => {
@@ -64,7 +66,7 @@ const ExplorePage = () => {
   )
 
   return (
-    <div className="explore-page">
+    <div className={`explore-page ${isChatOpen ? "chat-open" : "chat-closed"}`}>
       {/* 筛选工具栏 */}
       <div className="explore-toolbar">
         <div className="toolbar-left">

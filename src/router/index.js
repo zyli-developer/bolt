@@ -1,17 +1,38 @@
 import { Routes, Route } from "react-router-dom"
 import ExplorePage from "../pages/ExplorePage"
 import TaskPage from "../pages/TaskPage"
+import TaskDetailPage from "../pages/TaskDetailPage"
+import CardDetailPage from "../pages/CardDetailPage"
+import EvaluationPage from "../pages/EvaluationPage"
 import AssetsPage from "../pages/AssetsPage"
+
+// 确保评估页面的路由路径与TaskDetailPage中的导航路径匹配
 
 // 子路由配置
 const taskRoutes = [
   {
     path: "/tasks/my",
-    element: <div>我的任务页面</div>,
+    element: <TaskPage />,
   },
   {
     path: "/tasks/team",
-    element: <div>团队任务页面</div>,
+    element: <TaskPage />,
+  },
+  {
+    path: "/tasks/detail/:id",
+    element: <TaskDetailPage />,
+  },
+  {
+    path: "/tasks/evaluate/:id",
+    element: <EvaluationPage />,
+  },
+]
+
+// 卡片路由
+const cardRoutes = [
+  {
+    path: "/cards/detail/:id",
+    element: <CardDetailPage />,
   },
 ]
 
@@ -51,7 +72,7 @@ const mainRoutes = [
 ]
 
 // 所有路由配置
-const allRoutes = [...mainRoutes, ...taskRoutes, ...assetsRoutes]
+const allRoutes = [...mainRoutes, ...taskRoutes, ...assetsRoutes, ...cardRoutes]
 
 // 路由组件
 const AppRouter = () => {

@@ -1,0 +1,325 @@
+/* 卡片详情页样式 */
+.card-detail-page {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    height: 100%;
+    background: #fff;
+    transition: padding 0.3s ease;
+  }
+  
+  /* When chat is closed, apply 190px margin */
+  .card-detail-page.chat-closed {
+    padding: 0 190px;
+  }
+  
+  /* When chat is open, keep current margins */
+  .card-detail-page.chat-open {
+    padding: 0 16px;
+  }
+  
+  /* Responsive adjustments for the card detail page margins */
+  @media (max-width: 1440px) {
+    .card-detail-page.chat-closed {
+      padding: 0 120px;
+    }
+  }
+  
+  @media (max-width: 1200px) {
+    .card-detail-page.chat-closed {
+      padding: 0 80px;
+    }
+  }
+  
+  @media (max-width: 992px) {
+    .card-detail-page.chat-closed {
+      padding: 0 40px;
+    }
+  
+    .card-detail-page.chat-open {
+      padding: 0 12px;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .card-detail-page.chat-closed,
+    .card-detail-page.chat-open {
+      padding: 0 16px;
+    }
+  }
+  
+  /* 页面头部 */
+  .card-detail-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 16px;
+    padding-top: 16px;
+  }
+  
+  .back-button {
+    font-size: 18px;
+  }
+  
+  .card-detail-title {
+    flex: 1;
+    margin: 0 !important;
+  }
+  
+  .card-detail-actions {
+    display: flex;
+    gap: 8px;
+  }
+  
+  .action-button {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  
+  /* 卡片元信息 */
+  .card-detail-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+  
+  .card-detail-author {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  
+  .author-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .by-text,
+  .from-text {
+    color: #8f9098;
+  }
+  
+  .author-name,
+  .source-name {
+    margin-right: 4px !important;
+  }
+  
+  .card-detail-tags {
+    display: flex;
+    gap: 8px;
+  }
+  
+  .detail-tag {
+    border-radius: 12px;
+    background-color: #e6f1ff;
+    color: #006ffd;
+    border: none;
+    font-size: 12px;
+    padding: 1px 8px;
+    height: auto;
+    line-height: 1.5;
+  }
+  
+  .card-detail-divider {
+    margin: 0 0 16px 0;
+  }
+  
+  /* 卡片内容区域 */
+  .card-detail-content {
+    flex: 1;
+  }
+  
+  .card-detail-tabs {
+    margin-bottom: 16px;
+  }
+  
+  .card-detail-overview {
+    margin-bottom: 24px;
+  }
+  
+  /* 卡片信息卡片 */
+  .card-info-card {
+    margin-bottom: 24px;
+  }
+  
+  .card-info-card .ant-card-head-title {
+    font-size: 16px;
+    font-weight: 600;
+  }
+  
+  /* 指标卡片 */
+  .card-metrics-card {
+    margin-bottom: 24px;
+  }
+  
+  .detail-metrics {
+    display: flex;
+    justify-content: space-around;
+    padding: 16px 0;
+  }
+  
+  .detail-metric-item {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+  }
+  
+  .detail-metric-value {
+    font-size: 36px;
+    font-weight: 700;
+    color: #006ffd;
+    line-height: 1;
+  }
+  
+  .detail-metric-info {
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 4px;
+  }
+  
+  .detail-metric-label {
+    font-size: 12px;
+    color: #8f9098;
+  }
+  
+  .detail-metric-change {
+    font-size: 14px;
+  }
+  
+  .detail-metric-change.positive {
+    color: #3ac0a0;
+  }
+  
+  .detail-metric-change.negative {
+    color: #ff4d4f;
+  }
+  
+  /* 变更历史卡片 */
+  .card-changes-card {
+    margin-bottom: 24px;
+  }
+  
+  .change-item {
+    margin-bottom: 8px;
+  }
+  
+  .no-changes {
+    text-align: center;
+    color: #8f9098;
+    padding: 16px 0;
+  }
+  
+  /* 图表卡片 */
+  .card-charts-card {
+    margin-bottom: 24px;
+  }
+  
+  .chart-title {
+    font-size: 16px;
+    font-weight: 500;
+    color: #1f2024;
+    margin-bottom: 16px;
+    text-align: center;
+  }
+  
+  .detail-line-chart-container,
+  .detail-radar-chart-container {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .line-chart,
+  .radar-chart {
+    height: 250px;
+  }
+  
+  .chart-footer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 16px;
+  }
+  
+  .chart-link {
+    margin-bottom: 8px;
+  }
+  
+  .chart-link a {
+    color: #006ffd;
+    font-size: 14px;
+    text-decoration: none;
+  }
+  
+  .chart-info {
+    font-size: 12px;
+    color: #8f9098;
+  }
+  
+  .chart-time-author {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    justify-content: center;
+  }
+  
+  .chart-time {
+    color: #8f9098;
+  }
+  
+  .updater-avatar {
+    background-color: #f0f0f0;
+  }
+  
+  /* 代理选择 */
+  .chart-agents {
+    margin-top: 16px;
+  }
+  
+  .agents-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    justify-content: center;
+  }
+  
+  .agent-item .ant-checkbox-wrapper {
+    font-size: 14px;
+  }
+  
+  /* 活动记录卡片 */
+  .card-activity-card {
+    margin-bottom: 24px;
+  }
+  
+  .timeline-content {
+    margin-bottom: 8px;
+  }
+  
+  .timeline-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 4px;
+  }
+  
+  .timeline-body {
+    color: #71727a;
+  }
+  
+  /* 加载和错误状态 */
+  .loading-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 400px;
+  }
+  
+  .error-message {
+    color: #ff4d4f;
+    text-align: center;
+    font-size: 16px;
+    margin-bottom: 24px;
+  }
+  

@@ -51,15 +51,6 @@ const AppSidebar = () => {
     setIsSearchActive(!isSearchActive)
   }
 
-  // 获取当前选中的菜单项
-  const getSelectedKeys = () => {
-    const path = location.pathname
-    if (path === "/" || path === "/explore") return ["explore"]
-    if (path.startsWith("/tasks")) return ["tasks"]
-    if (path.startsWith("/assets")) return ["assets"]
-    return []
-  }
-
   const onExpand = (key) => {
     if (expandedKeys.includes(key)) {
       setExpandedKeys(expandedKeys.filter((k) => k !== key))
@@ -84,18 +75,26 @@ const AppSidebar = () => {
   const renderMenuItem = (item) => {
     const isExpanded = expandedKeys.includes(item.id.toString())
     const hasChildren = item.children && item.children.length > 0
-    const isActive =
-      location.pathname === item.path ||
-      (item.path === "/explore" && location.pathname === "/") ||
-      (location.pathname.startsWith(item.path) && item.path !== "/")
 
-    const handleMenuItemClick = () => {
+    // 修改激活逻辑：只有当前路径完全匹配菜单项路径时才激活
+    // 对于根路径和/explore特殊处理
+    const isActive = location.pathname === item.path || (item.path === "/explore" && location.pathname === "/")
+
+    const handleMenuItemClick = (e) => {
+      e.preventDefault()
+
       // 如果有子菜单，则切换展开状态
       if (hasChildren) {
         onExpand(item.id.toString())
+
+        // 导航到第一个子菜单的路径
+        if (item.children && item.children.length > 0) {
+          navigate(item.children[0].path)
+        }
+      } else {
+        // 只有没有子菜单的项目才导航到自己的路径
+        navigate(item.path)
       }
-      // 无论如何都导航到对应路径
-      navigate(item.path)
     }
 
     return (

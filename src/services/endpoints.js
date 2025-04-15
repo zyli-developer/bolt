@@ -37,6 +37,22 @@ const endpoints = {
     list: "/workspaces",
     detail: (id) => `/workspaces/${id}`,
   },
+
+  // 任务相关
+  tasks: {
+    list: "/tasks",
+    detail: (id) => `/tasks/${id}`,
+    create: "/tasks",
+    update: (id) => `/tasks/${id}`,
+    delete: (id) => `/tasks/${id}`,
+  },
+
+  // 评估相关
+  evaluations: {
+    byTask: (taskId) => `/evaluations/task/${taskId}`,
+    detail: (id) => `/evaluations/${id}`,
+    reevaluate: "/evaluations/reevaluate",
+  },
 }
 
 export default endpoints
