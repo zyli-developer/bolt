@@ -1,6 +1,10 @@
 "use client"
 
-const ContentNav = ({ selectedNav, onNavChange }) => {
+import { useNavContext } from "../../contexts/NavContext"
+
+const ContentNav = () => {
+  const { selectedNav, handleNavChange } = useNavContext()
+
   const navItems = [
     { key: "community", label: "Community" },
     { key: "workspace", label: "Workspace" },
@@ -14,7 +18,7 @@ const ContentNav = ({ selectedNav, onNavChange }) => {
           <div
             key={item.key}
             className={`nav-item ${selectedNav === item.key ? "active" : ""}`}
-            onClick={() => onNavChange(item.key)}
+            onClick={() => handleNavChange(item.key)}
           >
             {item.label}
           </div>

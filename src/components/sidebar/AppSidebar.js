@@ -15,6 +15,8 @@ import {
 } from "@ant-design/icons"
 import { useNavigate, useLocation } from "react-router-dom"
 import menuService from "../../services/menuService"
+import ExploreIcon from "../icons/ExploreIcon"
+import TaskIcon from "../icons/TaskIcon"
 
 const { Sider } = Layout
 
@@ -67,6 +69,10 @@ const AppSidebar = () => {
         return <FileOutlined />
       case "AppstoreOutlined":
         return <AppstoreOutlined />
+      case "ExploreIcon":
+        return <ExploreIcon />
+      case "TaskIcon":
+        return <TaskIcon />
       default:
         return null
     }

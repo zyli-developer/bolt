@@ -50,9 +50,31 @@ export const handlers = [
     return res(ctx.status(201), ctx.json(message))
   }),
 
-  // 获取卡片列表
+  // 获取卡片列表 - 修改为支持scope参数
   rest.get("/api/cards", (req, res, ctx) => {
-    return res(ctx.status(200), ctx.json(cardsData))
+    // 获取scope参数
+    const scope = req.url.searchParams.get("scope") || "community"
+
+    // 根据scope过滤数据
+    let filteredCards = [...cardsData]
+
+    if (scope === "workspace") {
+      // 模拟工作区范围的卡片 - 只返回source为Alibaba的卡片
+      filteredCards = cardsData.filter((card) => card.source === "Alibaba")
+    } else if (scope === "personal") {
+      // 模拟个人范围的卡片 - 只返回author.id为当前用户ID的卡片
+      filteredCards = cardsData.filter((card) => card.author.id === currentUser.id)
+    }
+    // community范围返回所有卡片
+
+    // 模拟分页
+    const page = Number.parseInt(req.url.searchParams.get("page") || "1")
+    const limit = Number.parseInt(req.url.searchParams.get("limit") || "10")
+    const startIndex = (page - 1) * limit
+    const endIndex = startIndex + limit
+
+    // 返回分页后的数据
+    return res(ctx.status(200), ctx.json(filteredCards.slice(startIndex, endIndex)))
   }),
 
   // 获取卡片详情

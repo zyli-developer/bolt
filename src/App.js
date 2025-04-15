@@ -3,6 +3,7 @@
 import { useEffect } from "react"
 import AppLayout from "./components/layout/AppLayout"
 import { ChatProvider } from "./contexts/ChatContext"
+import { NavProvider } from "./contexts/NavContext"
 import AppRouter from "./router"
 
 function App() {
@@ -27,9 +28,11 @@ function App() {
 
   return (
     <ChatProvider>
-      <AppLayout>
-        <AppRouter />
-      </AppLayout>
+      <NavProvider>
+        <AppLayout>
+          <AppRouter />
+        </AppLayout>
+      </NavProvider>
     </ChatProvider>
   )
 }
