@@ -71,7 +71,7 @@ export const handlers = [
       // 模拟工作区范围的卡片 - 只返回source为Alibaba的卡片
       filteredCards = cardsData.filter((card) => card.source === "Alibaba")
     } else if (scope === "personal") {
-      // 模拟个人范围的卡片 - 只返回author.id为当前用户ID的卡片
+      // ���拟个人范围的卡片 - 只返回author.id为当前用户ID的卡片
       filteredCards = cardsData.filter((card) => card.author.id === currentUser.id)
     }
     // community范围返回所有卡片

@@ -15,16 +15,16 @@ const FilterSystem = () => {
   // 状态管理
   const [state, setState] = useState({
     ...initialFilterState,
-    popoverVisible: false,
+    activePopover: null, // 'filter', 'group', 'sort' 或 null
   })
   const [loading, setLoading] = useState(false)
 
-  // 显示指定步骤的弹窗
-  const showPopover = (step) => {
+  // 显示指定的弹窗
+  const showPopover = (popoverType) => {
     setState((prevState) => ({
       ...prevState,
-      step,
-      popoverVisible: true,
+      step: popoverType, // 设置当前步骤为弹窗类型
+      activePopover: popoverType, // 设置活动弹窗
     }))
   }
 
@@ -32,7 +32,7 @@ const FilterSystem = () => {
   const closePopover = () => {
     setState((prevState) => ({
       ...prevState,
-      popoverVisible: false,
+      activePopover: null,
     }))
   }
 
@@ -53,6 +53,7 @@ const FilterSystem = () => {
       return {
         ...prevState,
         step: nextStep,
+        activePopover: nextStep, // 更新活动弹窗
       }
     })
   }
@@ -104,43 +105,6 @@ const FilterSystem = () => {
     }
   }
 
-  // 获取当前步骤的内容
-  const getStepContent = () => {
-    const { step, filterConfig, groupConfig, sortConfig } = state
-
-    switch (step) {
-      case "filter":
-        return (
-          <FilterCard
-            config={filterConfig}
-            onConfigChange={updateFilterConfig}
-            onNext={() => handleStepChange("next")}
-          />
-        )
-      case "group":
-        return (
-          <GroupCard
-            config={groupConfig}
-            onConfigChange={updateGroupConfig}
-            onPrev={() => handleStepChange("prev")}
-            onNext={() => handleStepChange("next")}
-          />
-        )
-      case "sort":
-        return (
-          <SortCard
-            config={sortConfig}
-            onConfigChange={updateSortConfig}
-            onPrev={() => handleStepChange("prev")}
-            onSave={handleSave}
-            loading={loading}
-          />
-        )
-      default:
-        return null
-    }
-  }
-
   // 获取筛选条件数量
   const getFilterCount = () => {
     return state.filterConfig.conditions.length
@@ -151,17 +115,56 @@ const FilterSystem = () => {
     return state.groupConfig.fields.length
   }
 
-  // 筛选系统弹窗内容
-  const popoverContent = <div className="filter-card">{getStepContent()}</div>
+  // 获取排序条件数量
+  const getSortCount = () => {
+    return state.sortConfig.fields.length
+  }
+
+  // 筛选卡片内容
+  const filterCardContent = (
+    <div className="filter-card">
+      <FilterCard
+        config={state.filterConfig}
+        onConfigChange={updateFilterConfig}
+        onNext={() => handleStepChange("next")}
+      />
+    </div>
+  )
+
+  // 分组卡片内容
+  const groupCardContent = (
+    <div className="filter-card">
+      <GroupCard
+        config={state.groupConfig}
+        onConfigChange={updateGroupConfig}
+        onPrev={() => handleStepChange("prev")}
+        onNext={() => handleStepChange("next")}
+      />
+    </div>
+  )
+
+  // 排序卡片内容
+  const sortCardContent = (
+    <div className="filter-card">
+      <SortCard
+        config={state.sortConfig}
+        onConfigChange={updateSortConfig}
+        onPrev={() => handleStepChange("prev")}
+        onSave={handleSave}
+        loading={loading}
+      />
+    </div>
+  )
 
   return (
     <>
       <div className="toolbar-left">
         <Popover
-          content={popoverContent}
-          visible={state.popoverVisible}
+          content={filterCardContent}
+          visible={state.activePopover === "filter"}
           onVisibleChange={(visible) => {
-            if (!visible) closePopover()
+            if (visible) showPopover("filter")
+            else if (state.activePopover === "filter") closePopover()
           }}
           trigger="click"
           placement="bottomLeft"
@@ -174,12 +177,38 @@ const FilterSystem = () => {
         </Popover>
       </div>
       <div className="toolbar-right">
-        <Button icon={<GroupOutlined />} className="group-button" onClick={() => showPopover("group")}>
-          Group <span className="group-count">{getGroupCount()}</span>
-        </Button>
-        <Button icon={<SortIcon />} className="sort-button" onClick={() => showPopover("sort")}>
-          Sort
-        </Button>
+        <Popover
+          content={groupCardContent}
+          visible={state.activePopover === "group"}
+          onVisibleChange={(visible) => {
+            if (visible) showPopover("group")
+            else if (state.activePopover === "group") closePopover()
+          }}
+          trigger="click"
+          placement="bottomLeft"
+          overlayClassName="filter-popover"
+          destroyTooltipOnHide
+        >
+          <Button icon={<GroupOutlined />} className="group-button" onClick={() => showPopover("group")}>
+            Group <span className="group-count">{getGroupCount()}</span>
+          </Button>
+        </Popover>
+        <Popover
+          content={sortCardContent}
+          visible={state.activePopover === "sort"}
+          onVisibleChange={(visible) => {
+            if (visible) showPopover("sort")
+            else if (state.activePopover === "sort") closePopover()
+          }}
+          trigger="click"
+          placement="bottomLeft"
+          overlayClassName="filter-popover"
+          destroyTooltipOnHide
+        >
+          <Button icon={<SortIcon />} className="sort-button" onClick={() => showPopover("sort")}>
+            Sort {getSortCount() > 0 && <span className="filter-count">{getSortCount()}</span>}
+          </Button>
+        </Popover>
       </div>
     </>
   )
