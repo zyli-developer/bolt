@@ -9,12 +9,18 @@ import endpoints from "./endpoints"
 const cardService = {
   /**
    * 获取卡片列表
-   * @param {Object} params - 查询参数
+   * @param {Object} params - 查询参数，包括page, limit, scope等
    * @returns {Promise} - 卡片列表数据
    */
   getCards: async (params = {}) => {
     try {
-      const data = await api.get(endpoints.cards.list, { params })
+      // 构建请求参数，确保包含scope
+      const requestParams = {
+        ...params,
+        scope: params.scope || "community", // 默认为community
+      }
+
+      const data = await api.get(endpoints.cards.list, { params: requestParams })
 
       // 确保每个卡片都有必要的属性
       const processedData = data.map((card) => ({

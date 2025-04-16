@@ -1,0 +1,371 @@
+/* 任务卡片样式 */
+.task-card {
+  border-radius: 16px;
+  padding: 20px;
+  background-color: #fff;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+  position: relative;
+  border: 1px solid #e8e9f1;
+}
+
+/* 卡片标题 */
+.task-card-header {
+  margin-bottom: 12px;
+}
+
+.task-card-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+  line-height: 1.4;
+  color: #000;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 作者信息和标签 */
+.task-card-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.task-author-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.task-author-avatar {
+  background-color: #f0f0f0;
+}
+
+.task-assigned-text,
+.task-from-text,
+.task-by-text {
+  color: #8f9098;
+  font-size: 14px;
+}
+
+.task-author-name,
+.task-source-name,
+.task-updater-name {
+  font-weight: 500;
+  font-size: 14px;
+  color: #000;
+}
+
+.task-card-tags {
+  display: flex;
+  gap: 6px;
+}
+
+.task-tag {
+  border-radius: 12px;
+  background-color: #e6f1ff;
+  color: #006ffd;
+  border: none;
+  font-size: 12px;
+  padding: 1px 8px;
+  height: auto;
+  line-height: 1.5;
+}
+
+.task-card-divider {
+  height: 1px;
+  background-color: #eaedf3;
+  margin: 0 -20px 16px;
+}
+
+/* 卡片内容水平布局 */
+.task-card-content {
+  display: flex;
+  gap: 20px;
+  min-height: 220px;
+}
+
+/* 左侧 - 任务详情 */
+.task-card-left {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-width: 228px;
+  max-width: 496px;
+}
+
+.task-details {
+  margin-bottom: 20px;
+}
+
+.task-section-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+  color: #000;
+}
+
+.task-detail-item {
+  margin-bottom: 12px;
+}
+
+.task-detail-label {
+  font-weight: 500;
+  color: #000;
+  margin-right: 8px;
+}
+
+.task-detail-value {
+  color: #71727a;
+}
+
+/* 任务操作按钮 */
+.task-actions {
+  display: flex;
+  gap: 16px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  width: 100%;
+}
+
+.task-action-item {
+  min-width: 110px;
+  width: 110px;
+  flex: 0 0 auto;
+  height: 120px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  position: relative;
+  cursor: pointer;
+  margin-right: 12px;
+}
+
+.task-action-item:last-child {
+  margin-right: 0;
+}
+
+.task-action-item.active {
+  border: 1px solid #006ffd;
+  background-color: #fff;
+}
+
+.task-action-item.add-item {
+  border: 1px dashed #c5c6cc;
+  background-color: #f8f9fe;
+}
+
+.task-action-icon {
+  font-size: 24px;
+  color: #006ffd;
+}
+
+.task-action-text {
+  font-size: 14px;
+  color: #71727a;
+}
+
+.task-action-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: #fff;
+  border: 1px solid #e8e9f1;
+  color: #8f9098;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+/* 右侧 - 图表 */
+.task-card-right {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.task-chart-container,
+.task-radar-chart-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.task-chart-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1f2024;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.task-chart,
+.task-radar-chart {
+  flex: 1;
+}
+
+.task-chart-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.task-chart-link {
+  text-align: center;
+  width: 100%;
+}
+
+.task-chart-link a {
+  color: #006ffd;
+  font-size: 14px;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.task-chart-info {
+  font-size: 12px;
+  color: #8f9098;
+  text-align: center;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.task-chart-time-author {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  justify-content: center;
+}
+
+.task-chart-time {
+  color: #8f9098;
+}
+
+.task-updater-avatar {
+  background-color: #f0f0f0;
+}
+
+/* 雷达图代理选择 */
+.task-agents {
+  margin-top: 8px;
+}
+
+.task-agents-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+}
+
+.task-agent-item .ant-checkbox-wrapper {
+  font-size: 12px;
+}
+
+/* 任务页面样式 */
+.task-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  height: 100%;
+  background: #fff;
+  transition: padding 0.3s ease;
+}
+
+/* When chat is closed, apply 190px margin */
+.task-page.chat-closed {
+  padding: 0 190px;
+}
+
+/* When chat is open, keep current margins */
+.task-page.chat-open {
+  padding: 0 16px;
+}
+
+/* Responsive adjustments for the task page margins */
+@media (max-width: 1440px) {
+  .task-page.chat-closed {
+    padding: 0 120px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .task-page.chat-closed {
+    padding: 0 80px;
+  }
+}
+
+@media (max-width: 992px) {
+  .task-page.chat-closed {
+    padding: 0 40px;
+  }
+
+  .task-page.chat-open {
+    padding: 0 12px;
+  }
+}
+
+@media (max-width: 768px) {
+  .task-page.chat-closed,
+  .task-page.chat-open {
+    padding: 0 16px;
+  }
+}
+
+.task-page-header {
+  margin-bottom: 16px;
+  padding-top: 16px;
+}
+
+.task-page-title {
+  margin-bottom: 0 !important;
+}
+
+.task-tabs {
+  margin-bottom: 16px;
+}
+
+.task-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* 工具栏 */
+.task-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.task-cards-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  overflow-y: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+  padding-bottom: 24px;
+}
+
+.task-cards-container::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+.task-card-wrapper {
+  margin-bottom: 0;
+}

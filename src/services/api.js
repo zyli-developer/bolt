@@ -3,6 +3,8 @@
  * 封装了基本的API请求方法
  */
 
+// 检查BASE_URL的配置
+
 // 基础URL，可以根据环境变量配置
 const BASE_URL = process.env.REACT_APP_API_BASE_URL || "/api"
 
