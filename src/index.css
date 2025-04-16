@@ -78,7 +78,7 @@ code {
 
 /* 主内容区域 */
 .main-content {
-  padding: 12px;
+  padding: 12 16px;
   overflow-y: auto;
   flex: 1;
   scrollbar-width: none; /* Firefox */
@@ -280,6 +280,12 @@ code {
   right: 0;
   border-top: 1px solid #e8e9f1;
   background-color: #fff;
+}
+
+/* 确保弹出层容器正确定位 */
+.sidebar-user-info-wrapper {
+  position: relative;
+  z-index: 20;
 }
 
 /* 用户信息 */
@@ -538,6 +544,34 @@ code {
   }
 }
 
+/* 探索页面标签切换样式 */
+.explore-tabs-container {
+  margin-bottom: 24px;
+}
+
+.explore-tabs .ant-tabs-nav {
+  margin-bottom: 0;
+}
+
+.explore-tabs .ant-tabs-tab {
+  padding: 12px 20px;
+  font-size: 16px;
+  transition: all 0.3s ease;
+}
+
+.explore-tabs .ant-tabs-tab:hover {
+  color: #006ffd;
+}
+
+.explore-tabs .ant-tabs-tab-active {
+  font-weight: 500;
+}
+
+.explore-tabs .ant-tabs-ink-bar {
+  background-color: #006ffd;
+  height: 3px;
+}
+
 /* 工具栏 */
 .explore-toolbar {
   display: flex;
@@ -601,6 +635,22 @@ code {
   text-align: center;
   font-size: 16px;
   padding: 24px 0;
+}
+
+/* 初始加载状态容器 */
+.initial-loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 0;
+  width: 100%;
+}
+
+.loading-text {
+  margin-top: 16px;
+  color: #8f9098;
+  font-size: 14px;
 }
 
 .cards-container {
@@ -921,6 +971,21 @@ code {
 
 .agent-item .ant-checkbox-wrapper {
   font-size: 12px;
+}
+
+/* 空数据状态 */
+.empty-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 0;
+  width: 100%;
+}
+
+.empty-message {
+  color: #8f9098;
+  font-size: 16px;
 }
 
 /* Responsive styles */

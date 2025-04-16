@@ -1,5 +1,14 @@
 import { rest } from "msw"
-import { menuData, chatUsers, cardsData, currentUser, tasksData, evaluationsData } from "./data"
+import {
+  menuData,
+  chatUsers,
+  cardsData,
+  currentUser,
+  tasksData,
+  evaluationsData,
+  workspacesData,
+  currentWorkspace,
+} from "./data"
 
 export const handlers = [
   // 获取菜单数据
@@ -190,5 +199,52 @@ export const handlers = [
 
     // 模拟重新评估，返回相同的数据
     return res(ctx.status(200), ctx.json(evaluation))
+  }),
+
+  // 在 handlers 数组中添加工作区相关的 API 处理程序
+
+  // 获取工作区列表
+  rest.get("/api/workspaces", (req, res, ctx) => {
+    return res(ctx.status(200), ctx.json(workspacesData))
+  }),
+
+  // 获取当前工作区
+  rest.get("/api/workspaces/current", (req, res, ctx) => {
+    return res(ctx.status(200), ctx.json(currentWorkspace))
+  }),
+
+  // 获取工作区详情
+  rest.get("/api/workspaces/:id", (req, res, ctx) => {
+    const { id } = req.params
+    const workspace = workspacesData.find((ws) => ws.id === Number.parseInt(id))
+
+    if (!workspace) {
+      return res(ctx.status(404), ctx.json({ message: "工作区不存在" }))
+    }
+
+    // 如果请求的是当前工作区，返回详细信息
+    if (workspace.id === currentWorkspace.id) {
+      return res(ctx.status(200), ctx.json(currentWorkspace))
+    }
+
+    // 否则返回基本信息
+    return res(ctx.status(200), ctx.json(workspace))
+  }),
+
+  // 切换当前工作区
+  rest.post("/api/workspaces/switch/:id", (req, res, ctx) => {
+    const { id } = req.params
+    const workspace = workspacesData.find((ws) => ws.id === Number.parseInt(id))
+
+    if (!workspace) {
+      return res(ctx.status(404), ctx.json({ message: "工作区不存在" }))
+    }
+
+    // 更新当前工作区
+    workspacesData.forEach((ws) => {
+      ws.current = ws.id === Number.parseInt(id)
+    })
+
+    return res(ctx.status(200), ctx.json({ success: true, workspace }))
   }),
 ]

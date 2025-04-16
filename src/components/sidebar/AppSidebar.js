@@ -17,6 +17,10 @@ import { useNavigate, useLocation } from "react-router-dom"
 import menuService from "../../services/menuService"
 import ExploreIcon from "../icons/ExploreIcon"
 import TaskIcon from "../icons/TaskIcon"
+// Import the new UserInfoArea component
+import UserInfoArea from "./UserInfoArea"
+// 导入工作区服务
+import workspaceService from "../../services/workspaceService"
 
 const { Sider } = Layout
 
@@ -27,6 +31,9 @@ const AppSidebar = () => {
   const [expandedKeys, setExpandedKeys] = useState(["tasks"])
   const [menuItems, setMenuItems] = useState([])
   const [loading, setLoading] = useState(true)
+  // 在 AppSidebar 组件中添加工作区状态
+  const [currentWorkspace, setCurrentWorkspace] = useState(null)
+  const [workspaceLoading, setWorkspaceLoading] = useState(true)
 
   useEffect(() => {
     const fetchMenuItems = async () => {
@@ -47,6 +54,23 @@ const AppSidebar = () => {
     }
 
     fetchMenuItems()
+  }, [])
+
+  // 在 useEffect 中添加获取当前工作区的逻辑
+  useEffect(() => {
+    const fetchCurrentWorkspace = async () => {
+      try {
+        setWorkspaceLoading(true)
+        const data = await workspaceService.getCurrentWorkspace()
+        setCurrentWorkspace(data)
+      } catch (error) {
+        console.error("获取当前工作区失败:", error)
+      } finally {
+        setWorkspaceLoading(false)
+      }
+    }
+
+    fetchCurrentWorkspace()
   }, [])
 
   const toggleSearch = () => {
@@ -159,17 +183,26 @@ const AppSidebar = () => {
       {/* 工作区标题和搜索 */}
       <div className="workspace-header">
         <div className="workspace-title-container">
-          <Avatar size={16} className="workspace-avatar">
-            A
-          </Avatar>
-          <h3 className="workspace-title">Alibaba</h3>
-          <DownOutlined className="workspace-dropdown-icon" />
+          {workspaceLoading ? (
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <div style={{ width: "16px", height: "16px", backgroundColor: "#f0f0f0", borderRadius: "50%" }}></div>
+              <div style={{ width: "60px", height: "14px", backgroundColor: "#f0f0f0", borderRadius: "4px" }}></div>
+            </div>
+          ) : (
+            <>
+              <Avatar size={16} className="workspace-avatar">
+                {currentWorkspace?.icon || currentWorkspace?.name?.charAt(0)}
+              </Avatar>
+              <h3 className="workspace-title">{currentWorkspace?.name || "未知工作区"}</h3>
+              <DownOutlined className="workspace-dropdown-icon" />
+            </>
+          )}
         </div>
         <Button type="text" icon={<SearchOutlined />} onClick={toggleSearch} size="small" />
       </div>
 
       {/* 菜单项区域 - 使用flex-1确保它填充剩余空间 */}
-      <div className="sidebar-menu-container">
+      <div className="sidebar-menu-container" style={{ position: "relative", zIndex: 1 }}>
         {loading ? (
           <div style={{ padding: "16px", textAlign: "center" }}>加载中...</div>
         ) : (
@@ -178,20 +211,7 @@ const AppSidebar = () => {
       </div>
 
       {/* 个人信息区域 - 固定在底部 */}
-      <div className="user-info-container">
-        <div className="user-info">
-          <div className="user-avatar-container">
-            <Avatar className="user-avatar" size={36}>
-              J
-            </Avatar>
-          </div>
-          <div className="user-details">
-            <div className="user-name">Jackson</div>
-            <div className="user-email">Jcson@yahoo.com</div>
-          </div>
-          <Button type="text" icon={<MoreOutlined />} className="user-more-btn" />
-        </div>
-      </div>
+      <UserInfoArea />
     </Sider>
   )
 }

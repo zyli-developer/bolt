@@ -35,7 +35,9 @@ const endpoints = {
   // 工作区相关
   workspace: {
     list: "/workspaces",
+    current: "/workspaces/current",
     detail: (id) => `/workspaces/${id}`,
+    switch: (id) => `/workspaces/switch/${id}`,
   },
 
   // 任务相关

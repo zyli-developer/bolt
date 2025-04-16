@@ -37,7 +37,7 @@ const evaluationService = {
 
   /**
    * 重新评估
-   * @param {string} evaluationId - 评���ID
+   * @param {string} evaluationId - 评估ID
    * @param {string} optimizationInput - 优化输入
    * @returns {Promise} - 更新后的评估数据
    */

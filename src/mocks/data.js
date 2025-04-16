@@ -432,3 +432,27 @@ export const evaluationsData = [
     ],
   },
 ]
+
+// 工作区数据
+export const workspacesData = [
+  { id: 1, name: "Alibaba", icon: "A", role: "Owner", current: true },
+  { id: 2, name: "Tencent", icon: "T", role: "Member", current: false },
+  { id: 3, name: "Baidu", icon: "B", role: "Admin", current: false },
+]
+
+// 当前工作区数据
+export const currentWorkspace = {
+  id: 1,
+  name: "Alibaba",
+  icon: "A",
+  role: "Owner",
+  domain: "syntrusthub.agentour.app",
+  members: 12,
+  projects: 8,
+  createdAt: "2023-05-15",
+  description: "阿里巴巴集团工作区",
+  settings: {
+    allowPublicSharing: true,
+    defaultPermission: "private",
+  },
+}
