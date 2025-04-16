@@ -247,4 +247,75 @@ export const handlers = [
 
     return res(ctx.status(200), ctx.json({ success: true, workspace }))
   }),
+
+  // 保存筛选视图
+  rest.post("/api/filter/views", async (req, res, ctx) => {
+    const viewConfig = await req.json()
+
+    // 模拟保存视图
+    const savedView = {
+      id: Date.now().toString(),
+      name: "自定义视图",
+      config: viewConfig,
+      createdAt: new Date().toISOString(),
+    }
+
+    return res(ctx.status(201), ctx.json(savedView))
+  }),
+
+  // 获取保存的视图列表
+  rest.get("/api/filter/views", (req, res, ctx) => {
+    // 模拟视图列表
+    const views = [
+      {
+        id: "1",
+        name: "默认视图",
+        createdAt: "2023-01-01T00:00:00Z",
+      },
+      {
+        id: "2",
+        name: "自定义视图",
+        createdAt: "2023-02-01T00:00:00Z",
+      },
+    ]
+
+    return res(ctx.status(200), ctx.json(views))
+  }),
+
+  // 获取视图详情
+  rest.get("/api/filter/views/:id", (req, res, ctx) => {
+    const { id } = req.params
+
+    // 模拟视图详情
+    const view = {
+      id,
+      name: id === "1" ? "默认视图" : "自定义视图",
+      config: {
+        filterConfig: {
+          conditions: [
+            {
+              field: "场景",
+              operator: "等于",
+              values: ["场景1", "场景2"],
+              id: "1",
+            },
+          ],
+        },
+        groupConfig: {
+          fields: [],
+        },
+        sortConfig: {
+          fields: [],
+        },
+      },
+      createdAt: id === "1" ? "2023-01-01T00:00:00Z" : "2023-02-01T00:00:00Z",
+    }
+
+    return res(ctx.status(200), ctx.json(view))
+  }),
+
+  // 删除视图
+  rest.delete("/api/filter/views/:id", (req, res, ctx) => {
+    return res(ctx.status(200), ctx.json({ success: true }))
+  }),
 ]

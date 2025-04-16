@@ -55,6 +55,14 @@ const endpoints = {
     detail: (id) => `/evaluations/${id}`,
     reevaluate: "/evaluations/reevaluate",
   },
+
+  // 筛选相关
+  filter: {
+    saveView: "/filter/views",
+    savedViews: "/filter/views",
+    viewDetail: (id) => `/filter/views/${id}`,
+    deleteView: (id) => `/filter/views/${id}`,
+  },
 }
 
 export default endpoints

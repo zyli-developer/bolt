@@ -1,0 +1,143 @@
+/* 筛选系统样式 */
+.filter-popover {
+  width: 480px;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  background-color: #fff;
+  overflow: hidden;
+}
+
+.filter-popover .ant-popover-inner {
+  border-radius: 16px;
+  padding: 0;
+}
+
+.filter-popover .ant-popover-arrow {
+  display: none;
+}
+
+.filter-card {
+  width: 100%;
+}
+
+.filter-card-header {
+  padding: 16px 24px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.filter-card-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: #1f2024;
+  margin: 0;
+}
+
+.filter-card-content {
+  padding: 20px 24px;
+}
+
+.filter-condition {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+  position: relative;
+}
+
+.filter-condition-field,
+.filter-condition-operator,
+.filter-condition-value {
+  margin-right: 8px;
+}
+
+.filter-condition-field {
+  width: 120px;
+}
+
+.filter-condition-operator {
+  width: 100px;
+}
+
+.filter-condition-value {
+  flex: 1;
+}
+
+.filter-condition-remove {
+  margin-left: 8px;
+  color: #8f9098;
+  cursor: pointer;
+}
+
+.filter-add-condition {
+  color: #006ffd;
+  cursor: pointer;
+  margin-top: 8px;
+  margin-bottom: 24px;
+  display: inline-block;
+}
+
+.filter-add-condition:hover {
+  text-decoration: underline;
+}
+
+.filter-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.filter-prev-btn,
+.filter-next-btn,
+.filter-save-btn {
+  min-width: 100px;
+}
+
+.filter-save-btn {
+  background-color: #006ffd;
+}
+
+/* 分组和排序卡片样式 */
+.group-options,
+.sort-options {
+  margin-bottom: 24px;
+}
+
+.group-option,
+.sort-option {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.group-field,
+.sort-field {
+  width: 150px;
+  margin-right: 12px;
+}
+
+.sort-direction {
+  width: 120px;
+}
+
+/* 动画效果 */
+.filter-step-enter {
+  opacity: 0;
+  transform: translateX(20px);
+}
+
+.filter-step-enter-active {
+  opacity: 1;
+  transform: translateX(0);
+  transition: opacity 300ms, transform 300ms;
+}
+
+.filter-step-exit {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.filter-step-exit-active {
+  opacity: 0;
+  transform: translateX(-20px);
+  transition: opacity 300ms, transform 300ms;
+}
