@@ -10,6 +10,21 @@ import {
   currentWorkspace,
 } from "./data"
 
+const mockChatMessages = [
+  {
+    id: 1,
+    sender: "user1",
+    text: "Hello!",
+    timestamp: new Date().toISOString(),
+  },
+  {
+    id: 2,
+    sender: "me",
+    text: "Hi there!",
+    timestamp: new Date().toISOString(),
+  },
+]
+
 export const handlers = [
   // 获取菜单数据
   rest.get("/api/menu", (req, res, ctx) => {
@@ -25,23 +40,8 @@ export const handlers = [
   rest.get("/api/chat/messages/:userId", (req, res, ctx) => {
     const { userId } = req.params
 
-    // 模拟消息数据
-    const messages = [
-      {
-        id: 1,
-        sender: "other",
-        text: "123456789012345678901234",
-        timestamp: "2025/12/3 21:52",
-      },
-      {
-        id: 2,
-        sender: "user",
-        text: "123456789012345678901234",
-        timestamp: "2025/12/3 21:52",
-      },
-    ]
-
-    return res(ctx.status(200), ctx.json(messages))
+    // Return our mock chat messages
+    return res(ctx.status(200), ctx.json(mockChatMessages))
   }),
 
   // 发送消息
@@ -71,7 +71,7 @@ export const handlers = [
       // 模拟工作区范围的卡片 - 只返回source为Alibaba的卡片
       filteredCards = cardsData.filter((card) => card.source === "Alibaba")
     } else if (scope === "personal") {
-      // ���拟个人范围的卡片 - 只返回author.id为当前用户ID的卡片
+      // 模拟个人范围的卡片 - 只返回author.id为当前用户ID的卡片
       filteredCards = cardsData.filter((card) => card.author.id === currentUser.id)
     }
     // community范围返回所有卡片
@@ -108,7 +108,7 @@ export const handlers = [
     return res(ctx.status(200), ctx.json([currentUser, ...chatUsers]))
   }),
 
-  // 获取任务列表
+  // 修改任务列表API处理程序，确保始终返回数组
   rest.get("/api/tasks", (req, res, ctx) => {
     const type = req.url.searchParams.get("type")
 
@@ -120,7 +120,8 @@ export const handlers = [
       filteredTasks = tasksData.filter((task) => task.permission === "workspace")
     }
 
-    return res(ctx.status(200), ctx.json(filteredTasks))
+    // 确保返回的是数组
+    return res(ctx.status(200), ctx.json(filteredTasks || []))
   }),
 
   // 创建任务

@@ -86,6 +86,40 @@ export const chatUsers = [
   },
 ]
 
+// Add more realistic mock chat messages
+export const mockChatMessages = [
+  {
+    id: 1,
+    sender: "other",
+    text: "您好，有什么我可以帮助您的吗？",
+    timestamp: "2025/12/3 21:45",
+  },
+  {
+    id: 2,
+    sender: "user",
+    text: "我想了解一下关于AI安全评估的相关信息",
+    timestamp: "2025/12/3 21:46",
+  },
+  {
+    id: 3,
+    sender: "other",
+    text: "当然可以。我们提供全面的AI安全评估服务，包括模型安全性、数据隐私保护、��统鲁棒性等多个维度的测试和评估。您有具体想了解哪方面的内容吗？",
+    timestamp: "2025/12/3 21:47",
+  },
+  {
+    id: 4,
+    sender: "user",
+    text: "我主要关注模型安全性评估，特别是对于大语言模型的评估标准",
+    timestamp: "2025/12/3 21:48",
+  },
+  {
+    id: 5,
+    sender: "other",
+    text: "对于大语言模型的安全性评估，我们主要从以下几个方面进行：1. 输出安全性：评估模型是否会产生有害、不当或违规内容；2. 鲁棒性：测试模型对抗攻击的防御能力；3. 隐私保护：评估模型是否会泄露训练数据中的敏感信息；4. 偏见与公平性：检测模型输出是否存在偏见。我们可以根据您的具体需求定制评估方案。",
+    timestamp: "2025/12/3 21:50",
+  },
+]
+
 // 卡片数据
 export const cardsData = [
   {

@@ -78,7 +78,7 @@ code {
 
 /* 主内容区域 */
 .main-content {
-  padding: 12 16px;
+  padding: 12px 16px;
   overflow-y: auto;
   flex: 1;
   scrollbar-width: none; /* Firefox */
@@ -94,7 +94,6 @@ code {
   width: 380px;
   height: 100%;
   background-color: #fff;
-  border-left: 1px solid #eaedf3;
 }
 
 /* Logo样式 */
@@ -280,12 +279,6 @@ code {
   right: 0;
   border-top: 1px solid #e8e9f1;
   background-color: #fff;
-}
-
-/* 确保弹出层容器正确定位 */
-.sidebar-user-info-wrapper {
-  position: relative;
-  z-index: 20;
 }
 
 /* 用户信息 */

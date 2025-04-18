@@ -13,6 +13,7 @@ const { Title } = Typography
 
 const TaskPage = () => {
   const location = useLocation()
+  // 修改初始化状态，确保tasks始终是一个数组
   const [tasks, setTasks] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -39,11 +40,13 @@ const TaskPage = () => {
         setLoading(true)
         const activeTab = getActiveTab()
         const data = await taskService.getTasks({ type: activeTab })
-        setTasks(data)
+        // 确保data是数组
+        setTasks(Array.isArray(data) ? data : [])
         setError(null)
       } catch (err) {
         console.error("获取任务数据失败:", err)
         setError("获取任务数据失败，请重试")
+        setTasks([]) // 出错时设置为空数组
       } finally {
         setLoading(false)
       }
@@ -88,15 +91,17 @@ const TaskPage = () => {
             </div>
           </div>
 
-          {tasks.length === 0 ? (
+          {tasks && Array.isArray(tasks) && tasks.length === 0 && !loading ? (
             <Empty description={`暂无${getPageTitle()}`} />
           ) : (
             <div className="task-cards-container">
-              {tasks.map((task) => (
-                <div key={task.id} className="task-card-wrapper">
-                  <TaskCard task={task} />
-                </div>
-              ))}
+              {tasks &&
+                Array.isArray(tasks) &&
+                tasks.map((task) => (
+                  <div key={task.id} className="task-card-wrapper">
+                    <TaskCard task={task} />
+                  </div>
+                ))}
             </div>
           )}
         </div>

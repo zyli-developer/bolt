@@ -14,10 +14,13 @@ const taskService = {
    */
   getTasks: async (params = {}) => {
     try {
-      return await api.get(endpoints.tasks.list, { params })
+      const response = await api.get(endpoints.tasks.list, { params })
+      // 确保返回的是数组
+      return Array.isArray(response) ? response : []
     } catch (error) {
       console.error("获取任务列表失败:", error)
-      throw error
+      // 出错时返回空数组
+      return []
     }
   },
 
