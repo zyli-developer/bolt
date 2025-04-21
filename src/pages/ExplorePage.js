@@ -1,13 +1,12 @@
 "use client"
 
 import { useEffect, useState, useRef, useCallback } from "react"
-import { Button, Spin } from "antd"
-import { FilterOutlined, GroupOutlined } from "@ant-design/icons"
-import SortIcon from "../components/icons/SortIcon"
+import { Spin } from "antd"
 import CardItem from "../components/card/CardItem"
 import cardService from "../services/cardService"
 import { useChatContext } from "../contexts/ChatContext"
 import { useNavContext } from "../contexts/NavContext"
+import FilterSystem from "../components/filter/FilterSystem"
 
 const ExplorePage = () => {
   const { selectedNav } = useNavContext()
@@ -94,19 +93,7 @@ const ExplorePage = () => {
     <div className={`explore-page ${isChatOpen ? "chat-open" : "chat-closed"}`}>
       {/* 筛选工具栏 */}
       <div className="explore-toolbar">
-        <div className="toolbar-left">
-          <Button icon={<FilterOutlined />} className="filter-button">
-            Filter <span className="filter-count">2</span>
-          </Button>
-        </div>
-        <div className="toolbar-right">
-          <Button icon={<GroupOutlined />} className="group-button">
-            Group <span className="group-count">2</span>
-          </Button>
-          <Button icon={<SortIcon />} className="sort-button">
-            Sort
-          </Button>
-        </div>
+        <FilterSystem />
       </div>
 
       {/* 卡片列表 */}

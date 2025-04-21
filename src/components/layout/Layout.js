@@ -1,7 +1,7 @@
 "use client"
 import Header from "./Header"
 import Sidebar from "../sidebar/Sidebar"
-import ChatArea from "../chat/ChatArea"
+import ChatArea from "../sidebar-chat/ChatArea"
 import { useChatContext } from "../../contexts/ChatContext"
 
 const Layout = ({ children }) => {

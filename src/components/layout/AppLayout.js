@@ -2,7 +2,7 @@
 import { Layout } from "antd"
 import { MessageOutlined } from "@ant-design/icons"
 import AppSidebar from "../sidebar/AppSidebar"
-import ChatArea from "../chat/ChatArea"
+import ChatArea from "../sidebar-chat/ChatArea"
 import { useChatContext } from "../../contexts/ChatContext"
 import { useState, useEffect } from "react"
 import ContentNav from "./ContentNav"
