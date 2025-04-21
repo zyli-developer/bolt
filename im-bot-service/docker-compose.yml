@@ -1,0 +1,24 @@
+version: '3'
+
+services:
+  im-bot-service:
+    build: .
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - IM_SDKAPPID=1400000000  # 替换为您的SDKAppID
+      - IM_SECRET_KEY=           # 替换为您的密钥
+      - IM_ADMIN_USER_ID=administrator
+      - IM_BOT_USER_ID=@RBT#001
+      - AI_PROVIDER=deepseek     # 使用DeepSeek作为AI提供商
+      - AI_API_KEY=sk-9fb7656e32574016b2a4dd6ad2aec066  # DeepSeek API密钥
+      - AI_MODEL=deepseek-chat   # DeepSeek模型名称
+    volumes:
+      - ./logs:/app/logs
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
