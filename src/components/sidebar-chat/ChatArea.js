@@ -12,14 +12,16 @@ import {
   MoreOutlined,
 } from "@ant-design/icons"
 import { useChatContext } from "../../contexts/ChatContext"
-import "./chat-area.css"
+import CreateChatModal from "./CreateChatModal"
+import "./sidebar-chat.css"
 
 const ChatArea = () => {
-  const { messages, activeUser, sendMessage, closeChat, loading } = useChatContext()
+  const { messages, activeUser, sendMessage, closeChat, loading, createNewChat, chatUsers, setActiveUser } = useChatContext()
   const [inputValue, setInputValue] = useState("")
   const messagesEndRef = useRef(null)
   const messagesContainerRef = useRef(null)
   const [showScrollTop, setShowScrollTop] = useState(false)
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
 
   // 滚动到底部
   const scrollToBottom = () => {
@@ -75,15 +77,11 @@ const ChatArea = () => {
     }
   }
 
-  // 滚动到顶部
-  const scrollToTop = () => {
-    const container = messagesContainerRef.current
-    if (container) {
-      container.scrollTo({
-        top: 0,
-        behavior: "smooth",
-      })
-    }
+
+  // 处理创建新会话
+  const handleCreateChat = (type, params) => {
+    createNewChat(type, params)
+    setIsCreateModalOpen(false)
   }
 
   return (
@@ -92,14 +90,14 @@ const ChatArea = () => {
       <div className="chat-header">
         <div className="chat-user-info">
           <div className="chat-user-avatar">
-            {activeUser.avatar ? (
-              <img src={activeUser.avatar || "/placeholder.svg"} alt={activeUser.name} />
+            {activeUser && activeUser.avatar ? (
+              <img src={activeUser.avatar} alt={activeUser?.name || 'User'} />
             ) : (
-              activeUser.name.charAt(0)
+              <span>{activeUser?.name?.charAt(0) || '?'}</span>
             )}
           </div>
           <div className="chat-user-details">
-            <div className="chat-user-name">{activeUser.name}</div>
+            <div className="chat-user-name">{activeUser?.name || '未知用户'}</div>
             <div className="chat-user-status">
               <span className="status-dot"></span>
               <span className="status-text">Active</span>
@@ -135,33 +133,34 @@ const ChatArea = () => {
 
       {/* 右侧功能区 */}
       <div className="chat-sidebar">
-        <button className="sidebar-button" type="button">
+        <button className="sidebar-button" type="button" onClick={() => setIsCreateModalOpen(true)}>
           <PlusOutlined />
         </button>
         <div className="sidebar-divider"></div>
-        <button className="sidebar-button" type="button">
-          <SmileOutlined />
-        </button>
-        <button className="sidebar-button" type="button">
-          <PictureOutlined />
-        </button>
-        <button className="sidebar-button" type="button">
-          <FileOutlined />
-        </button>
-        <button className="sidebar-button" type="button">
-          <AudioOutlined />
-        </button>
-        <button className="sidebar-button" type="button">
-          <MoreOutlined />
-        </button>
+        <div className="sidebar-chat-users">
+          {chatUsers.map((user) => (
+            <div 
+              key={user.id}
+              className={`sidebar-chat-user ${activeUser?.id === user.id ? 'active' : ''}`}
+              onClick={() => {
+                // 设置活跃用户并打开聊天窗口
+                setActiveUser(user);
+              }}
+            >
+              <div className="sidebar-chat-avatar">
+                {user.avatar ? (
+                  <img src={user.avatar} alt={user.name} />
+                ) : (
+                  <span>{user.name?.charAt(0) || '?'}</span>
+                )}
+                {user.unreadCount > 0 && (
+                  <span className="unread-badge">{user.unreadCount}</span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
-
-      {/* 回到顶部按钮 */}
-      {showScrollTop && (
-        <button className="scroll-to-top visible" onClick={scrollToTop} type="button">
-          <ArrowUpOutlined />
-        </button>
-      )}
 
       {/* 聊天输入区域 */}
       <div className="chat-input-wrapper">
@@ -170,16 +169,28 @@ const ChatArea = () => {
             className="chat-input-field"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            onKeyPress={handleKeyPress}
+            onKeyDown={handleKeyPress}
             placeholder="请输入文字"
           />
           <div className="chat-input-actions">
-            <button className="chat-input-action" type="button">
+            <button className="chat-input-action" type="button" onClick={() => setIsCreateModalOpen(true)}>
               <PlusOutlined />
             </button>
+            <button 
+              className="chat-input-send-btn" 
+              type="button" 
+              onClick={handleSendMessage}
+              disabled={!inputValue.trim()}
+            >
+              <ArrowUpOutlined />
+            </button>
+
           </div>
         </div>
       </div>
+
+      {/* 创建新会话模态窗口 */}
+      {isCreateModalOpen && <CreateChatModal onClose={() => setIsCreateModalOpen(false)} onCreate={handleCreateChat} />}
     </div>
   )
 }
