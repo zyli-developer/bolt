@@ -94,22 +94,38 @@ export async function getChatUsers() {
     // 获取会话列表
     const conversationList = await TIM.getConversationList();
     
+    console.log('获取到会话列表', { count: conversationList.length });
+    
     // 转换为ChatContext需要的格式
-    return conversationList.map(conversation => {
+    const users = conversationList.map(conversation => {
       const isGroup = conversation.type === 'GROUP';
       const profile = isGroup ? conversation.groupProfile : conversation.userProfile;
       
+      // 从conversationID中提取纯ID
+      let id = isGroup ? conversation.groupID : conversation.userID;
+      
+      // 如果id不存在但conversationID存在，尝试从conversationID提取
+      if (!id && conversation.conversationID) {
+        const prefix = conversation.conversationID.startsWith('C2C') ? 'C2C' : 'GROUP';
+        id = conversation.conversationID.substring(prefix.length);
+        console.log(`从conversationID(${conversation.conversationID})提取ID: ${id}`);
+      }
+      
       return {
-        id: isGroup ? conversation.groupID : conversation.userID,
-        name: isGroup ? profile.name : profile.nick,
+        id: id, // 纯ID
+        name: isGroup ? profile.name : (profile.nick || profile.userID || id),
         avatar: profile.avatar,
         status: profile.statusType === 'Online' ? 'active' : 'offline',
-        conversationID: conversation.conversationID,
+        conversationID: conversation.conversationID, // 保留原始会话ID
         unreadCount: conversation.unreadCount || 0,
         lastMessage: conversation.lastMessage?.messageForShow || '',
         type: isGroup ? 'group' : 'user'
       };
     });
+    
+    console.log('转换后的用户列表', { count: users.length });
+    
+    return users;
   } catch (error) {
     console.error('获取聊天用户列表失败', error);
     throw error;
@@ -127,47 +143,89 @@ export async function getChatMessages(userId) {
     return [];
   }
   
+  console.log(`开始获取聊天消息，userId: ${userId}`, { userId, type: typeof userId });
+  
   try {
     // 根据userId构建会话ID
     const isGroup = typeof userId === 'string' && userId.startsWith('GROUP');
     const pureId = String(userId).replace(/^(GROUP|C2C)/, '');
     const conversationID = isGroup ? `GROUP${pureId}` : `C2C${pureId}`;
     
+    console.log(`构建会话ID: ${conversationID}`, { isGroup, pureId });
+    
     // 获取会话资料（如果不存在会创建）
     try {
       await TIM.getConversationProfile(conversationID);
+      console.log(`获取会话资料成功: ${conversationID}`);
     } catch (convError) {
       console.warn(`获取会话资料失败: ${conversationID}`, convError);
       // 即使获取会话失败也继续尝试获取消息
     }
     
-    // 获取消息列表
+    // 使用 SDK 的 getMessageList 获取消息列表
+    console.log(`开始获取消息列表: ${conversationID}`);
     const messageList = await TIM.getMessageList({
       conversationID,
-      count: 20
+      count: 20 // 一次获取20条消息
     });
     
     // 确保messageList是数组
     if (!Array.isArray(messageList)) {
-      console.warn(`获取到的消息列表格式不正确: ${typeof messageList}`);
+      console.warn(`获取到的消息列表格式不正确: ${typeof messageList}`, messageList);
       return [];
     }
     
+    console.log(`获取消息列表成功，消息数: ${messageList.length}`);
+    
     // 标记消息已读
     try {
-      await TIM.setMessageRead(conversationID);
+      // 使用正确的函数标记会话消息已读
+      await TIM.markConversationRead(conversationID);
+      console.log(`标记会话已读成功: ${conversationID}`);
     } catch (readError) {
       console.warn(`设置消息已读失败: ${conversationID}`, readError);
       // 设置已读失败不影响消息获取
     }
     
     // 转换为ChatContext需要的格式
-    return messageList.map(message => ({
-      id: message.ID || `temp-${Date.now()}-${Math.random()}`,
-      sender: message.flow === 'in' ? 'other' : 'user',
-      text: message.payload?.text || message.elements?.[0]?.content?.text || '',
-      timestamp: formatDate(new Date(message.time * 1000))
-    }));
+    const formattedMessages = messageList.map(message => {
+      // 尝试获取消息ID
+      const messageId = message.ID || message.id || `temp-${Date.now()}-${Math.random()}`;
+      
+      // 确定消息发送方向
+      const isIncoming = message.flow === 'in';
+      
+      // 尝试从不同的属性提取文本内容
+      let textContent = '';
+      if (message.payload && message.payload.text) {
+        textContent = message.payload.text;
+      } else if (message.elements && message.elements.length > 0 && message.elements[0].content && message.elements[0].content.text) {
+        textContent = message.elements[0].content.text;
+      } else if (typeof message.text === 'string') {
+        textContent = message.text;
+      }
+      
+      // 获取时间戳
+      const timestamp = message.time 
+        ? formatDate(new Date(message.time * 1000)) 
+        : message.timestamp || formatDate(new Date());
+      
+      // 返回格式化的消息对象
+      return {
+        id: messageId,
+        sender: isIncoming ? 'other' : 'user',
+        text: textContent,
+        timestamp: timestamp
+      };
+    });
+    
+    // 过滤掉无效消息
+    const validMessages = formattedMessages.filter(msg => msg.text && msg.text.trim() !== '');
+    
+    console.log(`消息格式转换完成，转换后有效消息数: ${validMessages.length}`, 
+      validMessages.length > 0 ? validMessages[0] : '无消息');
+    
+    return validMessages;
   } catch (error) {
     console.error('获取聊天消息失败', error);
     return []; // 出错时返回空数组
@@ -181,6 +239,18 @@ export async function getChatMessages(userId) {
  * @returns {Promise} 发送结果
  */
 export async function sendMessage(userId, text) {
+  if (!userId) {
+    console.error('发送消息失败: userId不能为空');
+    throw new Error('发送消息失败: userId不能为空');
+  }
+  
+  if (!text || text.trim() === '') {
+    console.error('发送消息失败: 消息内容不能为空');
+    throw new Error('发送消息失败: 消息内容不能为空');
+  }
+  
+  console.log(`开始发送消息 userId: ${userId}, text: ${text}`);
+  
   try {
     // 生成消息唯一标识（用户ID + 消息内容 + 精确到秒的时间戳）
     const messageKey = `${userId}_${text}_${Math.floor(Date.now() / 1000)}`;
@@ -205,12 +275,22 @@ export async function sendMessage(userId, text) {
     const isGroup = typeof userId === 'string' && userId.startsWith('GROUP');
     const pureId = String(userId).replace(/^(GROUP|C2C)/, '');
     
+    console.log(`准备发送消息, 目标ID: ${pureId}, 是否群聊: ${isGroup}`);
+    
+    // 发送前检查TIM是否已初始化
+    if (!TIM.getTIMInstance()) {
+      console.error('TIM SDK未初始化，发送消息失败');
+      throw new Error('TIM SDK未初始化，请刷新页面重试');
+    }
+    
     // 发送文本消息
     const message = await TIM.sendTextMessage(text, pureId, isGroup);
     
+    console.log('消息发送成功', message);
+    
     // 转换为ChatContext需要的格式
     return {
-      id: message.ID,
+      id: message.ID || `sent-${Date.now()}`,
       sender: 'user',
       text,
       timestamp: formatDate(new Date())

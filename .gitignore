@@ -22,3 +22,7 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# im-bot-service specific
+/im-bot-service/node_modules
+/im-bot-service/logs
