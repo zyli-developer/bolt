@@ -188,9 +188,20 @@ export const ChatProvider = ({ children }) => {
     
     const fetchMessages = async () => {
       setLoading(true);
+      // 先清空消息列表，避免显示上一个会话的消息
+      setMessages([]);
+      
       try {
+        console.log(`开始获取用户(${activeUser.id})的聊天消息`);
         const messages = await timService.getChatMessages(activeUser.id);
-        setMessages(Array.isArray(messages) ? messages : []);
+        
+        if (Array.isArray(messages)) {
+          console.log(`获取到${messages.length}条消息`, messages.length > 0 ? messages[0] : '无消息');
+          setMessages(messages);
+        } else {
+          console.warn('获取到的消息不是数组:', messages);
+          setMessages([]);
+        }
       } catch (error) {
         console.error("获取聊天消息失败:", error);
         setMessages([]); // 出错时设置为空数组
@@ -214,7 +225,33 @@ export const ChatProvider = ({ children }) => {
   const sendMessage = async (message) => {
     console.log('发送消息调用栈:', new Error().stack);
     // 检查是否有正在发送的消息
-    if (!message || !message.trim() || !activeUser || !activeUser.id || !sdkReady || sendingMessageRef.current) return;
+    if (!message || !message.trim()) {
+      console.warn("消息为空，不发送");
+      return;
+    }
+    
+    if (!activeUser || !activeUser.id) {
+      console.error("没有选择聊天对象，无法发送消息");
+      notification.error({
+        message: "发送失败",
+        description: "请先选择聊天对象"
+      });
+      return;
+    }
+    
+    if (!sdkReady) {
+      console.error("SDK未准备就绪，无法发送消息");
+      notification.error({
+        message: "发送失败",
+        description: "通信服务未就绪，请稍后再试"
+      });
+      return;
+    }
+    
+    if (sendingMessageRef.current) {
+      console.warn("有消息正在发送中，请稍候");
+      return;
+    }
     
     // 标记为正在发送
     sendingMessageRef.current = true;
@@ -222,7 +259,8 @@ export const ChatProvider = ({ children }) => {
     try {
       // 生成本地消息ID
       const localMsgId = `local-${Date.now()}`;
-      console.log("发送消息:", message);
+      console.log("发送消息:", message, "到用户:", activeUser.id);
+      
       // 先添加到本地UI
       setMessages(prev => [...prev, {
         id: localMsgId,
@@ -234,11 +272,17 @@ export const ChatProvider = ({ children }) => {
       
       // 发送消息
       const sentMessage = await timService.sendMessage(activeUser.id, message);
+      console.log("消息发送成功，更新本地消息状态", sentMessage);
       
       // 更新本地消息状态
       setMessages(prev => prev.map(msg => 
         msg.id === localMsgId 
-          ? { ...msg, id: sentMessage.id || msg.id, pending: false } 
+          ? { 
+              ...msg, 
+              id: sentMessage.id || msg.id, 
+              pending: false,
+              timestamp: sentMessage.timestamp || msg.timestamp 
+            } 
           : msg
       ));
       
@@ -248,12 +292,21 @@ export const ChatProvider = ({ children }) => {
       
       // 更新本地消息状态为发送失败
       setMessages(prev => prev.map(msg => 
-        msg.pending ? { ...msg, error: true, pending: false } : msg
+        msg.pending ? { ...msg, error: true, pending: false, errorMessage: error.message } : msg
       ));
+      
+      let errorMessage = "消息发送失败，请稍后重试";
+      
+      // 针对特定错误提供更友好的提示
+      if (error.message && error.message.includes('TIM SDK未初始化')) {
+        errorMessage = "通信服务未就绪，请刷新页面后重试";
+      } else if (error.message && error.message.includes('重复发送')) {
+        errorMessage = "请勿频繁发送相同消息";
+      }
       
       notification.error({
         message: "发送失败",
-        description: error.message || "消息发送失败，请稍后重试"
+        description: error.message || errorMessage
       });
     } finally {
       // 设置一个延迟，防止快速连续点击
@@ -279,6 +332,46 @@ export const ChatProvider = ({ children }) => {
     return createChat(type, params);
   };
 
+  /**
+   * 切换当前活跃聊天用户
+   * @param {Object} user 用户对象
+   */
+  const switchActiveUser = (user) => {
+    if (!user) {
+      console.warn('用户对象为空，无法切换聊天');
+      return;
+    }
+    
+    // 如果没有id但有conversationID，从conversationID中提取id
+    if (!user.id && user.conversationID) {
+      // conversationID格式为 "C2C{userId}" 或 "GROUP{groupId}"
+      const prefix = user.conversationID.startsWith('C2C') ? 'C2C' : 'GROUP';
+      user.id = user.conversationID.substring(prefix.length);
+      user.type = prefix === 'C2C' ? 'user' : 'group';
+      console.log(`从conversationID(${user.conversationID})中提取ID: ${user.id}`);
+    }
+    
+    if (!user.id) {
+      console.warn('用户对象缺少ID，无法切换聊天', user);
+      return;
+    }
+    
+    const isChangingUser = activeUser?.id !== user.id;
+    console.log(`切换聊天用户: ${user.id}`, { isChangingUser, user });
+    
+    // 先清空消息，避免旧消息闪现
+    if (isChangingUser) {
+      setMessages([]);
+      setLoading(true);
+    }
+    
+    // 设置活跃用户
+    setActiveUser(user);
+    
+    // 打开聊天窗口
+    setIsChatOpen(true);
+  };
+
   return (
     <ChatContext.Provider
       value={{
@@ -292,7 +385,11 @@ export const ChatProvider = ({ children }) => {
         chatUsers,
         loading,
         createChat,
-        createNewChat // 为了兼容性添加旧函数名
+        createNewChat, // 为了兼容性添加旧函数名
+        setMessages,
+        setLoading,
+        setIsChatOpen, // 添加这个函数到 context 中
+        switchActiveUser // 添加用户切换函数
       }}
     >
       {children}

@@ -153,6 +153,27 @@
   padding: 0 4px;
 }
 
+/* 添加消息状态样式 */
+.message-status {
+  font-size: 12px;
+  margin-left: 8px;
+  opacity: 0.7;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.message-status.error {
+  color: #ff4d4f;
+}
+
+.message-bubble.pending {
+  opacity: 0.7;
+}
+
+.message-bubble.error {
+  border-color: #ff4d4f;
+}
+
 /* 输入区域 */
 .chat-input-wrapper {
   padding: 16px 20px;
