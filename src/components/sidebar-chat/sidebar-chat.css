@@ -184,11 +184,19 @@
 
 .chat-input-container {
   display: flex;
-  align-items: center;
   background-color: #fff;
-  border-radius: 24px;
-  padding: 8px 16px;
+  border-radius: 16px;
+  padding: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  position: relative;
+  min-height: 90px;
+  border: 1px solid #f0f0f0;
+  transition: all 0.3s ease;
+}
+
+.chat-input-container:focus-within {
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  border-color: #e0e0e0;
 }
 
 .chat-input-field {
@@ -197,23 +205,35 @@
   outline: none;
   background: transparent;
   font-size: 16px;
-  padding: 8px 0;
+  padding: 10px;
+  padding-right: 55px; /* 为右侧按钮留出空间 */
+  resize: none; /* 防止textarea可以调整大小 */
+  line-height: 1.5;
+  min-height: 70px;
+  max-height: 150px;
+  overflow-y: auto;
+  font-family: inherit;
 }
 
 .chat-input-field::placeholder {
-  color: #8f9098;
+  color: #a0a0a0;
 }
 
 /* 输入动作区域 */
 .chat-input-actions {
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 8px;
+  height: calc(100% - 20px);
+  justify-content: space-between;
 }
 
 .chat-input-action, 
-.chat-input-send-btn,
-.chat-input-scroll-btn {
+.chat-input-send-btn {
   width: 36px;
   height: 36px;
   border-radius: 50%;
@@ -223,15 +243,17 @@
   border: none;
   cursor: pointer;
   transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .chat-input-action {
-  background: transparent;
+  background-color: #f7f7f7;
   color: #8f9098;
 }
 
 .chat-input-action:hover {
-  background-color: #f5f5f5;
+  background-color: #efefef;
+  transform: scale(1.05);
 }
 
 .chat-input-send-btn {
@@ -240,21 +262,14 @@
 }
 
 .chat-input-send-btn:hover {
-  background-color: #0070db;
+  background-color: #0078e7;
+  transform: scale(1.05);
 }
 
 .chat-input-send-btn:disabled {
   background-color: #c1c1c1;
   cursor: not-allowed;
-}
-
-.chat-input-scroll-btn {
-  background-color: #f0f2f5;
-  color: #1f2024;
-}
-
-.chat-input-scroll-btn:hover {
-  background-color: #e4e6e9;
+  transform: none;
 }
 
 /* 右侧功能区 */

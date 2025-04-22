@@ -30,6 +30,7 @@ const ChatArea = () => {
   const [inputValue, setInputValue] = useState("")
   const messagesEndRef = useRef(null)
   const messagesContainerRef = useRef(null)
+  const textareaRef = useRef(null)
   const [showScrollTop, setShowScrollTop] = useState(false)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
 
@@ -46,6 +47,16 @@ const ChatArea = () => {
       scrollToBottom()
     }
   }, [messages])
+
+  // 自动调整textarea高度
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = 'auto';
+      const newHeight = Math.min(150, Math.max(70, textarea.scrollHeight));
+      textarea.style.height = `${newHeight}px`;
+    }
+  }, [inputValue]);
 
   // 设置滚动监听器
   useEffect(() => {
@@ -82,9 +93,10 @@ const ChatArea = () => {
   // 处理按键事件
   const handleKeyPress = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault()
-      handleSendMessage()
+      e.preventDefault(); // 阻止默认的换行行为
+      handleSendMessage();
     }
+    // 允许Shift+Enter进行换行
   }
 
   // 处理创建新会话
@@ -230,12 +242,14 @@ const ChatArea = () => {
       {/* 聊天输入区域 */}
       <div className="chat-input-wrapper">
         <div className="chat-input-container">
-          <input
+          <textarea
             className="chat-input-field"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyPress}
             placeholder="请输入文字"
+            rows={3}
+            ref={textareaRef}
           />
           <div className="chat-input-actions">
             <button className="chat-input-action" type="button" onClick={() => setIsCreateModalOpen(true)}>
@@ -249,7 +263,6 @@ const ChatArea = () => {
             >
               <ArrowUpOutlined />
             </button>
-
           </div>
         </div>
       </div>
