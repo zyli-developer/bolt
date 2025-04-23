@@ -414,7 +414,7 @@ code {
 .chat-container {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  height: 90%;
   background-color: #fff;
   overflow: hidden;
   position: relative;
@@ -1062,5 +1062,495 @@ code {
   .card-left-section,
   .card-left-section.with-radar {
     max-width: none;
+  }
+}
+
+/* 详情页公共样式 */
+.task-detail-page,
+.card-detail-page {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+  transition: all 0.3s ease;
+  background-color: #F5F5F5;
+}
+
+
+
+/* 面包屑导航 */
+.task-detail-breadcrumb {
+  margin-bottom: 24px;
+  padding: 0 24px;
+}
+
+.breadcrumb-arrow {
+  font-size: 16px;
+  cursor: pointer;
+  color: #8f9098;
+}
+
+.breadcrumb-parent {
+  color: #006ffd;
+  cursor: pointer;
+}
+
+.breadcrumb-current {
+  color: #1f2024;
+}
+
+/* 标题区域 - 添加卡片样式 */
+.task-detail-title-section {
+  margin-bottom: 24px;
+  background-color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+  padding: 24px;
+  border: 1px solid #e8e9f1;
+}
+
+.task-title {
+  font-size: 28px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: #1f2024;
+  line-height: 1.2;
+  word-break: break-word;
+}
+
+.task-creator-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.task-creator-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.creator-text {
+  font-size: 15px;
+  color: #71727a;
+}
+
+.creator-name {
+  font-weight: 600;
+  color: #1f2024;
+}
+
+.creator-source {
+  font-weight: 600;
+  color: #006ffd;
+}
+
+.task-tags {
+  display: flex;
+  gap: 8px;
+}
+
+.task-dimension-tag {
+  font-size: 13px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  background-color: #f3f5ff;
+  border: none;
+  color: #006ffd;
+}
+
+.task-actions-top {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+/* 评估结果区域 */
+.evaluation-section {
+  background-color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+  padding: 24px;
+  border: 1px solid #e8e9f1;
+  flex: 3;
+  margin-bottom: 0;
+  height: fit-content;
+}
+
+.evaluation-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.evaluation-title {
+  font-size: 18px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.model-selector {
+  min-width: 120px;
+}
+
+.evaluation-model-info {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.model-avatar-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.model-avatar {
+  background-color: #006ffd;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.model-details {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.model-name {
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.model-tag {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background-color: #f3f5ff;
+  border: none;
+  color: #006ffd;
+}
+
+.evaluation-content {
+  flex: 1;
+}
+
+.evaluation-text {
+  font-size: 15px;
+  line-height: 1.6;
+  margin-bottom: 24px;
+  color: #1f2024;
+}
+
+.metrics-section {
+  display: flex;
+  gap: 32px;
+  margin-bottom: 24px;
+}
+
+.metric-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.metric-label {
+  font-size: 13px;
+  color: #8f9098;
+  margin-bottom: 4px;
+}
+
+.metric-value {
+  font-size: 28px;
+  font-weight: 600;
+  color: #1f2024;
+}
+
+.metric-change {
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.metric-change.positive {
+  color: #3ac0a0;
+}
+
+.metric-change.negative {
+  color: #ff4d4f;
+}
+
+.metric-name {
+  font-size: 13px;
+  color: #8f9098;
+}
+
+.history-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background-color: #f8f9fe;
+  padding: 16px;
+  border-radius: 8px;
+}
+
+.history-time {
+  font-size: 14px;
+  color: #71727a;
+}
+
+.history-author {
+  font-size: 14px;
+  color: #71727a;
+}
+
+.history-author span {
+  font-weight: 600;
+  color: #1f2024;
+}
+
+.history-content {
+  font-size: 14px;
+  color: #1f2024;
+  line-height: 1.5;
+}
+
+/* 优势与不足区域 */
+.evaluation-details {
+  margin-top: 24px;
+}
+
+.strengths-weaknesses-wrapper {
+  display: flex;
+  gap: 24px;
+}
+
+.strengths-section,
+.weaknesses-section {
+  flex: 1;
+  background-color: #f8f9fe;
+  padding: 20px;
+  border-radius: 8px;
+}
+
+.strengths-section h3,
+.weaknesses-section h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: #1f2024;
+}
+
+.strengths-section ul,
+.weaknesses-section ul {
+  padding-left: 20px;
+  margin: 0;
+}
+
+.strengths-section li,
+.weaknesses-section li {
+  margin-bottom: 8px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #1f2024;
+}
+
+/* 图表区域 */
+.charts-section {
+  background-color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+  padding: 24px;
+  border: 1px solid #e8e9f1;
+  flex: 2;
+  margin-bottom: 0;
+  height: fit-content;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.chart-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0;
+}
+
+.chart-model-selector {
+  display: flex;
+  gap: 16px;
+}
+
+.chart-toggle {
+  color: #006ffd;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+/* 重新设计两个图表区域 */
+.line-chart-container {
+  height: 200px;
+  width: 100%;
+}
+
+.radar-chart-container {
+  display: flex;
+  gap: 20px;
+  min-height: 300px;
+  width: 100%;
+}
+
+.radar-chart-content {
+  flex: 1;
+  height: 300px;
+}
+
+/* 历史记录区域 - 移至雷达图左侧 */
+.history-section-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.history-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background-color: #f8f9fe;
+  padding: 16px;
+  border-radius: 8px;
+  height: 100%;
+}
+
+.chart-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: #1f2024;
+  margin-bottom: 12px;
+  text-align: left;
+}
+
+/* 底部按钮区域 */
+.task-footer-actions {
+  display: flex;
+  gap: 16px;
+  background-color: #fff;
+  border-radius: 12px;
+  padding: 16px 24px;
+  margin-bottom: 24px;
+}
+
+.action-button {
+  height: 40px;
+  border-radius: 24px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.like-button,
+.comment-button {
+  min-width: 100px;
+  color: #1f2024;
+  border: 1px solid #e0e0e0;
+  background-color: white;
+}
+
+.fork-button {
+  background-color: #006ffd;
+  color: white;
+  flex: 1;
+  border: none;
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(0, 111, 253, 0.3);
+}
+
+.optimize-button {
+  background-color: white;
+  color: #1f2024;
+  border-color: #e0e0e0;
+  margin-left: auto;
+  font-weight: 500;
+}
+
+/* 加载和错误状态 */
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 300px;
+}
+
+.error-message {
+  color: #ff4d4f;
+  text-align: center;
+  margin: 24px 0;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .task-detail-page,
+  .card-detail-page {
+    padding: 16px;
+  }
+  
+  .evaluation-model-info {
+    flex-direction: column;
+  }
+  
+  .metrics-section {
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .strengths-weaknesses-wrapper {
+    flex-direction: column;
+  }
+  
+  .task-footer-actions {
+    flex-wrap: wrap;
+  }
+  
+  .fork-button,
+  .optimize-button {
+    flex: auto;
+  }
+}
+
+/* 隐藏头部tab */
+.hide-tabs-nav {
+  display: none !important;
+}
+
+/* 添加左右布局的容器 */
+.evaluation-charts-wrapper {
+  display: flex;
+  gap: 24px;
+}
+
+/* 响应式调整 */
+@media (max-width: 992px) {
+  .evaluation-charts-wrapper {
+    flex-direction: column;
+  }
+  
+  .evaluation-section,
+  .charts-section {
+    width: 100%;
   }
 }

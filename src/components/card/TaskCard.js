@@ -38,8 +38,10 @@ const TaskCard = ({ task }) => {
     })
   }
 
+  // Update the handleTitleClick function in TaskCard.js
   const handleTitleClick = () => {
-    navigate(`/tasks/detail/${task.id}`)
+    // Navigate to the task detail page with state to track where we came from
+    navigate(`/tasks/detail/${task.id}`, { state: { from: "tasks" } })
   }
 
   // Filter radar data based on selected agents

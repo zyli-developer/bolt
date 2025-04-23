@@ -1,17 +1,15 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Typography, Space, Spin, Empty, Button } from "antd"
-import { FileOutlined, FilterOutlined, GroupOutlined } from "@ant-design/icons"
+import { Spin, Empty, Button } from "antd"
+import { FilterOutlined, GroupOutlined } from "@ant-design/icons"
 import { useLocation } from "react-router-dom"
 import TaskCard from "../components/card/TaskCard"
 import taskService from "../services/taskService"
 import SortIcon from "../components/icons/SortIcon"
 import { useChatContext } from "../contexts/ChatContext"
-// Import useNavContext to get the selected navigation
 import { useNavContext } from "../contexts/NavContext"
 
-const { Title } = Typography
 
 const TaskPage = () => {
   const location = useLocation()
@@ -61,14 +59,6 @@ const TaskPage = () => {
 
   return (
     <div className={`task-page ${isChatOpen ? "chat-open" : "chat-closed"}`}>
-      <div className="task-page-header">
-        <Title level={2} className="task-page-title">
-          <Space>
-            <FileOutlined />
-            {getPageTitle()}
-          </Space>
-        </Title>
-      </div>
 
       {loading ? (
         <div className="loading-container">

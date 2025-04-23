@@ -77,8 +77,9 @@
 }
 
 .evaluation-title {
-  margin: 0 !important;
-  font-weight: 600 !important;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .evaluation-meta {
@@ -559,4 +560,393 @@
   .optimization-area::after {
     width: 12px; /* 减少连接线长度 */
   }
+}
+
+/* 评估和图表的整体容器 */
+.evaluation-charts-wrapper {
+  display: flex;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+/* 左侧评估区域 */
+.evaluation-left-section {
+  flex: 0 0 330px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* 右侧图表区域 */
+.evaluation-right-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* 评估结果区域 */
+.evaluation-section {
+  background: #fff;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+/* 评估标题区域 */
+.evaluation-header {
+  margin-bottom: 24px;
+}
+
+/* 模型信息区域 */
+.evaluation-model-info {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* 模型头像区域 */
+.model-avatar-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background-color: #f8f9fe;
+  padding: 16px 24px;
+  border-radius: 8px;
+  width: 100%;
+}
+
+.model-avatar {
+  background-color: #006ffd;
+}
+
+.model-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.model-name {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2024;
+}
+
+.model-tags {
+  display: flex;
+  gap: 8px;
+}
+
+.evaluation-content {
+  padding: 20px;
+  background-color: #f8f9fe;
+  border-radius: 8px;
+}
+
+.evaluation-text {
+  margin: 0;
+  line-height: 1.6;
+  color: #1f2024;
+}
+
+/* 折线图区域 */
+.line-chart-section {
+  background: #fff;
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.line-chart-container {
+  height: 200px;
+  width: 100%;
+  margin-top: 12px;
+}
+
+/* 评分和雷达图区域 */
+.score-radar-section {
+  display: flex;
+  gap: 24px;
+  background: #fff;
+  padding: 24px;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.metrics-section {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-width: 200px;
+}
+
+.metric-item {
+  padding: 16px;
+  background-color: #f8f9fe;
+  border-radius: 8px;
+}
+
+.metric-label {
+  font-size: 14px;
+  color: #8f9098;
+  margin-bottom: 8px;
+}
+
+.metric-value {
+  font-size: 24px;
+  font-weight: 600;
+  color: #1f2024;
+}
+
+.metric-change {
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+.metric-change.positive {
+  color: #3ac0a0;
+}
+
+.metric-change.negative {
+  color: #ff4d4f;
+}
+
+.radar-chart-content {
+  flex: 1;
+  height: 300px;
+  background-color: #fff;
+  border-radius: 8px;
+}
+
+/* 历史记录区域 */
+.history-section-wrapper {
+  background: #fff;
+  padding: 24px;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  margin-top: auto;
+}
+
+.history-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.history-time {
+  color: #71727a;
+  font-size: 14px;
+}
+
+.history-author {
+  font-size: 14px;
+  color: #1f2024;
+}
+
+.history-content {
+  margin-top: 8px;
+  color: #1f2024;
+  line-height: 1.6;
+}
+
+.task-detail-title-section {
+  padding: 12px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.task-creator-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px;
+}
+
+/* 模型信息折叠面板样式 */
+.model-panel {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  margin-bottom: 8px;
+}
+
+.model-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  cursor: pointer;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.model-panel-header:hover {
+  background-color: #f8f9fe;
+}
+
+.model-panel-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.model-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.model-name {
+  font-size: 16px;
+  font-weight: 500;
+  color: #1f2024;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.model-usage {
+  font-size: 14px;
+  color: #71727a;
+}
+
+.model-tags {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.model-tag {
+  background: #f0f7ff;
+  border: none;
+  color: #006ffd;
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.model-panel-icon {
+  color: #8f9098;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.model-panel-icon:hover {
+  background-color: #f0f0f0;
+}
+
+.model-panel-content {
+  padding: 0 20px 20px;
+}
+
+.evaluation-content {
+  background-color: #f8f9fe;
+  padding: 16px;
+  border-radius: 8px;
+  margin-top: 12px;
+}
+
+.evaluation-text {
+  margin: 0;
+  line-height: 1.6;
+  color: #1f2024;
+  font-size: 14px;
+}
+
+/* 其他间距调整 */
+.task-detail-breadcrumb {
+  margin-bottom: 12px;
+}
+
+.task-detail-title-section {
+  margin-bottom: 12px;
+}
+
+.task-footer-actions {
+  padding: 12px;
+}
+
+.model-selector {
+  min-width: 200px;
+}
+
+.model-selector .ant-select-selection-item {
+  color: #1f2024;
+  font-weight: 500;
+}
+
+/* 图例样式 */
+.chart-legend {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: default;
+  user-select: none;
+}
+
+.legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+}
+
+.legend-label {
+  font-size: 12px;
+  color: #8f9098;
+}
+
+/* 多选下拉框样式优化 */
+.ant-select-multiple .ant-select-selection-item {
+  background: #f0f7ff;
+  border: none;
+  color: #006ffd;
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-right: 8px;
+}
+
+.ant-select-multiple .ant-select-selection-item-remove {
+  color: #006ffd;
+  font-size: 12px;
+}
+
+.ant-select-dropdown .ant-select-item-option-selected {
+  background-color: #f0f7ff;
+  color: #006ffd;
+}
+
+.ant-select-dropdown .ant-select-item-option {
+  padding: 8px 12px;
+  font-size: 14px;
+}
+
+/* 全选选项样式 */
+.select-all-option {
+  padding: 8px 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.select-all-option:hover {
+  background-color: #f5f5f5;
+}
+
+.select-all-option .ant-checkbox-wrapper {
+  width: 100%;
 }

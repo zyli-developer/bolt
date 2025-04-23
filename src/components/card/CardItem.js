@@ -47,30 +47,51 @@ const CardItem = ({ card }) => {
     setIsCreateTaskModalVisible(false)
   }
 
+  // Update the handleTitleClick function in CardItem.js
   const handleTitleClick = () => {
-    navigate(`/cards/detail/${card.id}`)
+    // Navigate to the card detail page with state to track where we came from
+    navigate(`/explore/detail/${card.id}`, { state: { from: "explore" } })
   }
+
+  // Generate unique radar data for each card
+  const generateUniqueRadarData = useMemo(() => {
+    if (!card.chartData?.radar) return []
+
+    return card.chartData.radar.map((item, index) => {
+      // Create different values for each agent
+      return {
+        name: item.name,
+        value: item.value,
+        claude: Math.min(100, item.value * (1 + Math.sin(index * 0.5) * 0.2)),
+        agent2: Math.min(100, item.value * (1 - Math.cos(index * 0.5) * 0.15)),
+      }
+    })
+  }, [card.chartData?.radar])
+
+  // Generate unique line data for each card
+  const generateUniqueLineData = useMemo(() => {
+    if (!card.chartData?.line) return []
+
+    return card.chartData.line.map((item, index) => {
+      // Create different values for each agent
+      return {
+        month: item.month,
+        value: item.value,
+        claude: Math.min(100, item.value * (1 + Math.sin(index * 0.7) * 0.1)),
+        agent2: Math.min(100, item.value * (1 - Math.cos(index * 0.7) * 0.1)),
+      }
+    })
+  }, [card.chartData?.line])
 
   // Filter radar data based on selected agents
   const filteredRadarData = useMemo(() => {
-    if (!card.chartData?.radar) return []
-
     // If no agents selected, return original data
     if (!selectedAgents.overall && !selectedAgents.agent1 && !selectedAgents.agent2) {
-      return card.chartData.radar
+      return generateUniqueRadarData
     }
 
-    // Filter data based on selected agents
-    return card.chartData.radar.map((item) => {
-      const newItem = { name: item.name }
-
-      if (selectedAgents.overall) newItem.overall = item.value
-      if (selectedAgents.agent1) newItem.agent1 = item.value * 0.9
-      if (selectedAgents.agent2) newItem.agent2 = item.value * 0.8
-
-      return newItem
-    })
-  }, [card.chartData?.radar, selectedAgents])
+    return generateUniqueRadarData
+  }, [generateUniqueRadarData, selectedAgents])
 
   return (
     <div className="card-item">
@@ -173,10 +194,10 @@ const CardItem = ({ card }) => {
                     <PolarAngleAxis dataKey="name" tick={{ fontSize: 10, fill: "#8f9098" }} />
                     <PolarRadiusAxis domain={[0, 100]} tick={{ fontSize: 10, fill: "#8f9098" }} axisLine={false} />
                     {selectedAgents.overall && (
-                      <Radar name="Overall" dataKey="overall" stroke="#006ffd" fill="#006ffd" fillOpacity={0.2} />
+                      <Radar name="Overall" dataKey="value" stroke="#006ffd" fill="#006ffd" fillOpacity={0.2} />
                     )}
                     {selectedAgents.agent1 && (
-                      <Radar name="Agent 1" dataKey="agent1" stroke="#3ac0a0" fill="#3ac0a0" fillOpacity={0.2} />
+                      <Radar name="Agent 1" dataKey="claude" stroke="#3ac0a0" fill="#3ac0a0" fillOpacity={0.2} />
                     )}
                     {selectedAgents.agent2 && (
                       <Radar name="Agent 2" dataKey="agent2" stroke="#ff7a45" fill="#ff7a45" fillOpacity={0.2} />
@@ -211,7 +232,7 @@ const CardItem = ({ card }) => {
             <div className="line-chart-title">置信度爬升曲线</div>
             <div className="line-chart">
               <ResponsiveContainer width="100%" height={180}>
-                <LineChart data={card.chartData.line} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
+                <LineChart data={generateUniqueLineData} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
                   <XAxis
                     dataKey="month"
                     tick={{ fontSize: 10, fill: "#8f9098" }}
@@ -228,6 +249,26 @@ const CardItem = ({ card }) => {
                     dot={{ r: 3, fill: "#006ffd" }}
                     activeDot={{ r: 5 }}
                   />
+                  {selectedAgents.agent1 && (
+                    <Line
+                      type="monotone"
+                      dataKey="claude"
+                      stroke="#3ac0a0"
+                      strokeWidth={2}
+                      dot={{ r: 3, fill: "#3ac0a0" }}
+                      activeDot={{ r: 5 }}
+                    />
+                  )}
+                  {selectedAgents.agent2 && (
+                    <Line
+                      type="monotone"
+                      dataKey="agent2"
+                      stroke="#ff7a45"
+                      strokeWidth={2}
+                      dot={{ r: 3, fill: "#ff7a45" }}
+                      activeDot={{ r: 5 }}
+                    />
+                  )}
                 </LineChart>
               </ResponsiveContainer>
             </div>

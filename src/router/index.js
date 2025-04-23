@@ -5,10 +5,7 @@ import TaskDetailPage from "../pages/TaskDetailPage"
 import CardDetailPage from "../pages/CardDetailPage"
 import EvaluationPage from "../pages/EvaluationPage"
 import AssetsPage from "../pages/AssetsPage"
-// Import the ScenesPage
 import ScenesPage from "../pages/ScenesPage"
-
-// 确保评估页面的路由路径与TaskDetailPage中的导航路径匹配
 
 // 子路由配置
 const taskRoutes = [
@@ -32,6 +29,10 @@ const cardRoutes = [
     path: "/cards/detail/:id",
     element: <CardDetailPage />,
   },
+  {
+    path: "/explore/detail/:id",
+    element: <CardDetailPage />,
+  },
 ]
 
 const assetsRoutes = [
@@ -49,7 +50,6 @@ const assetsRoutes = [
   },
 ]
 
-// Update the mainRoutes to use the ScenesPage component
 const mainRoutes = [
   {
     path: "/",

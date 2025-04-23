@@ -48,303 +48,325 @@
   }
 }
 
-/* 页面头部 */
-.task-detail-header {
+/* 面包屑导航样式 */
+.task-detail-breadcrumb {
+  margin-bottom: 16px;
+  font-size: 14px;
   display: flex;
   align-items: center;
-  gap: 16px;
-  margin-bottom: 16px;
   padding-top: 16px;
 }
 
-.back-button {
-  font-size: 18px;
+.breadcrumb-arrow {
+  cursor: pointer;
+  font-size: 16px;
 }
 
-.task-detail-title {
-  flex: 1;
-  margin: 0 !important;
+.breadcrumb-parent {
+  cursor: pointer;
+  color: rgba(0, 0, 0, 0.85);
 }
 
-.task-detail-actions {
-  display: flex;
-  gap: 8px;
+.breadcrumb-parent:hover {
+  color: #006ffd;
 }
 
-.action-button {
-  display: flex;
-  align-items: center;
-  gap: 4px;
+.breadcrumb-current {
+  color: rgba(0, 0, 0, 0.45);
 }
 
-.task-detail-actions .ant-btn-primary {
-  background-color: #006ffd;
-  border-color: #006ffd;
-  margin-right: 8px;
+/* 标题区域样式 */
+.task-detail-title-section {
+  margin-bottom: 24px;
 }
 
-.task-detail-actions .ant-btn-primary:hover {
-  background-color: #0058ca;
-  border-color: #0058ca;
-}
-
-/* 任务元信息 */
-.task-detail-meta {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.task-title {
+  font-size: 24px;
+  font-weight: bold;
   margin-bottom: 16px;
+  line-height: 1.4;
 }
 
-.task-detail-author {
+.task-creator-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.task-creator-info {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-.author-info {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.assigned-by,
-.from-text {
-  color: #8f9098;
-}
-
-.author-name,
-.source-name {
-  margin-right: 4px !important;
-}
-
-.task-detail-tags {
-  display: flex;
-  gap: 8px;
-}
-
-.detail-tag {
-  border-radius: 12px;
-  background-color: #e6f1ff;
-  color: #006ffd;
-  border: none;
-  font-size: 12px;
-  padding: 1px 8px;
-  height: auto;
-  line-height: 1.5;
-}
-
-.task-detail-divider {
-  margin: 0 0 16px 0;
-}
-
-/* 任务内容区域 */
-.task-detail-content {
-  flex: 1;
-}
-
-.task-detail-tabs {
-  margin-bottom: 16px;
-}
-
-.task-detail-overview {
-  margin-bottom: 24px;
-}
-
-/* 任务信息卡片 */
-.task-info-card {
-  margin-bottom: 24px;
-}
-
-.task-info-item {
-  margin-bottom: 16px;
-}
-
-.task-info-item:last-child {
-  margin-bottom: 0;
-}
-
-.info-label {
-  margin-right: 8px;
-}
-
-.info-value {
-  color: #71727a;
-}
-
-/* 任务组件卡片 */
-.task-components-card {
-  margin-bottom: 24px;
-}
-
-.task-components-list {
-  display: flex;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-.task-component-item {
-  width: 150px;
-  height: 120px;
-  border-radius: 8px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  position: relative;
-  cursor: pointer;
-}
-
-.task-component-item.active {
-  border: 1px solid #006ffd;
-  background-color: #fff;
-}
-
-.task-component-item.add-item {
-  border: 1px dashed #c5c6cc;
-  background-color: #f8f9fe;
-}
-
-.component-icon {
-  font-size: 24px;
-  color: #006ffd;
-}
-
-.component-title {
-  font-size: 14px;
-  color: #71727a;
-}
-
-.component-close {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background-color: #fff;
-  border: 1px solid #e8e9f1;
-  color: #8f9098;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  cursor: pointer;
-  padding: 0;
-  line-height: 1;
-}
-
-/* 图表卡片 */
-.task-charts-card {
-  margin-bottom: 24px;
-}
-
-.chart-title {
+.creator-text {
   font-size: 16px;
+  color: #333;
+}
+
+.creator-name,
+.creator-source {
   font-weight: 500;
-  color: #1f2024;
-  margin-bottom: 16px;
-  text-align: center;
 }
 
-.detail-line-chart-container,
-.detail-radar-chart-container {
+.task-tags {
   display: flex;
-  flex-direction: column;
+  gap: 8px;
 }
 
-.line-chart,
-.radar-chart {
-  height: 250px;
+.task-dimension-tag {
+  border-radius: 16px;
+  background-color: #e6f7ff;
+  border-color: #1890ff;
+  color: #1890ff;
+  padding: 0 12px;
 }
 
-.chart-footer {
+.task-actions-top {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-top: 16px;
+  gap: 12px;
 }
 
-.chart-link {
-  margin-bottom: 8px;
-}
-
-.chart-link a {
-  color: #006ffd;
-  font-size: 14px;
-  text-decoration: none;
-}
-
-.chart-info {
-  font-size: 12px;
-  color: #8f9098;
-}
-
-.chart-time-author {
+.follow-button,
+.share-button {
   display: flex;
   align-items: center;
   gap: 4px;
+  border-radius: 16px;
+  padding: 0 16px;
 }
 
-.chart-time {
-  color: #8f9098;
+/* 评估结果区域样式 */
+.evaluation-section {
+  margin-bottom: 24px;
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  padding: 20px;
 }
 
-.updater-avatar {
-  background-color: #f0f0f0;
-}
-
-.by-text {
-  color: #8f9098;
-}
-
-.updater-name {
-  font-weight: 500;
-  color: #1f2024;
-}
-
-/* 代理选择 */
-.chart-agents {
-  margin-top: 16px;
-}
-
-.agents-list {
+.evaluation-header {
   display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  justify-content: center;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
 }
 
-.agent-item .ant-checkbox-wrapper {
-  font-size: 14px;
+.evaluation-title {
+  font-size: 18px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
-/* 活动记录卡片 */
-.task-activity-card {
+.model-selector {
+  width: 150px;
+}
+
+.evaluation-model-info {
+  display: flex;
+  gap: 20px;
   margin-bottom: 24px;
 }
 
-.timeline-content {
-  margin-bottom: 8px;
+.model-avatar-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
 }
 
-.timeline-header {
-  display: flex;
-  justify-content: space-between;
+.model-avatar {
+  background-color: #f0f0f0;
+}
+
+.model-details {
+  text-align: center;
+}
+
+.model-name {
+  font-weight: 500;
   margin-bottom: 4px;
 }
 
-.timeline-body {
-  color: #71727a;
+.model-tags {
+  display: flex;
+  gap: 4px;
 }
 
-/* 空状态 */
-.scene-content,
-.qa-content,
-.template-content {
-  padding: 40px 0;
-  text-align: center;
+.model-tag {
+  border-radius: 12px;
+  font-size: 12px;
+}
+
+.evaluation-content {
+  flex: 1;
+}
+
+.evaluation-text {
+  margin-bottom: 16px;
+  line-height: 1.6;
+}
+
+.metrics-section {
+  display: flex;
+  gap: 40px;
+  margin-bottom: 16px;
+}
+
+.metric-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.metric-label {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 4px;
+}
+
+.metric-value {
+  font-size: 28px;
+  font-weight: bold;
+  color: #1890ff;
+}
+
+.metric-change {
+  font-size: 14px;
+}
+
+.metric-change.positive {
+  color: #52c41a;
+}
+
+.metric-change.negative {
+  color: #f5222d;
+}
+
+.metric-name {
+  font-size: 14px;
+  color: #999;
+}
+
+.history-section {
+  background-color: #EAF2FF;
+  padding: 12px;
+  border-radius: 4px;
+}
+
+.history-time,
+.history-author {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 4px;
+}
+
+.history-content {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.evaluation-details {
+  display: flex;
+  gap: 40px;
+}
+
+.strengths-section,
+.weaknesses-section {
+  flex: 1;
+}
+
+.strengths-section h3,
+.weaknesses-section h3 {
+  margin-bottom: 12px;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.strengths-section ul,
+.weaknesses-section ul {
+  padding-left: 20px;
+}
+
+.strengths-section li,
+.weaknesses-section li {
+  margin-bottom: 8px;
+}
+
+/* 图表区域样式 */
+.charts-section {
+  margin-bottom: 24px;
+}
+
+.chart-container {
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.chart-model-selector {
+  display: flex;
+  gap: 16px;
+}
+
+.chart-toggle {
+  cursor: pointer;
+  color: #1890ff;
+}
+
+.chart-content {
+  height: 300px;
+}
+
+.line-chart-section,
+.radar-chart-section {
+  height: 100%;
+}
+
+/* 底部按钮区域样式 */
+.task-footer-actions {
+  display: flex;
+  gap: 12px;
+  padding: 16px 0;
+}
+
+.action-button {
+  height: 40px;
+  border-radius: 20px;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.like-button,
+.comment-button {
+  min-width: 100px;
+}
+
+.branch-button {
+  flex: 1;
+  background-color: #1890ff;
+  color: white;
+  border-color: #1890ff;
+}
+
+.branch-button:hover {
+  background-color: #40a9ff;
+  border-color: #40a9ff;
+  color: white;
+}
+
+.optimize-button {
+  background-color: #f5f5f5;
+  border-color: #d9d9d9;
 }
 
 /* 加载和错误状态 */
@@ -359,5 +381,5 @@
   color: #ff4d4f;
   text-align: center;
   font-size: 16px;
-  margin-bottom: 24px;
+  margin: 24px 0;
 }

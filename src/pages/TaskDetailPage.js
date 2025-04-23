@@ -1,16 +1,16 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useParams, useNavigate } from "react-router-dom"
-import { Typography, Button, Avatar, Tag, Spin, Divider, Tabs, Checkbox, Card, Row, Col, Timeline, Empty } from "antd"
+import { useParams, useNavigate, useLocation } from "react-router-dom"
+import { Typography, Button, Avatar, Tag, Spin, Breadcrumb, Select, Checkbox } from "antd"
 import {
   ArrowLeftOutlined,
-  EditOutlined,
+  StarOutlined,
   ShareAltOutlined,
-  DeleteOutlined,
-  PlusOutlined,
-  FileTextOutlined,
-  PlayCircleOutlined,
+  LikeOutlined,
+  CommentOutlined,
+  ForkOutlined,
+  SettingOutlined,
 } from "@ant-design/icons"
 import {
   LineChart,
@@ -30,22 +30,27 @@ import taskService from "../services/taskService"
 import { useChatContext } from "../contexts/ChatContext"
 
 const { Title, Text, Paragraph } = Typography
-const { TabPane } = Tabs
+const { Option } = Select
 
 const TaskDetailPage = () => {
   const { id } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
   const [task, setTask] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [activeTab, setActiveTab] = useState("overview")
-  const [showRadarChart, setShowRadarChart] = useState(false)
-  const [selectedAgents, setSelectedAgents] = useState({
+  const [selectedModel, setSelectedModel] = useState("claude")
+  const [selectedChartModels, setSelectedChartModels] = useState({
     overall: true,
-    agent1: false,
+    claude: true,
     agent2: false,
   })
   const { isChatOpen } = useChatContext()
+
+  // Determine if we came from explore or tasks
+  const isFromExplore = location.pathname.includes("/explore") || location.state?.from === "explore"
+  const parentPath = isFromExplore ? "/explore" : "/tasks"
+  const parentLabel = isFromExplore ? "探索" : "任务"
 
   useEffect(() => {
     const fetchTaskDetail = async () => {
@@ -71,56 +76,53 @@ const TaskDetailPage = () => {
     navigate(-1)
   }
 
-  const toggleRadarChart = () => {
-    setShowRadarChart(!showRadarChart)
+  const handleModelChange = (value) => {
+    setSelectedModel(value)
   }
 
-  const handleAgentChange = (agentKey) => {
-    setSelectedAgents({
-      ...selectedAgents,
-      [agentKey]: !selectedAgents[agentKey],
-    })
+  const handleChartModelChange = (modelKey) => {
+    setSelectedChartModels((prev) => ({
+      ...prev,
+      [modelKey]: !prev[modelKey],
+    }))
   }
 
-  // 检查handleStartEvaluation函数的实现
-  // 确保导航路径正确
-
-  const handleStartEvaluation = () => {
-    console.log("Starting evaluation for task ID:", id)
-    navigate(`/tasks/evaluate/${id}`)
+  // Mock evaluation data
+  const evaluationData = {
+    claude: {
+      name: "Claude 3.5 Sonnet",
+      tags: ["Programming", "Programming"],
+      description:
+        "该AI玩具在语音识别方面表现优秀，能够准确识别儿童的语音指令。安全性设计符合国际标准，无小零件脱落风险。交互体验流该AI玩具在语音识别方面表现优秀，能够准确识别儿童的语音指令。安全性设计符合国际标准，无小零件脱落风险。",
+      score: 10.0,
+      scoreChange: "-1.5%",
+      credibility: 100.0,
+      credibilityChange: "+1.5%",
+      updatedAt: "21:32, 12/01/2025",
+      updatedBy: "Mike",
+      history:
+        "修改了模板修改了模板修改了模板修改了模板修改了模板修改了模板修改了模板修改了模板修改了模板修改了模板修改了模板修改了模板",
+      strengths: ["语音识别准确", "安全性高", "交互体验好"],
+      weaknesses: ["语音识别准确", "安全性高", "交互体验好"],
+    },
+    agent2: {
+      name: "Agent 2",
+      tags: ["Testing", "Evaluation"],
+      description:
+        "这款AI玩具的语音交互系统反应灵敏，能够理解大部分儿童指令。安全材料使用符合标准，但某些边缘部分可能需要进一步圆润处理。教育内容丰富多样，适合目标年龄段儿童。建议改进：增强防水性能，优化充电接口设计。",
+      score: 8.7,
+      scoreChange: "+0.5%",
+      credibility: 87.0,
+      credibilityChange: "+2.0%",
+      updatedAt: "18:45, 12/02/2025",
+      updatedBy: "Jackson",
+      history: "添加了产品的详细材质信息和安全认证文档",
+      strengths: ["语音交互灵敏", "教育内容丰富", "目标人群匹配度高"],
+      weaknesses: ["边缘安全性需改进", "防水性能不足"],
+    },
   }
 
-  // Filter radar data based on selected agents
-  const filteredRadarData = task?.chartData?.radar || [
-    { name: "维度1", value: 70 },
-    { name: "维度2", value: 80 },
-    { name: "维度3", value: 60 },
-    { name: "维度4", value: 90 },
-    { name: "维度5", value: 75 },
-    { name: "维度6", value: 85 },
-  ]
-
-  // Mock timeline data
-  const timelineItems = [
-    {
-      date: "2025/12/01",
-      time: "21:32",
-      user: "Mike",
-      action: "创建了任务",
-    },
-    {
-      date: "2025/12/02",
-      time: "09:15",
-      user: "Jackson",
-      action: "添加了场景",
-    },
-    {
-      date: "2025/12/03",
-      time: "14:45",
-      user: "Rita",
-      action: "更新了目标描述",
-    },
-  ]
+  const currentEvaluation = evaluationData[selectedModel] || evaluationData.claude
 
   if (loading) {
     return (
@@ -145,286 +147,271 @@ const TaskDetailPage = () => {
 
   return (
     <div className={`task-detail-page ${isChatOpen ? "chat-open" : "chat-closed"}`}>
-      {/* 页面头部 */}
-      <div className="task-detail-header">
-        <Button type="text" icon={<ArrowLeftOutlined />} onClick={handleGoBack} className="back-button" />
-        <Title level={3} className="task-detail-title">
-          {task.title}
-        </Title>
-        <div className="task-detail-actions">
-          {/* 检查"开始测评"按钮是否正确绑定了handleStartEvaluation函数 */}
-          <Button
-            type="primary"
-            icon={<PlayCircleOutlined />}
-            className="action-button"
-            onClick={handleStartEvaluation}
-          >
-            开始测评
-          </Button>
-          <Button icon={<EditOutlined />} className="action-button">
-            编辑
-          </Button>
-          <Button icon={<ShareAltOutlined />} className="action-button">
-            分享
-          </Button>
-          <Button icon={<DeleteOutlined />} danger className="action-button">
-            删除
-          </Button>
-        </div>
+      {/* 隐藏头部的community/workspace/peison的tab */}
+      <div className="hide-tabs-nav" style={{ display: 'none' }}>
+        {/* 这里本应显示tab，但现在设置为不显示 */}
+      </div>
+      
+      {/* 面包屑导航 */}
+      <div className="task-detail-breadcrumb">
+        <Breadcrumb
+          items={[
+            {
+              title: <ArrowLeftOutlined onClick={handleGoBack} className="breadcrumb-arrow" />,
+            },
+            {
+              title: (
+                <span onClick={() => navigate(parentPath)} className="breadcrumb-parent">
+                  {parentLabel}
+                </span>
+              ),
+            },
+            {
+              title: <span className="breadcrumb-current">父任务</span>,
+            },
+          ]}
+        />
       </div>
 
-      {/* 任务元信息 */}
-      <div className="task-detail-meta">
-        <div className="task-detail-author">
-          <Avatar size={40} src={task.author.avatar} className="author-avatar">
-            {task.author.name.charAt(0)}
-          </Avatar>
-          <div className="author-info">
-            <Text className="assigned-by">Assigned by</Text>
-            <Text strong className="author-name">
-              {task.author.name}
-            </Text>
-            <Text className="from-text">from</Text>
-            <Text strong className="source-name">
-              {task.source}
-            </Text>
+      {/* 任务标题和信息 */}
+      <div className="task-detail-title-section">
+        <h1 className="task-title">{task.title}</h1>
+        <div className="task-creator-section">
+          <div className="task-creator-info">
+            <Avatar size={40} className="creator-avatar">
+              {task.author?.name?.charAt(0)}
+            </Avatar>
+            <span className="creator-text">
+              by <span className="creator-name">{task.author?.name}</span> from{" "}
+              <span className="creator-source">{task.source}</span>
+            </span>
+          </div>
+          <div className="task-tags">
+            {task.tags.map((tag, index) => (
+              <Tag key={index} className="task-dimension-tag">
+                {tag}
+              </Tag>
+            ))}
+          </div>
+          <div className="task-actions-top">
+            <Button icon={<StarOutlined />} className="follow-button">
+              关注
+            </Button>
+            <Button icon={<ShareAltOutlined />} className="share-button">
+              分享
+            </Button>
           </div>
         </div>
-        <div className="task-detail-tags">
-          {task.tags.map((tag, index) => (
-            <Tag key={index} className="detail-tag">
-              {tag}
-            </Tag>
-          ))}
+      </div>
+
+      {/* 评估结果和图表区域 - 左右结构 */}
+      <div className="evaluation-charts-wrapper">
+        {/* 评估结果区域 */}
+        <div className="evaluation-section">
+          <div className="evaluation-header">
+            <div className="evaluation-title">
+              <span>Claude 评估结果</span>
+              <Select defaultValue={selectedModel} onChange={handleModelChange} className="model-selector">
+                <Option value="claude">Claude</Option>
+                <Option value="agent2">Agent 2</Option>
+              </Select>
+            </div>
+          </div>
+
+          <div className="evaluation-model-info">
+            <div className="model-avatar-section">
+              <Avatar size={64} className="model-avatar">
+                {currentEvaluation.name.charAt(0)}
+              </Avatar>
+              <div className="model-details">
+                <div className="model-name">{currentEvaluation.name}</div>
+                <div className="model-tags">
+                  {currentEvaluation.tags.map((tag, index) => (
+                    <Tag key={index} className="model-tag">
+                      {tag}
+                    </Tag>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="evaluation-content">
+              <p className="evaluation-text">{currentEvaluation.description}</p>
+
+              <div className="metrics-section">
+                <div className="metric-item">
+                  <div className="metric-label">综合得分</div>
+                  <div className="metric-value">{currentEvaluation.score}</div>
+                  <div
+                    className={`metric-change ${currentEvaluation.scoreChange.startsWith("+") ? "positive" : "negative"}`}
+                  >
+                    {currentEvaluation.scoreChange}
+                  </div>
+                  <div className="metric-name">Score</div>
+                </div>
+
+                <div className="metric-item">
+                  <div className="metric-label">各维度得分</div>
+                  <div className="metric-value">{currentEvaluation.credibility}%</div>
+                  <div
+                    className={`metric-change ${currentEvaluation.credibilityChange.startsWith("+") ? "positive" : "negative"}`}
+                  >
+                    {currentEvaluation.credibilityChange}
+                  </div>
+                  <div className="metric-name">Credibility</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="evaluation-details">
+            <div className="strengths-weaknesses-wrapper">
+              <div className="strengths-section">
+                <h3>优势</h3>
+                <ul>
+                  {currentEvaluation.strengths.map((strength, index) => (
+                    <li key={index}>{strength}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="weaknesses-section">
+                <h3>不足</h3>
+                <ul>
+                  {currentEvaluation.weaknesses.map((weakness, index) => (
+                    <li key={index}>{weakness}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 图表区域 - 同时显示折线图和雷达图 */}
+        <div className="charts-section">
+          <div className="chart-header">
+            <div className="chart-model-selector">
+              <Checkbox checked={selectedChartModels.overall} onChange={() => handleChartModelChange("overall")}>
+                Overall
+              </Checkbox>
+              <Checkbox checked={selectedChartModels.claude} onChange={() => handleChartModelChange("claude")}>
+                Claude
+              </Checkbox>
+              <Checkbox checked={selectedChartModels.agent2} onChange={() => handleChartModelChange("agent2")}>
+                Agent 2
+              </Checkbox>
+            </div>
+          </div>
+
+          {/* 折线图区域 */}
+          <div>
+            <div className="chart-title">置信度爬升曲线</div>
+            <div className="line-chart-container">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={task.chartData?.line || []} margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
+                  <XAxis
+                    dataKey="month"
+                    tick={{ fontSize: 12, fill: "#8f9098" }}
+                    axisLine={{ stroke: "#e0e0e0" }}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    domain={[0, 100]}
+                    tick={{ fontSize: 12, fill: "#8f9098" }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <Tooltip />
+                  {selectedChartModels.overall && (
+                    <Line
+                      type="monotone"
+                      dataKey="value"
+                      name="Overall"
+                      stroke="#006ffd"
+                      strokeWidth={2}
+                      dot={{ r: 4, fill: "#006ffd" }}
+                      activeDot={{ r: 6 }}
+                    />
+                  )}
+                  {selectedChartModels.claude && (
+                    <Line
+                      type="monotone"
+                      dataKey="claude"
+                      name="Claude"
+                      stroke="#3ac0a0"
+                      strokeWidth={2}
+                      dot={{ r: 4, fill: "#3ac0a0" }}
+                      activeDot={{ r: 6 }}
+                    />
+                  )}
+                  {selectedChartModels.agent2 && (
+                    <Line
+                      type="monotone"
+                      dataKey="agent2"
+                      name="Agent 2"
+                      stroke="#ff7a45"
+                      strokeWidth={2}
+                      dot={{ r: 4, fill: "#ff7a45" }}
+                      activeDot={{ r: 6 }}
+                    />
+                  )}
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* 历史记录和雷达图区域 */}
+          <div className="radar-chart-container">
+            {/* 历史记录 */}
+            <div className="history-section-wrapper">
+              <div className="history-section">
+                <div className="history-time">{currentEvaluation.updatedAt}</div>
+                <div className="history-author">
+                  by <span>{currentEvaluation.updatedBy}</span>
+                </div>
+                <div className="history-content">{currentEvaluation.history}</div>
+              </div>
+            </div>
+
+            {/* 雷达图 */}
+            <div className="radar-chart-content">
+              <div className="chart-title">各维度得分</div>
+              <ResponsiveContainer width="100%" height="100%">
+                <RadarChart data={task.chartData?.radar || []} outerRadius={90}>
+                  <PolarGrid stroke="#e0e0e0" />
+                  <PolarAngleAxis dataKey="name" tick={{ fontSize: 12, fill: "#8f9098" }} />
+                  <PolarRadiusAxis domain={[0, 100]} tick={{ fontSize: 10, fill: "#8f9098" }} axisLine={false} />
+                  {selectedChartModels.overall && (
+                    <Radar name="Overall" dataKey="value" stroke="#006ffd" fill="#006ffd" fillOpacity={0.2} />
+                  )}
+                  {selectedChartModels.claude && (
+                    <Radar name="Claude" dataKey="claude" stroke="#3ac0a0" fill="#3ac0a0" fillOpacity={0.2} />
+                  )}
+                  {selectedChartModels.agent2 && (
+                    <Radar name="Agent 2" dataKey="agent2" stroke="#ff7a45" fill="#ff7a45" fillOpacity={0.2} />
+                  )}
+                </RadarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
         </div>
       </div>
 
-      <Divider className="task-detail-divider" />
-
-      {/* 任务内容区域 */}
-      <div className="task-detail-content">
-        <Tabs activeKey={activeTab} onChange={setActiveTab} className="task-detail-tabs">
-          <TabPane tab="概览" key="overview">
-            <Row gutter={[24, 24]} className="task-detail-overview">
-              {/* 左侧信息区域 */}
-              <Col xs={24} lg={16}>
-                <Card title="任务详情" className="task-info-card">
-                  <div className="task-info-item">
-                    <Text strong className="info-label">
-                      状态：
-                    </Text>
-                    <Text className="info-value">{task.status || "待启动"}</Text>
-                  </div>
-                  <div className="task-info-item">
-                    <Text strong className="info-label">
-                      目标：
-                    </Text>
-                    <Paragraph className="info-value">
-                      {task.description ||
-                        "目标目标目标目标目标目标目标目标目标目标目标目标目标目标目标目标目标目标目标目标"}
-                    </Paragraph>
-                  </div>
-                  <div className="task-info-item">
-                    <Text strong className="info-label">
-                      权限：
-                    </Text>
-                    <Text className="info-value">
-                      {task.permission === "workspace" ? "工作区" : task.permission === "community" ? "社区" : "个人"}
-                    </Text>
-                  </div>
-                  <div className="task-info-item">
-                    <Text strong className="info-label">
-                      创建时间：
-                    </Text>
-                    <Text className="info-value">{task.createdAt || task.updatedAt}</Text>
-                  </div>
-                </Card>
-
-                <Card title="任务组件" className="task-components-card">
-                  <div className="task-components-list">
-                    <div className="task-component-item active">
-                      <div className="component-icon">
-                        <FileTextOutlined />
-                      </div>
-                      <div className="component-title">场景</div>
-                      <button className="component-close">×</button>
-                    </div>
-
-                    <div className="task-component-item add-item">
-                      <div className="component-icon">
-                        <PlusOutlined />
-                      </div>
-                      <div className="component-title">点击添加QA</div>
-                    </div>
-
-                    <div className="task-component-item add-item">
-                      <div className="component-icon">
-                        <PlusOutlined />
-                      </div>
-                      <div className="component-title">点击添加模板</div>
-                    </div>
-                  </div>
-                </Card>
-              </Col>
-
-              {/* 右侧图表区域 */}
-              <Col xs={24} lg={8}>
-                <Card className="task-charts-card">
-                  {showRadarChart ? (
-                    <div className="detail-radar-chart-container">
-                      <div className="chart-title">各维度得分</div>
-                      <div className="radar-chart">
-                        <ResponsiveContainer width="100%" height={250}>
-                          <RadarChart data={filteredRadarData} outerRadius={90}>
-                            <PolarGrid stroke="#e0e0e0" />
-                            <PolarAngleAxis dataKey="name" tick={{ fontSize: 12, fill: "#8f9098" }} />
-                            <PolarRadiusAxis
-                              domain={[0, 100]}
-                              tick={{ fontSize: 10, fill: "#8f9098" }}
-                              axisLine={false}
-                            />
-                            {selectedAgents.overall && (
-                              <Radar name="Overall" dataKey="value" stroke="#006ffd" fill="#006ffd" fillOpacity={0.2} />
-                            )}
-                            {selectedAgents.agent1 && (
-                              <Radar
-                                name="Agent 1"
-                                dataKey="agent1"
-                                stroke="#3ac0a0"
-                                fill="#3ac0a0"
-                                fillOpacity={0.2}
-                              />
-                            )}
-                            {selectedAgents.agent2 && (
-                              <Radar
-                                name="Agent 2"
-                                dataKey="agent2"
-                                stroke="#ff7a45"
-                                fill="#ff7a45"
-                                fillOpacity={0.2}
-                              />
-                            )}
-                          </RadarChart>
-                        </ResponsiveContainer>
-                      </div>
-                      <div className="chart-agents">
-                        <div className="agents-list">
-                          <div className="agent-item">
-                            <Checkbox checked={selectedAgents.overall} onChange={() => handleAgentChange("overall")}>
-                              Overall
-                            </Checkbox>
-                          </div>
-                          <div className="agent-item">
-                            <Checkbox checked={selectedAgents.agent1} onChange={() => handleAgentChange("agent1")}>
-                              Agent 1
-                            </Checkbox>
-                          </div>
-                          <div className="agent-item">
-                            <Checkbox checked={selectedAgents.agent2} onChange={() => handleAgentChange("agent2")}>
-                              Agent 2
-                            </Checkbox>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="detail-line-chart-container">
-                      <div className="chart-title">置信度爬升曲线</div>
-                      <div className="line-chart">
-                        <ResponsiveContainer width="100%" height={250}>
-                          <LineChart
-                            data={task.chartData?.line || []}
-                            margin={{ top: 10, right: 10, left: 0, bottom: 10 }}
-                          >
-                            <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
-                            <XAxis
-                              dataKey="month"
-                              tick={{ fontSize: 12, fill: "#8f9098" }}
-                              axisLine={{ stroke: "#e0e0e0" }}
-                              tickLine={false}
-                            />
-                            <YAxis
-                              domain={[0, 100]}
-                              tick={{ fontSize: 12, fill: "#8f9098" }}
-                              axisLine={false}
-                              tickLine={false}
-                            />
-                            <Tooltip />
-                            <Line
-                              type="monotone"
-                              dataKey="value"
-                              stroke="#006ffd"
-                              strokeWidth={2}
-                              dot={{ r: 4, fill: "#006ffd" }}
-                              activeDot={{ r: 6 }}
-                            />
-                          </LineChart>
-                        </ResponsiveContainer>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="chart-footer">
-                    <div className="chart-link">
-                      <a
-                        href="#"
-                        onClick={(e) => {
-                          e.preventDefault()
-                          toggleRadarChart()
-                        }}
-                      >
-                        {showRadarChart ? "收起" : "查看模板维度"} {showRadarChart ? "←" : "→"}
-                      </a>
-                    </div>
-                    <div className="chart-info">
-                      <div className="chart-time-author">
-                        <span className="chart-time">{task.updatedAt}</span>
-                        <span className="by-text">by</span>
-                        <Avatar size={16} src={task.updatedBy?.avatar} className="updater-avatar">
-                          {task.updatedBy?.name.charAt(0)}
-                        </Avatar>
-                        <span className="updater-name">{task.updatedBy?.name}</span>
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-
-                <Card title="活动记录" className="task-activity-card">
-                  <Timeline>
-                    {timelineItems.map((item, index) => (
-                      <Timeline.Item key={index}>
-                        <div className="timeline-content">
-                          <div className="timeline-header">
-                            <Text strong>{item.user}</Text>
-                            <Text type="secondary">
-                              {item.date} {item.time}
-                            </Text>
-                          </div>
-                          <div className="timeline-body">{item.action}</div>
-                        </div>
-                      </Timeline.Item>
-                    ))}
-                  </Timeline>
-                </Card>
-              </Col>
-            </Row>
-          </TabPane>
-          <TabPane tab="场景" key="scene">
-            <div className="scene-content">
-              <Empty description="暂无场景内容" />
-            </div>
-          </TabPane>
-          <TabPane tab="QA" key="qa">
-            <div className="qa-content">
-              <Empty description="暂无QA内容" />
-            </div>
-          </TabPane>
-          <TabPane tab="模板" key="template">
-            <div className="template-content">
-              <Empty description="暂无模板内容" />
-            </div>
-          </TabPane>
-        </Tabs>
+      {/* 底部按钮区域 */}
+      <div className="task-footer-actions">
+        <Button icon={<LikeOutlined />} className="action-button like-button">
+          点赞
+        </Button>
+        <Button icon={<CommentOutlined />} className="action-button comment-button">
+          评论
+        </Button>
+        <Button icon={<ForkOutlined />} className="action-button fork-button" type="primary">
+          分支为新任务
+        </Button>
+        <Button icon={<SettingOutlined />} className="action-button optimize-button">
+          优化模式
+        </Button>
       </div>
     </div>
   )
