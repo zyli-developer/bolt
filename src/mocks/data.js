@@ -12,55 +12,18 @@ export const menuData = [
     title: "任务",
     path: "/tasks",
     icon: "TaskIcon",
-    expanded: true,
-    children: [
-      {
-        id: 21,
-        title: "我的任务",
-        path: "/tasks/my",
-        icon: "TaskIcon",
-      },
-      {
-        id: 22,
-        title: "团队任务",
-        path: "/tasks/team",
-        icon: "TaskIcon",
-      },
-    ],
   },
   {
     id: 3,
     title: "资产",
     path: "/assets",
     icon: "AppstoreOutlined",
-    expanded: false,
-    children: [
-      {
-        id: 31,
-        title: "模板",
-        path: "/assets/templates",
-        icon: "AppstoreOutlined",
-      },
-      {
-        id: 32,
-        title: "我的模板",
-        path: "/assets/my-templates",
-        icon: "AppstoreOutlined",
-      },
-      {
-        id: 33,
-        title: "别人的模板",
-        path: "/assets/others-templates",
-        icon: "AppstoreOutlined",
-      },
-    ],
   },
   {
     id: 4,
     title: "场景",
     path: "/scenes",
     icon: "AppstoreOutlined",
-    expanded: false,
   },
 ]
 

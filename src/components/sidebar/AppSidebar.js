@@ -2,24 +2,12 @@
 
 import { useState, useEffect } from "react"
 import { Layout, Button, Avatar } from "antd"
-import {
-  SearchOutlined,
-  FileOutlined,
-  AppstoreOutlined,
-  PlusOutlined,
-  MoreOutlined,
-  DownOutlined,
-  ThunderboltOutlined,
-  CaretDownOutlined,
-  CaretRightOutlined,
-} from "@ant-design/icons"
+import { SearchOutlined, FileOutlined, AppstoreOutlined, ThunderboltOutlined } from "@ant-design/icons"
 import { useNavigate, useLocation } from "react-router-dom"
 import menuService from "../../services/menuService"
 import ExploreIcon from "../icons/ExploreIcon"
 import TaskIcon from "../icons/TaskIcon"
-// Import the new UserInfoArea component
 import UserInfoArea from "./UserInfoArea"
-// 导入工作区服务
 import workspaceService from "../../services/workspaceService"
 
 const { Sider } = Layout
@@ -27,13 +15,12 @@ const { Sider } = Layout
 const AppSidebar = () => {
   const navigate = useNavigate()
   const location = useLocation()
-  const [isSearchActive, setIsSearchActive] = useState(false)
-  const [expandedKeys, setExpandedKeys] = useState(["tasks"])
   const [menuItems, setMenuItems] = useState([])
   const [loading, setLoading] = useState(true)
-  // 在 AppSidebar 组件中添加工作区状态
   const [currentWorkspace, setCurrentWorkspace] = useState(null)
   const [workspaceLoading, setWorkspaceLoading] = useState(true)
+  // Add a new state for sidebar collapse
+  const [isCollapsed, setIsCollapsed] = useState(false)
 
   useEffect(() => {
     const fetchMenuItems = async () => {
@@ -41,11 +28,6 @@ const AppSidebar = () => {
         setLoading(true)
         const data = await menuService.getMenuItems()
         setMenuItems(data)
-
-        // 设置初始展开的菜单项
-        const initialExpandedKeys = data.filter((item) => item.expanded).map((item) => item.id.toString())
-
-        setExpandedKeys(initialExpandedKeys)
       } catch (error) {
         console.error("获取菜单数据失败:", error)
       } finally {
@@ -56,7 +38,6 @@ const AppSidebar = () => {
     fetchMenuItems()
   }, [])
 
-  // 在 useEffect 中添加获取当前工作区的逻辑
   useEffect(() => {
     const fetchCurrentWorkspace = async () => {
       try {
@@ -73,17 +54,12 @@ const AppSidebar = () => {
     fetchCurrentWorkspace()
   }, [])
 
-  const toggleSearch = () => {
-    setIsSearchActive(!isSearchActive)
-  }
-
-  const onExpand = (key) => {
-    if (expandedKeys.includes(key)) {
-      setExpandedKeys(expandedKeys.filter((k) => k !== key))
-    } else {
-      setExpandedKeys([...expandedKeys, key])
-    }
-  }
+  // Add a function to detect if we're on a detail page
+  useEffect(() => {
+    // Check if the current path includes 'detail' to determine if we're on a detail page
+    const isDetailPage = location.pathname.includes("/detail")
+    setIsCollapsed(isDetailPage)
+  }, [location.pathname])
 
   const getIconComponent = (iconName) => {
     switch (iconName) {
@@ -102,107 +78,84 @@ const AppSidebar = () => {
     }
   }
 
-  const renderMenuItem = (item) => {
-    const isExpanded = expandedKeys.includes(item.id.toString())
-    const hasChildren = item.children && item.children.length > 0
+  const handleMenuItemClick = (e, item) => {
+    e.preventDefault()
+    // For all items, navigate directly to their path
+    navigate(item.path)
+  }
 
+  const renderMenuItem = (item) => {
     // 修改激活逻辑：只有当前路径完全匹配菜单项路径时才激活
     // 对于根路径和/explore特殊处理
     const isActive = location.pathname === item.path || (item.path === "/explore" && location.pathname === "/")
 
-    const handleMenuItemClick = (e) => {
-      e.preventDefault()
-
-      // 如果有子菜单，则切换展开状态
-      if (hasChildren) {
-        onExpand(item.id.toString())
-
-        // 导航到第一个子菜单的路径
-        if (item.children && item.children.length > 0) {
-          navigate(item.children[0].path)
-        }
-      } else {
-        // 只有没有子菜单的项目才导航到自己的路径
-        navigate(item.path)
-      }
-    }
-
     return (
       <div key={item.id} className="custom-menu-item">
-        <div className={`menu-item ${isActive ? "active" : ""}`} onClick={handleMenuItemClick}>
+        <div
+          className={`menu-item ${isActive ? "active" : ""} ${isCollapsed ? "collapsed" : ""}`}
+          onClick={(e) => handleMenuItemClick(e, item)}
+        >
           <div className="menu-item-content">
             {item.icon && <span className="menu-item-icon">{getIconComponent(item.icon)}</span>}
-            <span className="menu-item-title">{item.title}</span>
-            {hasChildren && (
-              <span className="menu-item-expand-icon">
-                {isExpanded ? <CaretDownOutlined /> : <CaretRightOutlined />}
-              </span>
-            )}
-          </div>
-          <div className="menu-item-actions">
-            {hasChildren ? (
-              <Button
-                type="text"
-                size="small"
-                icon={<PlusOutlined />}
-                onClick={(e) => e.stopPropagation()}
-                className="action-icon plus-icon"
-              />
-            ) : (
-              <Button
-                type="text"
-                size="small"
-                icon={<MoreOutlined />}
-                onClick={(e) => e.stopPropagation()}
-                className="action-icon more-icon"
-              />
-            )}
+            {!isCollapsed && <span className="menu-item-title">{item.title}</span>}
           </div>
         </div>
-
-        {hasChildren && isExpanded && (
-          <div className="submenu">{item.children.map((child) => renderMenuItem(child))}</div>
-        )}
       </div>
     )
   }
 
   return (
-    <Sider width={228} className="app-sidebar">
+    // Modify the Sider component to use the collapsed state with correct width
+    <Sider
+      width={isCollapsed ? 48 : 228}
+      collapsed={isCollapsed}
+      className={`app-sidebar ${isCollapsed ? "collapsed" : ""}`}
+      collapsedWidth={48}
+    >
       {/* Logo区域 */}
-      <div className="sidebar-logo">
+      <div className={`sidebar-logo ${isCollapsed ? "collapsed" : ""}`}>
         <div className="logo-icon">
           <ThunderboltOutlined />
         </div>
-        <div className="logo-text-container">
-          <div className="logo-text">可信</div>
-          <div className="logo-domain">syntrusthub.agentour.app</div>
-        </div>
+        {!isCollapsed && (
+          <div className="logo-text-container">
+            <div className="logo-text">可信</div>
+            <div className="logo-domain">syntrusthub.agentour.app</div>
+          </div>
+        )}
       </div>
 
-      {/* 工作区标题和搜索 */}
-      <div className="workspace-header">
-        <div className="workspace-title-container">
-          {workspaceLoading ? (
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <div style={{ width: "16px", height: "16px", backgroundColor: "#f0f0f0", borderRadius: "50%" }}></div>
-              <div style={{ width: "60px", height: "14px", backgroundColor: "#f0f0f0", borderRadius: "4px" }}></div>
-            </div>
-          ) : (
-            <>
-              <Avatar size={16} className="workspace-avatar">
-                {currentWorkspace?.icon || currentWorkspace?.name?.charAt(0)}
-              </Avatar>
-              <h3 className="workspace-title">{currentWorkspace?.name || "未知工作区"}</h3>
-              <DownOutlined className="workspace-dropdown-icon" />
-            </>
-          )}
+      {/* 搜索图标 - 在收起状态下只显示搜索图标 */}
+      {isCollapsed && (
+        <div className="search-icon-container">
+          <Button type="text" icon={<SearchOutlined />} className="search-icon-button" />
         </div>
-        <Button type="text" icon={<SearchOutlined />} onClick={toggleSearch} size="small" />
-      </div>
+      )}
 
-      {/* 菜单项区域 - 使用flex-1确保它填充剩余空间 */}
-      <div className="sidebar-menu-container" style={{ position: "relative", zIndex: 1 }}>
+      {/* 工作区标题和搜索 - 在展开状态下显示 */}
+      {!isCollapsed && (
+        <div className="workspace-header">
+          <div className="workspace-title-container">
+            {workspaceLoading ? (
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <div style={{ width: "16px", height: "16px", backgroundColor: "#f0f0f0", borderRadius: "50%" }}></div>
+                <div style={{ width: "60px", height: "14px", backgroundColor: "#f0f0f0", borderRadius: "4px" }}></div>
+              </div>
+            ) : (
+              <>
+                <Avatar size={16} className="workspace-avatar">
+                  {currentWorkspace?.icon || currentWorkspace?.name?.charAt(0)}
+                </Avatar>
+                <h3 className="workspace-title">{currentWorkspace?.name || "未知工作区"}</h3>
+              </>
+            )}
+          </div>
+          <Button type="text" icon={<SearchOutlined />} size="small" />
+        </div>
+      )}
+
+      {/* 菜单项区域 */}
+      <div className={`sidebar-menu-container ${isCollapsed ? "collapsed" : ""}`}>
         {loading ? (
           <div style={{ padding: "16px", textAlign: "center" }}>加载中...</div>
         ) : (
@@ -211,7 +164,7 @@ const AppSidebar = () => {
       </div>
 
       {/* 个人信息区域 - 固定在底部 */}
-      <UserInfoArea />
+      <UserInfoArea isCollapsed={isCollapsed} />
     </Sider>
   )
 }

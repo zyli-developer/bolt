@@ -110,17 +110,20 @@ export const handlers = [
 
   // 修改任务列表API处理程序，确保始终返回数组
   rest.get("/api/tasks", (req, res, ctx) => {
-    const type = req.url.searchParams.get("type")
+    const scope = req.url.searchParams.get("scope") || "community"
 
-    // 根据类型筛选任务
+    // Get all tasks
     let filteredTasks = [...tasksData]
-    if (type === "my") {
-      filteredTasks = tasksData.filter((task) => task.author.id === currentUser.id)
-    } else if (type === "team") {
+
+    // Filter based on scope
+    if (scope === "personal") {
+      filteredTasks = tasksData.filter((task) => task.type === "my")
+    } else if (scope === "workspace") {
       filteredTasks = tasksData.filter((task) => task.permission === "workspace")
     }
+    // For community, return all tasks
 
-    // 确保返回的是数组
+    // Ensure returning an array
     return res(ctx.status(200), ctx.json(filteredTasks || []))
   }),
 

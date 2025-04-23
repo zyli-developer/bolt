@@ -14,9 +14,24 @@ const taskService = {
    */
   getTasks: async (params = {}) => {
     try {
-      const response = await api.get(endpoints.tasks.list, { params })
-      // 确保返回的是数组
-      return Array.isArray(response) ? response : []
+      // Extract scope from params
+      const { scope = "community" } = params
+
+      // Get all tasks
+      const response = await api.get(endpoints.tasks.list)
+      let tasks = Array.isArray(response) ? response : []
+
+      // Filter tasks based on scope
+      if (scope === "personal") {
+        // Filter for personal tasks (author.id === currentUser.id)
+        tasks = tasks.filter((task) => task.type === "my")
+      } else if (scope === "workspace") {
+        // Filter for workspace tasks
+        tasks = tasks.filter((task) => task.permission === "workspace")
+      }
+      // For community, return all tasks
+
+      return tasks
     } catch (error) {
       console.error("获取任务列表失败:", error)
       // 出错时返回空数组

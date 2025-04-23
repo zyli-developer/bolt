@@ -8,6 +8,8 @@ import TaskCard from "../components/card/TaskCard"
 import taskService from "../services/taskService"
 import SortIcon from "../components/icons/SortIcon"
 import { useChatContext } from "../contexts/ChatContext"
+// Import useNavContext to get the selected navigation
+import { useNavContext } from "../contexts/NavContext"
 
 const { Title } = Typography
 
@@ -18,6 +20,8 @@ const TaskPage = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const { isChatOpen } = useChatContext()
+  // Add the NavContext to the component
+  const { selectedNav } = useNavContext()
 
   // 获取当前活动的标签页
   const getActiveTab = () => {
@@ -28,9 +32,9 @@ const TaskPage = () => {
 
   // 获取页面标题
   const getPageTitle = () => {
-    if (location.pathname === "/tasks/my") return "我的任务"
-    if (location.pathname === "/tasks/team") return "团队任务"
-    return "所有任务"
+    if (selectedNav === "personal") return "我的任务"
+    if (selectedNav === "workspace") return "工作区任务"
+    return "社区任务"
   }
 
   // 加载任务数据
@@ -38,9 +42,9 @@ const TaskPage = () => {
     const fetchTasks = async () => {
       try {
         setLoading(true)
-        const activeTab = getActiveTab()
-        const data = await taskService.getTasks({ type: activeTab })
-        // 确保data是数组
+        // Use selectedNav instead of getActiveTab()
+        const scope = selectedNav || "community"
+        const data = await taskService.getTasks({ scope })
         setTasks(Array.isArray(data) ? data : [])
         setError(null)
       } catch (err) {
@@ -53,7 +57,7 @@ const TaskPage = () => {
     }
 
     fetchTasks()
-  }, [location.pathname])
+  }, [selectedNav, location.pathname])
 
   return (
     <div className={`task-page ${isChatOpen ? "chat-open" : "chat-closed"}`}>

@@ -52,6 +52,66 @@ code {
   position: relative;
 }
 
+/* Add these styles to ensure the collapsed sidebar works correctly */
+.app-sidebar.collapsed {
+  width: 48px !important;
+  min-width: 48px !important;
+}
+
+.app-sidebar.collapsed .ant-layout-sider-children {
+  width: 48px;
+}
+
+/* Adjust the main content when sidebar is collapsed */
+.app-sidebar.collapsed + .main-content-layout {
+  margin-left: 48px;
+}
+
+/* Add styles for collapsed sidebar */
+.app-sidebar.ant-layout-sider-collapsed .sidebar-logo {
+  justify-content: center;
+  padding: 12px 0;
+}
+
+.app-sidebar.ant-layout-sider-collapsed .workspace-header {
+  justify-content: center;
+  padding: 12px 0;
+}
+
+.workspace-avatar-collapsed {
+  background-color: #006ffd;
+  color: white;
+}
+
+.app-sidebar.ant-layout-sider-collapsed .menu-item-title,
+.app-sidebar.ant-layout-sider-collapsed .menu-item-actions,
+.app-sidebar.ant-layout-sider-collapsed .menu-item-expand-icon {
+  display: none;
+}
+
+.app-sidebar.ant-layout-sider-collapsed .menu-item {
+  padding: 8px 0;
+  justify-content: center;
+}
+
+.app-sidebar.ant-layout-sider-collapsed .menu-item-icon {
+  margin-right: 0;
+}
+
+.app-sidebar.ant-layout-sider-collapsed .user-info-container {
+  padding: 12px 0;
+  justify-content: center;
+}
+
+.app-sidebar.ant-layout-sider-collapsed .user-details,
+.app-sidebar.ant-layout-sider-collapsed .user-more-btn {
+  display: none;
+}
+
+.app-sidebar.ant-layout-sider-collapsed .user-avatar-container {
+  margin-right: 0;
+}
+
 /* 右侧内容区 */
 .main-content-layout {
   flex: 1;
@@ -354,7 +414,7 @@ code {
 .chat-container {
   display: flex;
   flex-direction: column;
-  height: 90%;
+  height: 100%;
   background-color: #fff;
   overflow: hidden;
   position: relative;
