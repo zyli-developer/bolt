@@ -52,12 +52,11 @@ const cardService = {
    * @returns {Promise} - 卡片详情数据
    */
   getCardDetail: async (id) => {
-    try {
-      return await api.get(endpoints.cards.detail(id))
-    } catch (error) {
-      console.error(`获取卡片详情失败 (ID: ${id}):`, error)
-      throw error
+    const response = await fetch(`/api/cards/${id}`);
+    if (!response.ok) {
+      throw new Error('获取卡片详情失败');
     }
+    return response.json();
   },
 
   /**

@@ -28,8 +28,9 @@ import {
   PolarAngleAxis,
   PolarRadiusAxis,
 } from "recharts"
-import cardService from "../services/cardService"
+import taskService from "../services/taskService"
 import { useChatContext } from "../contexts/ChatContext"
+import { modelEvaluationData, cardsData } from "../mocks/data"
 
 const { Title, Text, Paragraph } = Typography
 const { Option } = Select
@@ -51,6 +52,8 @@ const CardDetailPage = () => {
   })
   const { isChatOpen } = useChatContext()
   const [expandedModel, setExpandedModel] = useState(false)
+  const [selectedModel, setSelectedModel] = useState("claude")
+  const [evaluationData, setEvaluationData] = useState({})
 
   // Determine if we came from explore or tasks
   const isFromExplore = location.pathname.includes("/explore") || location.state?.from === "explore"
@@ -58,22 +61,26 @@ const CardDetailPage = () => {
   const parentLabel = isFromExplore ? "探索" : "任务"
 
   useEffect(() => {
-    const fetchCardDetail = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true)
-        const data = await cardService.getCardDetail(id)
-        setCard(data)
+        const [cardData, evaluationData] = await Promise.all([
+          taskService.getCardDetail(id),
+          taskService.getAllModelEvaluations()
+        ])
+        setCard(cardData)
+        setEvaluationData(evaluationData)
         setError(null)
       } catch (err) {
-        console.error(`获取卡片详情失败 (ID: ${id}):`, err)
-        setError("获取卡片详情失败，请重试")
+        console.error(`获取数据失败 (ID: ${id}):`, err)
+        setError("获取数据失败，请重试")
       } finally {
         setLoading(false)
       }
     }
 
     if (id) {
-      fetchCardDetail()
+      fetchData()
     }
   }, [id])
 
@@ -81,90 +88,10 @@ const CardDetailPage = () => {
     navigate(-1)
   }
 
-  // Mock evaluation data based on real evaluation data structure
-  const mockEvaluationData = {
-    "claude3.5": {
-      name: "Claude 3.5",
-      tags: ["Programming", "Programming"],
-      description:
-        "该AI玩具在语音识别方面表现优秀，能够准确识别儿童的语音指令。安全性设计符合国际标准，无小零件脱落风险。交互体验流该AI玩具在语音识别方面表现优秀，能够准确识别儿童的语音指令。安全性设计符合国际标准，无小零件脱落风险。",
-      score: 10.0,
-      scoreChange: "-1.5%",
-      credibility: 100.0,
-      credibilityChange: "+1.5%",
-      updatedAt: "21:32, 12/01/2025",
-      updatedBy: "Mike",
-      history:
-        "修改了模板修改了模板修改了模板修改了模板修改了模板修改了模板修改了模板修改了模板修改了模板修改了模板修改了模板修改了模板",
-      strengths: ["语音识别准确", "安全性高", "交互体验好"],
-      weaknesses: ["语音识别准确", "安全性高", "交互体验好"],
-    },
-    "claude3.6": {
-      name: "Claude 3.6",
-      tags: ["Programming", "Programming"],
-      description:
-        "该AI玩具在语音识别方面表现优秀，能够准确识别儿童的语音指令。安全性设计符合国际标准，无小零件脱落风险。交互体验流该AI玩具在语音识别方面表现优秀，能够准确识别儿童的语音指令。安全性设计符合国际标准，无小零件脱落风险。",
-      score: 9.5,
-      scoreChange: "+0.5%",
-      credibility: 95.0,
-      credibilityChange: "+1.0%",
-      updatedAt: "20:15, 12/01/2025",
-      updatedBy: "David",
-      history: "完成了全面的性能评估和用户体验测试",
-      strengths: ["响应速度快", "准确率高", "多语言支持"],
-      weaknesses: ["资源消耗大", "冷启动时间长"],
-    },
-    "claude3.7": {
-      name: "Claude 3.7",
-      tags: ["Programming", "Programming"],
-      description:
-        "Claude 3.7在复杂任务处理和推理方面表现出色，能够处理多步骤指令并保持上下文连贯性。在代码生成和编程辅助方面尤为突出，支持多种编程语言并能提供详细的解释。",
-      score: 9.8,
-      scoreChange: "+1.2%",
-      credibility: 98.0,
-      credibilityChange: "+2.5%",
-      updatedAt: "19:45, 12/01/2025",
-      updatedBy: "Emma",
-      history: "根据最新的基准测试更新了评估结果",
-      strengths: ["代码生成能力强", "推理深度好", "上下文理解准确"],
-      weaknesses: ["处理速度可提升", "特定领域知识有限"],
-    },
-    agent2: {
-      name: "Agent 2",
-      tags: ["Testing", "Evaluation"],
-      description:
-        "这款AI玩具的语音交互系统反应灵敏，能够理解大部分儿童指令。安全材料使用符合标准，但某些边缘部分可能需要进一步圆润处理。教育内容丰富多样，适合目标年龄段儿童。建议改进：增强防水性能，优化充电接口设计。",
-      score: 8.7,
-      scoreChange: "+0.5%",
-      credibility: 87.0,
-      credibilityChange: "+2.0%",
-      updatedAt: "18:45, 12/02/2025",
-      updatedBy: "Jackson",
-      history: "添加了产品的详细材质信息和安全认证文档",
-      strengths: ["语音交互灵敏", "教育内容丰富", "目标人群匹配度高"],
-      weaknesses: ["边缘安全性需改进", "防水性能不足"],
-    },
-    deepseek: {
-      name: "DeepSeek",
-      tags: ["AI", "Large Model"],
-      description:
-        "DeepSeek在此任务中展现出优秀的理解能力和分析深度。模型能够准确把握问题核心，提供详实的解决方案。特别在代码生成和技术文档理解方面表现突出。建议在边缘场景的处理上进行优化。",
-      score: 9.2,
-      scoreChange: "+1.8%",
-      credibility: 92.0,
-      credibilityChange: "+3.0%",
-      updatedAt: "20:15, 12/02/2025",
-      updatedBy: "Sarah",
-      history: "完成了全部测试用例的验证",
-      strengths: ["理解准确", "分析深入", "解决方案可行"],
-      weaknesses: ["边缘场景处理", "响应时间优化"],
-    }
-  };
-
-  const currentEvaluation = mockEvaluationData[selectedModels[0]] || mockEvaluationData.agent2;
+  const currentEvaluation = evaluationData[selectedModel] || evaluationData.claude
 
   // 获取所有可用的模型选项
-  const modelOptions = Object.keys(mockEvaluationData);
+  const modelOptions = Object.keys(evaluationData);
 
   // 处理全选/取消全选
   const handleSelectAll = (checked) => {
@@ -286,7 +213,7 @@ const CardDetailPage = () => {
               title: (
                 <span onClick={() => navigate(parentPath)} className="breadcrumb-parent" style={{ fontSize: "12px" }}>
                   {parentLabel}
-                </span>
+          </span>
               ),
             },
             {
@@ -359,9 +286,9 @@ const CardDetailPage = () => {
                   <Option value="claude3.7">Claude 3.7</Option>
                   <Option value="agent2">Agent 2</Option>
                   <Option value="deepseek">DeepSeek</Option>
-                </Select>
-              </div>
-            </div>
+            </Select>
+          </div>
+        </div>
 
             <div className="evaluation-model-info" style={{ gap: "4px" }}>
               {selectedModels.map(modelKey => (
@@ -369,17 +296,17 @@ const CardDetailPage = () => {
                   <div className="model-panel-header" onClick={() => toggleModelPanel(modelKey)} style={{ padding: "8px" }}>
                     <div className="model-panel-left">
                       <Avatar size={32} className="model-avatar" style={{ background: getModelColor(modelKey) }}>
-                        {mockEvaluationData[modelKey].name.charAt(0)}
-                      </Avatar>
+                        {evaluationData[modelKey]?.name.charAt(0)}
+            </Avatar>
                       <div className="model-info">
                         <div className="model-name" style={{ fontSize: "14px" }}>
-                          {mockEvaluationData[modelKey].name}
+                          {evaluationData[modelKey]?.name}
                           <span className="model-usage" style={{ fontSize: "12px", marginLeft: "4px" }}>128k</span>
                         </div>
                         <div className="model-tags" style={{ gap: "4px" }}>
-                          {mockEvaluationData[modelKey].tags.map((tag, index) => (
+                          {evaluationData[modelKey]?.tags.map((tag, index) => (
                             <span key={index} className="model-tag" style={{ padding: "0 4px", fontSize: "11px" }}>
-                              {tag}
+                    {tag}
                             </span>
                           ))}
                         </div>
@@ -393,15 +320,15 @@ const CardDetailPage = () => {
                   {expandedModel === modelKey && (
                     <div className="model-panel-content" style={{ padding: "0 8px 8px" }}>
                       <div className="evaluation-content" style={{ padding: "8px" }}>
-                        <p className="evaluation-text" style={{ fontSize: "12px", margin: 0, lineHeight: "1.4" }}>{mockEvaluationData[modelKey].description}</p>
+                        <p className="evaluation-text" style={{ fontSize: "12px", margin: 0, lineHeight: "1.4" }}>{evaluationData[modelKey]?.description}</p>
                       </div>
                     </div>
                   )}
                 </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
-        </div>
 
         {/* 右侧图表区域 */}
         <div className="evaluation-right-section" style={{ gap: "4px" }}>
@@ -411,7 +338,7 @@ const CardDetailPage = () => {
               {selectedModels.map(modelKey => (
                 <div className="legend-item" key={modelKey} style={{ gap: "4px" }}>
                   <span className="legend-color" style={{ backgroundColor: getModelColor(modelKey), width: "10px", height: "10px" }}></span>
-                  <span className="legend-label" style={{ fontSize: "12px" }}>{mockEvaluationData[modelKey].name}</span>
+                  <span className="legend-label" style={{ fontSize: "12px" }}>{evaluationData[modelKey]?.name}</span>
                 </div>
               ))}
             </div>
@@ -424,7 +351,7 @@ const CardDetailPage = () => {
                 >
                   {/* 渐变定义 */}
                   <defs>
-                    {Object.keys(mockEvaluationData).map(modelKey => (
+                    {Object.keys(evaluationData).map(modelKey => (
                       <linearGradient key={modelKey} id={`color${modelKey}`} x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor={getModelColor(modelKey)} stopOpacity={0.2}/>
                         <stop offset="95%" stopColor={getModelColor(modelKey)} stopOpacity={0}/>
@@ -461,7 +388,7 @@ const CardDetailPage = () => {
                       key={modelKey}
                       type="monotone"
                       dataKey={modelKey}
-                      name={mockEvaluationData[modelKey].name}
+                      name={evaluationData[modelKey]?.name}
                       stroke={getModelColor(modelKey)}
                       strokeWidth={1.5}
                       fill={`url(#color${modelKey})`}
@@ -503,7 +430,7 @@ const CardDetailPage = () => {
                   {selectedModels.map(modelKey => (
                     <Radar 
                       key={modelKey}
-                      name={mockEvaluationData[modelKey].name} 
+                      name={evaluationData[modelKey]?.name} 
                       dataKey={modelKey} 
                       stroke={getModelColor(modelKey)} 
                       fill={getModelColor(modelKey)} 
@@ -523,7 +450,7 @@ const CardDetailPage = () => {
                 by <span>{currentEvaluation.updatedBy}</span>
               </div>
               <div className="history-content" style={{ fontSize: "12px", lineHeight: "1.4", marginTop: "4px" }}>{currentEvaluation.history}</div>
-            </div>
+              </div>
           </div>
         </div>
       </div>

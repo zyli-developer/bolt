@@ -454,3 +454,207 @@ export const currentWorkspace = {
     defaultPermission: "private",
   },
 }
+
+// 任务详情数据
+export const taskDetailData = {
+  title: "示例任务",
+  author: {
+    name: "Mike",
+    avatar: "M"
+  },
+  source: "内部项目",
+  tags: ["AI", "评估", "编程"],
+  description: "这是一个示例任务描述",
+  chartData: {
+    radar: [
+      { name: "准确性", value: 85 },
+      { name: "效率", value: 90 },
+      { name: "质量", value: 88 },
+      { name: "速度", value: 92 }
+    ],
+    line: [
+      { month: "1月", value: 85 },
+      { month: "2月", value: 88 },
+      { month: "3月", value: 92 },
+      { month: "4月", value: 90 }
+    ]
+  }
+};
+
+// 任务注释数据
+export const taskAnnotationData = [
+  {
+    key: '1',
+    no: '1',
+    title: '评估标准',
+    content: 'GB xxxx 生成式人工智能评估标准v1.0',
+    attachments: [
+      { name: '评估标准.pdf', url: '#' },
+      { name: '评估细则.docx', url: '#' }
+    ],
+    lastModifiedBy: {
+      name: 'Mike',
+      avatar: 'M'
+    },
+    modifiedTime: {
+      hour: '13:28',
+      date: '14/4/2025'
+    }
+  },
+  {
+    key: '2',
+    no: '2',
+    title: '评估方法',
+    content: '基于 ISO/IEC 25010 的AI系统质量评估方法',
+    attachments: [
+      { name: '评估方法.pdf', url: '#' }
+    ],
+    lastModifiedBy: {
+      name: 'Sarah',
+      avatar: 'S'
+    },
+    modifiedTime: {
+      hour: '15:45',
+      date: '14/4/2025'
+    }
+  },
+  {
+    key: '3',
+    no: '3',
+    title: '测试用例',
+    content: '包含安全性、可靠性、性能效率等维度的测试用例集',
+    attachments: [
+      { name: '测试用例.xlsx', url: '#' },
+      { name: '测试数据.zip', url: '#' }
+    ],
+    lastModifiedBy: {
+      name: 'David',
+      avatar: 'D'
+    },
+    modifiedTime: {
+      hour: '09:15',
+      date: '15/4/2025'
+    }
+  }
+];
+
+// 卡片详情数据
+export const cardDetailData = {
+  title: "示例卡片",
+  author: {
+    name: "David",
+    avatar: "D"
+  },
+  source: "研发部门",
+  tags: ["开发", "测试", "部署"],
+  chartData: {
+    radar: [
+      { name: "性能", value: 88 },
+      { name: "可靠性", value: 92 },
+      { name: "安全性", value: 85 },
+      { name: "可维护性", value: 90 }
+    ],
+    line: [
+      { month: "1月", value: 82 },
+      { month: "2月", value: 85 },
+      { month: "3月", value: 90 },
+      { month: "4月", value: 88 }
+    ]
+  }
+};
+
+// 模型评估数据
+export const modelEvaluationData = {
+  "claude": {
+    name: "Claude 3.5 Sonnet",
+    tags: ["Programming", "Programming"],
+    description:
+      "该AI玩具在语音识别方面表现优秀，能够准确识别儿童的语音指令。安全性设计符合国际标准，无小零件脱落风险。交互体验流该AI玩具在语音识别方面表现优秀，能够准确识别儿童的语音指令。安全性设计符合国际标准，无小零件脱落风险。",
+    score: 10.0,
+    scoreChange: "-1.5%",
+    credibility: 100.0,
+    credibilityChange: "+1.5%",
+    updatedAt: "21:32, 12/01/2025",
+    updatedBy: "Mike",
+    history:
+      "修改了模板修改了模板修改了模板修改了模板修改了模板修改了模板修改了模板修改了模板修改了模板修改了模板修改了模板修改了模板",
+    strengths: ["语音识别准确", "安全性高", "交互体验好"],
+    weaknesses: ["语音识别准确", "安全性高", "交互体验好"],
+  },
+  "claude3.5": {
+    name: "Claude 3.5",
+    tags: ["Programming", "Programming"],
+    description:
+      "该AI玩具在语音识别方面表现优秀，能够准确识别儿童的语音指令。安全性设计符合国际标准，无小零件脱落风险。交互体验流该AI玩具在语音识别方面表现优秀，能够准确识别儿童的语音指令。安全性设计符合国际标准，无小零件脱落风险。",
+    score: 10.0,
+    scoreChange: "-1.5%",
+    credibility: 100.0,
+    credibilityChange: "+1.5%",
+    updatedAt: "21:32, 12/01/2025",
+    updatedBy: "Mike",
+    history:
+      "修改了模板修改了模板修改了模板修改了模板修改了模板修改了模板修改了模板修改了模板修改了模板修改了模板修改了模板修改了模板",
+    strengths: ["语音识别准确", "安全性高", "交互体验好"],
+    weaknesses: ["语音识别准确", "安全性高", "交互体验好"],
+  },
+  "claude3.6": {
+    name: "Claude 3.6",
+    tags: ["Programming", "Programming"],
+    description:
+      "该AI玩具在语音识别方面表现优秀，能够准确识别儿童的语音指令。安全性设计符合国际标准，无小零件脱落风险。交互体验流该AI玩具在语音识别方面表现优秀，能够准确识别儿童的语音指令。安全性设计符合国际标准，无小零件脱落风险。",
+    score: 9.5,
+    scoreChange: "+0.5%",
+    credibility: 95.0,
+    credibilityChange: "+1.0%",
+    updatedAt: "20:15, 12/01/2025",
+    updatedBy: "David",
+    history: "完成了全面的性能评估和用户体验测试",
+    strengths: ["响应速度快", "准确率高", "多语言支持"],
+    weaknesses: ["资源消耗大", "冷启动时间长"],
+  },
+  "claude3.7": {
+    name: "Claude 3.7",
+    tags: ["Programming", "Programming"],
+    description:
+      "Claude 3.7在复杂任务处理和推理方面表现出色，能够处理多步骤指令并保持上下文连贯性。在代码生成和编程辅助方面尤为突出，支持多种编程语言并能提供详细的解释。",
+    score: 9.8,
+    scoreChange: "+1.2%",
+    credibility: 98.0,
+    credibilityChange: "+2.5%",
+    updatedAt: "19:45, 12/01/2025",
+    updatedBy: "Emma",
+    history: "根据最新的基准测试更新了评估结果",
+    strengths: ["代码生成能力强", "推理深度好", "上下文理解准确"],
+    weaknesses: ["处理速度可提升", "特定领域知识有限"],
+  },
+  "agent2": {
+    name: "Agent 2",
+    tags: ["Testing", "Evaluation"],
+    description:
+      "这款AI玩具的语音交互系统反应灵敏，能够理解大部分儿童指令。安全材料使用符合标准，但某些边缘部分可能需要进一步圆润处理。教育内容丰富多样，适合目标年龄段儿童。建议改进：增强防水性能，优化充电接口设计。",
+    score: 8.7,
+    scoreChange: "+0.5%",
+    credibility: 87.0,
+    credibilityChange: "+2.0%",
+    updatedAt: "18:45, 12/02/2025",
+    updatedBy: "Jackson",
+    history: "添加了产品的详细材质信息和安全认证文档",
+    strengths: ["语音交互灵敏", "教育内容丰富", "目标人群匹配度高"],
+    weaknesses: ["边缘安全性需改进", "防水性能不足"],
+  },
+  "deepseek": {
+    name: "DeepSeek",
+    tags: ["AI", "Large Model"],
+    description:
+      "DeepSeek在此任务中展现出优秀的理解能力和分析深度。模型能够准确把握问题核心，提供详实的解决方案。特别在代码生成和技术文档理解方面表现突出。建议在边缘场景的处理上进行优化。",
+    score: 9.2,
+    scoreChange: "+1.8%",
+    credibility: 92.0,
+    credibilityChange: "+3.0%",
+    updatedAt: "20:15, 12/02/2025",
+    updatedBy: "Sarah",
+    history: "完成了全部测试用例的验证",
+    strengths: ["理解准确", "分析深入", "解决方案可行"],
+    weaknesses: ["边缘场景处理", "响应时间优化"],
+  }
+};

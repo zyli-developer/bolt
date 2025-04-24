@@ -6,6 +6,7 @@ import { FilterOutlined, GroupOutlined } from "@ant-design/icons"
 import { useLocation } from "react-router-dom"
 import TaskCard from "../components/card/TaskCard"
 import taskService from "../services/taskService"
+import FilterSystem from "../components/filter/FilterSystem"
 import SortIcon from "../components/icons/SortIcon"
 import { useChatContext } from "../contexts/ChatContext"
 import { useNavContext } from "../contexts/NavContext"
@@ -68,22 +69,12 @@ const TaskPage = () => {
         <div className="error-message">{error}</div>
       ) : (
         <div className="task-content">
-          {/* 筛选工具栏 */}
-          <div className="task-toolbar">
-            <div className="toolbar-left">
-              <Button icon={<FilterOutlined />} className="filter-button">
-                Filter <span className="filter-count">2</span>
-              </Button>
-            </div>
-            <div className="toolbar-right">
-              <Button icon={<GroupOutlined />} className="group-button">
-                Group <span className="group-count">2</span>
-              </Button>
-              <Button icon={<SortIcon />} className="sort-button">
-                Sort
-              </Button>
-            </div>
-          </div>
+       {/* 筛选工具栏 */}
+ 
+       <div className="explore-toolbar">
+        <FilterSystem />
+      </div>
+
 
           {tasks && Array.isArray(tasks) && tasks.length === 0 && !loading ? (
             <Empty description={`暂无${getPageTitle()}`} />

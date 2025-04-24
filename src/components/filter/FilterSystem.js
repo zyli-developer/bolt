@@ -1,8 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { Button, Popover, message } from "antd"
-import { FilterOutlined, GroupOutlined } from "@ant-design/icons"
+import { Button, Popover, message, Input } from "antd"
+import { FilterOutlined, GroupOutlined, SearchOutlined } from "@ant-design/icons"
 import FilterCard from "./FilterCard"
 import GroupCard from "./GroupCard"
 import SortCard from "./SortCard"
@@ -16,6 +16,7 @@ const FilterSystem = () => {
   const [state, setState] = useState({
     ...initialFilterState,
     activePopover: null, // 'filter', 'group', 'sort' 或 null
+    searchValue: '', // 添加搜索值状态
   })
   const [loading, setLoading] = useState(false)
 
@@ -80,6 +81,20 @@ const FilterSystem = () => {
       ...prevState,
       sortConfig: config,
     }))
+  }
+
+  // 处理搜索值变化
+  const handleSearchChange = (e) => {
+    setState((prevState) => ({
+      ...prevState,
+      searchValue: e.target.value,
+    }))
+  }
+
+  // 处理搜索提交
+  const handleSearch = (value) => {
+    // 这里可以添加搜索逻辑
+    console.log('搜索:', value || state.searchValue);
   }
 
   // 保存视图配置
@@ -157,8 +172,8 @@ const FilterSystem = () => {
   )
 
   return (
-    <>
-      <div className="toolbar-left">
+    <div className="filter-system-container" style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+      <div className="toolbar-left" style={{ display: 'flex', gap: '8px' }}>
         <Popover
           content={filterCardContent}
           visible={state.activePopover === "filter"}
@@ -175,8 +190,7 @@ const FilterSystem = () => {
             Filter <span className="filter-count">{getFilterCount()}</span>
           </Button>
         </Popover>
-      </div>
-      <div className="toolbar-right">
+        
         <Popover
           content={groupCardContent}
           visible={state.activePopover === "group"}
@@ -193,6 +207,7 @@ const FilterSystem = () => {
             Group <span className="group-count">{getGroupCount()}</span>
           </Button>
         </Popover>
+        
         <Popover
           content={sortCardContent}
           visible={state.activePopover === "sort"}
@@ -210,7 +225,27 @@ const FilterSystem = () => {
           </Button>
         </Popover>
       </div>
-    </>
+      
+      <div className="toolbar-right">
+        <Input
+          placeholder="搜索感兴趣的任务"
+          suffix={<SearchOutlined style={{ color: '#8c8c8c', fontSize: '16px' }} />}
+          value={state.searchValue}
+          onChange={handleSearchChange}
+          onPressEnter={() => handleSearch()}
+          style={{ 
+            width: '240px', 
+            borderRadius: '30px',
+            padding: '8px 16px',
+            border: '1px solid #d9d9d9',
+            boxShadow: 'none',
+            fontSize: '14px',
+            color: '#8c8c8c'
+          }}
+          allowClear={false}
+        />
+      </div>
+    </div>
   )
 }
 

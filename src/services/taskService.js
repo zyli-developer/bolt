@@ -5,6 +5,7 @@
 
 import api from "./api"
 import endpoints from "./endpoints"
+import { cardsData, modelEvaluationData, tasksData } from "../mocks/data"
 
 const taskService = {
   /**
@@ -45,12 +46,54 @@ const taskService = {
    * @returns {Promise} - 任务详情数据
    */
   getTaskDetail: async (id) => {
-    try {
-      return await api.get(endpoints.tasks.detail(id))
-    } catch (error) {
-      console.error(`获取任务详情失败 (ID: ${id}):`, error)
-      throw error
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        const task = tasksData.find(task => task.id === parseInt(id))
+        if (task) {
+          resolve(task)
+        } else {
+          reject(new Error("任务不存在"))
+        }
+      }, 500)
+    })
+  },
+
+  /**
+   * 获取任务注释
+   * @param {string} id - 任务ID
+   * @returns {Promise} - 任务注释数据
+   */
+  getTaskAnnotations: async (id) => {
+    const response = await fetch(`/api/tasks/${id}/annotations`);
+    if (!response.ok) {
+      throw new Error('获取任务注释失败');
     }
+    return response.json();
+  },
+
+  /**
+   * 获取模型评估数据
+   * @param {string} modelId - 模型ID
+   * @returns {Promise} - 模型评估数据
+   */
+  getModelEvaluation: async (modelId) => {
+    const response = await fetch(`/api/evaluations/${modelId}`);
+    if (!response.ok) {
+      throw new Error('获取模型评估数据失败');
+    }
+    return response.json();
+  },
+
+  /**
+   * 获取所有模型评估数据
+   * @returns {Promise} - 所有模型评估数据
+   */
+  getAllModelEvaluations: async () => {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve(modelEvaluationData)
+      }, 500)
+    })
   },
 
   /**
@@ -95,6 +138,20 @@ const taskService = {
       throw error
     }
   },
+
+  // 获取卡片详情
+  getCardDetail: async (id) => {
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        const card = cardsData.find(card => card.id === parseInt(id))
+        if (card) {
+          resolve(card)
+        } else {
+          reject(new Error("卡片不存在"))
+        }
+      }, 500)
+    })
+  }
 }
 
 export default taskService
