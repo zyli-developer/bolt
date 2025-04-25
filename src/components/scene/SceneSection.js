@@ -7,11 +7,13 @@ import AnnotationModal from '../annotations/AnnotationModal';
 import ContextMenu from '../annotations/ContextMenu';
 import * as annotationService from '../../services/annotationService';
 import * as sceneService from '../../services/sceneService';
+import useStyles from '../../styles/components/scene/SceneSection';
 
 const { Title } = Typography;
 const { TextArea } = Input;
 
 const SceneSection = ({ isEditable = false }) => {
+  const { styles } = useStyles();
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [annotations, setAnnotations] = useState([]);
@@ -189,42 +191,24 @@ const SceneSection = ({ isEditable = false }) => {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+      <div className={styles.loadingContainer}>
         <Spin size="large" />
       </div>
     );
   }
 
   return (
-    <div style={{ 
-      display: 'flex', 
-      gap: '4px',
-      padding: '16px',
-      height: 'calc(100vh - 300px)',
-      overflow: 'hidden',
-      position: 'relative'
-    }}>
+    <div className={styles.container}>
       {/* 左侧流程图区域 */}
-      <div style={{ 
-        flex: '1',
-        backgroundColor: '#fff',
-        borderRadius: '8px',
-        overflow: 'hidden'
-      }}>
-        <div style={{ 
-          padding: '16px 24px',
-          borderBottom: '1px solid #f0f0f0',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
-        }}>
-          <Title level={5} style={{ margin: 0 }}>场景详情</Title>
+      <div className={styles.flowChartContainer}>
+        <div className={styles.flowChartHeader}>
+          <Title level={5} className={styles.headerTitle}>场景详情</Title>
           {isEditable ? (
             <Button type="text" icon={<EyeOutlined />}>预览</Button>
           ) : null}
         </div>
         
-        <div style={{ height: 'calc(100% - 57px)' }}>
+        <div className={styles.flowChartContent}>
           <ReactFlowProvider>
             <ReactFlow
               nodes={nodes}
@@ -261,72 +245,39 @@ const SceneSection = ({ isEditable = false }) => {
       </div>
 
       {/* 右侧注释列表 */}
-      <div style={{ 
-        width: '320px',
-        backgroundColor: '#fff',
-        borderRadius: '8px',
-        padding: '24px',
-        overflow: 'auto'
-      }}>
-        <Title level={5} style={{ marginBottom: '16px' }}>注释列表</Title>
+      <div className={styles.annotationSidebar}>
+        <Title level={5} className={styles.annotationTitle}>注释列表</Title>
         
-        <div className="annotation-list" style={{ gap: '4px' }}>
+        <div className={styles.annotationList}>
           {annotations.map(item => (
-            <div className="annotation-panel" key={item.id} style={{ marginBottom: '4px' }}>
+            <div className={styles.annotationPanel} key={item.id}>
               <div 
-                className="annotation-panel-header" 
+                className={`${styles.annotationPanelHeader} ${expandedAnnotation === item.id ? styles.expandedHeader : styles.collapsedHeader}`}
                 onClick={() => setExpandedAnnotation(expandedAnnotation === item.id ? null : item.id)}
-                style={{ 
-                  padding: '8px',
-                  backgroundColor: expandedAnnotation === item.id ? '#E6F7FF' : '#f8f9fa',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
-                }}
               >
-                <div className="annotation-panel-left" style={{ 
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  flex: 1
-                }}>
+                <div className={styles.annotationPanelLeft}>
                   <Avatar size={32}>{item.author.avatar}</Avatar>
-                  <div className="annotation-info" style={{ flex: 1 }}>
-                    <div className="annotation-text" style={{ 
-                      fontSize: '14px',
-                      color: '#333',
-                      wordBreak: 'break-all'
-                    }}>
+                  <div className={styles.annotationInfo}>
+                    <div className={styles.annotationText}>
                       {nodes.find(node => node.id === item.nodeId)?.data.label}
                     </div>
-                    <div style={{ 
-                      fontSize: '12px',
-                      color: '#8f9098',
-                      marginTop: '4px'
-                    }}>
+                    <div className={styles.annotationMeta}>
                       {item.author.name} · {item.time}
                     </div>
                   </div>
                 </div>
-                <div className="annotation-panel-icon">
+                <div>
                   {expandedAnnotation === item.id ? <MinusOutlined /> : <PlusOutlined />}
                 </div>
               </div>
               
               {expandedAnnotation === item.id && (
-                <div className="annotation-panel-content" style={{ padding: '0 8px 8px' }}>
-                  <div className="annotation-content" style={{ padding: '8px' }}>
-                    <p className="annotation-text" style={{ 
-                      fontSize: '12px',
-                      margin: 0,
-                      lineHeight: '1.4',
-                      color: '#333'
-                    }}>{item.content}</p>
+                <div className={styles.annotationPanelContent}>
+                  <div className={styles.annotationContent}>
+                    <p className={styles.annotationTextContent}>{item.content}</p>
                     
                     {item.attachments?.length > 0 && (
-                      <div style={{ marginTop: '8px' }}>
+                      <div className={styles.attachmentContainer}>
                         {item.attachments.map((file, index) => (
                           <Tag key={index} style={{ marginRight: '4px' }}>
                             <a href={file.url} target="_blank" rel="noopener noreferrer">
@@ -338,11 +289,7 @@ const SceneSection = ({ isEditable = false }) => {
                     )}
                   </div>
                   {isEditable && (
-                    <div style={{ 
-                      display: 'flex',
-                      justifyContent: 'flex-end',
-                      marginTop: '8px'
-                    }}>
+                    <div className={styles.actionContainer}>
                       <Button 
                         type="text" 
                         icon={<DeleteOutlined />} 
@@ -430,12 +377,7 @@ const SceneSection = ({ isEditable = false }) => {
           shape="circle"
           icon={<PlusCircleOutlined />}
           size="large"
-          style={{
-            position: 'absolute',
-            right: '360px',
-            bottom: '24px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
-          }}
+          className={styles.addNodeButton}
           onClick={() => setAddNodeModalVisible(true)}
         />
       )}

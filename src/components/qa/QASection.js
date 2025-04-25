@@ -5,10 +5,13 @@ import AnnotationModal from '../annotations/AnnotationModal';
 import ContextMenu from '../annotations/ContextMenu';
 import * as annotationService from '../../services/annotationService';
 import * as qaService from '../../services/qaService';
+import useStyles from '../../styles/components/qa/QASection';
 
 const { Title } = Typography;
 
 const QASection = ({ isEditable = false }) => {
+  const { styles } = useStyles();
+  
   const [annotations, setAnnotations] = useState([]);
   const [expandedAnnotation, setExpandedAnnotation] = useState(null);
   const [contextMenu, setContextMenu] = useState(null);
@@ -120,30 +123,18 @@ const QASection = ({ isEditable = false }) => {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+      <div className={styles.loadingContainer}>
         <Spin size="large" />
       </div>
     );
   }
 
   return (
-    <div style={{ 
-      display: 'flex', 
-      gap: '24px',
-      padding: '16px',
-      height: 'calc(100vh - 300px)',
-      overflow: 'hidden'
-    }}>
+    <div className={styles.container}>
       {/* 左侧文本区域 */}
-      <div style={{ 
-        flex: '1',
-        backgroundColor: '#fff',
-        borderRadius: '8px',
-        padding: '24px',
-        overflow: 'auto'
-      }}>
-        <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Title level={5} style={{ margin: 0 }}>{qaContent.title}</Title>
+      <div className={styles.leftSection}>
+        <div className={styles.headerSection}>
+          <Title level={5} className={styles.headerTitle}>{qaContent.title}</Title>
           {isEditable ? (
             <Button type="text" icon={<EyeOutlined />}>预览</Button>
           ) : null}
@@ -151,13 +142,7 @@ const QASection = ({ isEditable = false }) => {
         
         <div 
           ref={contentRef}
-          style={{ 
-            fontSize: '14px',
-            lineHeight: '1.8',
-            color: '#333',
-            position: 'relative',
-            whiteSpace: 'pre-wrap'
-          }}
+          className={styles.contentText}
           onMouseUp={handleTextSelection}
           onContextMenu={(e) => {
             e.preventDefault();
@@ -172,30 +157,12 @@ const QASection = ({ isEditable = false }) => {
               return (
                 <span
                   key={index}
-                  style={{
-                    backgroundColor: '#E6F7FF',
-                    position: 'relative'
-                  }}
+                  className={styles.annotatedText}
                   onMouseEnter={() => handleMouseEnter(annotation.id)}
                 >
                   {char}
                   {index === annotation.start && (
-                    <span
-                      style={{
-                        position: 'absolute',
-                        top: '-12px',
-                        right: '-12px',
-                        background: '#1890ff',
-                        color: '#fff',
-                        borderRadius: '50%',
-                        width: '16px',
-                        height: '16px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '12px'
-                      }}
-                    >
+                    <span className={styles.annotationMarker}>
                       {annotation.id}
                     </span>
                   )}
@@ -208,74 +175,45 @@ const QASection = ({ isEditable = false }) => {
       </div>
 
       {/* 右侧注释列表 */}
-      <div style={{ 
-        width: '320px',
-        backgroundColor: '#fff',
-        borderRadius: '8px',
-        padding: '24px',
-        overflow: 'auto'
-      }}>
-        <Title level={5} style={{ marginBottom: '16px' }}>注释列表</Title>
+      <div className={styles.rightSection}>
+        <Title level={5} className={styles.annotationTitle}>注释列表</Title>
         
-        <div className="annotation-list" style={{ gap: '4px' }}>
+        <div className={styles.annotationList}>
           {annotations.map(item => (
-            <div className="annotation-panel" key={item.id} style={{ marginBottom: '4px' }}>
+            <div className={styles.annotationPanel} key={item.id}>
               <div 
-                className="annotation-panel-header" 
                 onClick={() => setExpandedAnnotation(expandedAnnotation === item.id ? null : item.id)}
-                style={{ 
-                  padding: '8px',
-                  backgroundColor: expandedAnnotation === item.id ? '#E6F7FF' : '#f8f9fa',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
-                }}
+                className={`${styles.annotationPanelHeader} ${
+                  expandedAnnotation === item.id 
+                    ? styles.annotationPanelExpanded 
+                    : styles.annotationPanelCollapsed
+                }`}
               >
-                <div className="annotation-panel-left" style={{ 
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  flex: 1
-                }}>
+                <div className={styles.annotationPanelLeft}>
                   <Avatar size={32}>{item.author.avatar}</Avatar>
-                  <div className="annotation-info" style={{ flex: 1 }}>
-                    <div className="annotation-text" style={{ 
-                      fontSize: '14px',
-                      color: '#333',
-                      wordBreak: 'break-all'
-                    }}>
+                  <div className={styles.annotationInfo}>
+                    <div className={styles.annotationText}>
                       {item.selectedText}
                     </div>
-                    <div style={{ 
-                      fontSize: '12px',
-                      color: '#8f9098',
-                      marginTop: '4px'
-                    }}>
+                    <div className={styles.annotationMeta}>
                       {item.author.name} · {item.time}
                     </div>
                   </div>
                 </div>
-                <div className="annotation-panel-icon">
+                <div className={styles.annotationPanelIcon}>
                   {expandedAnnotation === item.id ? <MinusOutlined /> : <PlusOutlined />}
                 </div>
               </div>
               
               {expandedAnnotation === item.id && (
-                <div className="annotation-panel-content" style={{ padding: '0 8px 8px' }}>
-                  <div className="annotation-content" style={{ padding: '8px' }}>
-                    <p className="annotation-text" style={{ 
-                      fontSize: '12px',
-                      margin: 0,
-                      lineHeight: '1.4',
-                      color: '#333'
-                    }}>{item.content}</p>
+                <div className={styles.annotationPanelContent}>
+                  <div className={styles.annotationContent}>
+                    <p className={styles.annotationText}>{item.content}</p>
                     
                     {item.attachments?.length > 0 && (
-                      <div style={{ marginTop: '8px' }}>
+                      <div className={styles.annotationAttachments}>
                         {item.attachments.map((file, index) => (
-                          <Tag key={index} style={{ marginRight: '4px' }}>
+                          <Tag key={index} className={styles.attachmentTag}>
                             <a href={file.url} target="_blank" rel="noopener noreferrer">
                               {file.name}
                             </a>
@@ -285,11 +223,7 @@ const QASection = ({ isEditable = false }) => {
                     )}
                   </div>
                   {isEditable && (
-                    <div style={{ 
-                      display: 'flex',
-                      justifyContent: 'flex-end',
-                      marginTop: '8px'
-                    }}>
+                    <div className={styles.annotationActions}>
                       <Button 
                         type="text" 
                         icon={<DeleteOutlined />} 
