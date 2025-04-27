@@ -17,6 +17,7 @@ import {
 } from "recharts"
 import CreateTaskModal from "../modals/CreateTaskModal"
 import { useNavigate } from "react-router-dom"
+import "./card.css"
 
 const CardItem = ({ card }) => {
   const navigate = useNavigate()
@@ -97,7 +98,7 @@ const CardItem = ({ card }) => {
     <div className="card-item">
       {/* Card title and button */}
       <div className="card-header">
-        <h2 className="card-title-text" onClick={handleTitleClick} style={{ cursor: "pointer" }}>
+        <h2 className="card-title-text" onClick={handleTitleClick}>
           {card.title}
         </h2>
         <button className="branch-climb-button" onClick={handleBranchClimbClick}>
