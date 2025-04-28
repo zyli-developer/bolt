@@ -59,6 +59,30 @@ const taskService = {
   },
 
   /**
+   * 检查任务名称是否唯一
+   * @param {string} name - 任务名称
+   * @returns {Promise<boolean>} - 是否唯一
+   */
+  checkTaskNameUnique: async (name) => {
+    try {
+      // 模拟API调用延迟
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          // 从模拟数据中检查是否有同名任务
+          const existingTask = tasksData.find(task => 
+            task.title && task.title.toLowerCase() === name.toLowerCase()
+          )
+          // 如果找不到同名任务，返回true（唯一）
+          resolve(!existingTask)
+        }, 800) // 添加延迟以模拟网络请求
+      })
+    } catch (error) {
+      console.error("检查任务名称唯一性失败:", error)
+      return false
+    }
+  },
+
+  /**
    * 获取任务注释
    * @param {string} id - 任务ID
    * @returns {Promise} - 任务注释数据
