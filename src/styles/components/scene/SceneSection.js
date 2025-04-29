@@ -110,6 +110,32 @@ const useStyles = createStyles(({ css }) => {
       bottom: 24px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     `,
+    customNode: css`
+      padding: 10px;
+      border-radius: 5px;
+      background: white;
+      border: 1px solid #d9d9d9;
+      min-width: 150px;
+    `,
+    nodeContent: css`
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    `,
+    expandButton: css`
+      padding: 0;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    `,
+    childrenContainer: css`
+      margin-top: 8px;
+      margin-left: 24px;
+      border-left: 1px dashed #d9d9d9;
+      padding-left: 8px;
+    `,
   };
 });
 

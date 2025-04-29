@@ -520,7 +520,7 @@ const TaskDetailPage = () => {
       case 'scene':
         return (
           <div className="scene-section">
-            <h2>场景内容</h2>
+
             <SceneSection isEditable={false} />
                   </div>
         );
@@ -1054,20 +1054,26 @@ const TaskDetailPage = () => {
         <Button
           size="large"
           onClick={() => {
-            const prevStep = currentStep - 1;
-            setCurrentStep(prevStep);
-            switch (prevStep) {
-              case 1:
-                setActiveSection('qa');
-                break;
-              case 2:
-                setActiveSection('scene');
-                break;
-              case 3:
-                setActiveSection('template');
-                break;
-              default:
-                break;
+            if (currentStep === 1) {
+              // 从QA页面返回到任务概览
+              handleBack();
+            } else {
+              // 其他步骤的返回逻辑
+              const prevStep = currentStep - 1;
+              setCurrentStep(prevStep);
+              switch (prevStep) {
+                case 1:
+                  setActiveSection('qa');
+                  break;
+                case 2:
+                  setActiveSection('scene');
+                  break;
+                case 3:
+                  setActiveSection('template');
+                  break;
+                default:
+                  break;
+              }
             }
           }}
           style={{ flex: 1 }}
@@ -1236,7 +1242,7 @@ const TaskDetailPage = () => {
           {!isTaskStarted && (
             <div className="left-menu" style={{
               width: '110px',
-              borderRight: '1px solid #f0f0f0',
+
               padding: '16px 0'
             }}>
               {/* 任务概览标题 */}
@@ -1300,7 +1306,6 @@ const TaskDetailPage = () => {
           {/* 右侧内容区域 */}
           <div className="right-content" style={{
             flex: 1,
-            padding: '24px'
           }}>
             {renderContent()}
             </div>

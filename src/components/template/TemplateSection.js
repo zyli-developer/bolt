@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { ReactFlow, Controls, Background, useNodesState, useEdgesState, addEdge, Panel, ReactFlowProvider } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { Typography, Avatar, Tag, Button, message, Spin, Modal, Input } from 'antd';
@@ -36,6 +36,20 @@ const TemplateSection = ({ isEditable = false }) => {
     });
   }, []);
 
+  useEffect(() => {
+    const handleGlobalClick = () => {
+      if (contextMenu) {
+        setContextMenu(null);
+      }
+    };
+
+    document.addEventListener('click', handleGlobalClick);
+
+    return () => {
+      document.removeEventListener('click', handleGlobalClick);
+    };
+  }, [contextMenu]);
+
   const fetchTemplateContent = async () => {
     try {
       const data = await templateService.getTemplateContent();
@@ -65,6 +79,8 @@ const TemplateSection = ({ isEditable = false }) => {
     if (!isEditable) return;
     
     event.preventDefault();
+    event.stopPropagation();
+    
     setSelectedNode(node);
     setContextMenu({
       x: event.clientX,

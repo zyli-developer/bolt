@@ -27,7 +27,7 @@ root.render(
         token: {
           colorPrimary: "#006ffd",
           colorSuccess: "#3ac0a0",
-          colorError: "#ffe2e5",
+          colorError: "#ff0000",
           colorTextBase: "#1f2024",
           colorTextSecondary: "#71727a",
           colorTextTertiary: "#8f9098",

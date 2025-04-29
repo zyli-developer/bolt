@@ -31,6 +31,7 @@ import {
 import taskService from "../services/taskService"
 import { useChatContext } from "../contexts/ChatContext"
 import { modelEvaluationData, cardsData } from "../mocks/data"
+import CreateTaskModal from "../components/modals/CreateTaskModal"
 
 const { Title, Text, Paragraph } = Typography
 const { Option } = Select
@@ -54,6 +55,7 @@ const CardDetailPage = () => {
   const [expandedModel, setExpandedModel] = useState(false)
   const [selectedModel, setSelectedModel] = useState("claude")
   const [evaluationData, setEvaluationData] = useState({})
+  const [isCreateTaskModalVisible, setIsCreateTaskModalVisible] = useState(false)
 
   // Determine if we came from explore or tasks
   const isFromExplore = location.pathname.includes("/explore") || location.state?.from === "explore"
@@ -172,6 +174,16 @@ const CardDetailPage = () => {
       default:
         return '#8f9098';
     }
+  }
+
+  // 处理分支为新任务按钮点击
+  const handleForkTask = () => {
+    setIsCreateTaskModalVisible(true)
+  }
+
+  // 处理取消创建任务
+  const handleCancelCreateTask = () => {
+    setIsCreateTaskModalVisible(false)
   }
 
   if (loading) {
@@ -491,6 +503,7 @@ const CardDetailPage = () => {
           icon={<ForkOutlined />} 
           className="action-button fork-button" 
           type="primary"
+          onClick={handleForkTask}
           style={{ 
             borderRadius: '20px',
             display: 'flex',
@@ -521,6 +534,13 @@ const CardDetailPage = () => {
           优化模式
         </Button>
       </div>
+
+      {/* 创建任务模态框 */}
+      <CreateTaskModal
+        visible={isCreateTaskModalVisible}
+        onCancel={handleCancelCreateTask}
+        cardData={card}
+      />
     </div>
   )
 }

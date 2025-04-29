@@ -32,7 +32,7 @@ const ConfirmPage = ({ formData }) => {
   // 渲染基本信息内容
   const renderBasicInfo = () => (
     <div className={styles.confirmSection}>
-      <div className={styles.confirmSectionTitle}>基本信息</div>
+  
       <div className={styles.confirmInfoRow}>
         <div className={styles.confirmInfoLabel}>任务名称：</div>
         <div className={styles.confirmInfoValue}>{formData.title || '未设置'}</div>
@@ -204,7 +204,7 @@ const ConfirmPage = ({ formData }) => {
 
   return (
     <div className={styles.confirmContainer}>
-      <div className={styles.formTitle}>任务概览</div>
+ 
       <div className={styles.confirmLayout}>
         {/* 左侧Timeline导航 */}
         <div className={styles.confirmSidebar}>

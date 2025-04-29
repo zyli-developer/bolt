@@ -57,7 +57,7 @@ const useStyles = createStyles(({ token, css }) => {
     contentContainer: css`
       flex: 1;
       overflow-y: auto;
-      padding: 0 8px;
+      padding:  8px 0;
     `,
     form: css`
       .ant-form-item {
@@ -70,7 +70,7 @@ const useStyles = createStyles(({ token, css }) => {
       
       .ant-form-item-label > label {
         font-weight: 500;
-        color: ${token.colorTextSecondary};
+        color: #000000;
         font-size: 13px;
       }
       
@@ -101,7 +101,7 @@ const useStyles = createStyles(({ token, css }) => {
       font-size: 16px;
       font-weight: 500;
       margin-bottom: 16px;
-      color: ${token.colorTextHeading};
+      color: #000000;
     `,
     footerButtons: css`
       display: flex;
@@ -184,6 +184,10 @@ const useStyles = createStyles(({ token, css }) => {
       display: flex;
       flex-direction: column;
       gap: 16px;
+      
+      .ant-form-item-label > label {
+        color: #000000;
+      }
     `,
     qaTextarea: css`
       resize: none;
@@ -349,7 +353,7 @@ const useStyles = createStyles(({ token, css }) => {
     confirmContent: css`
       flex: 1;
       overflow-y: auto;
-      padding: 0 8px;
+      padding: 8px;
     `,
     confirmSection: css`
       margin-bottom: 24px;

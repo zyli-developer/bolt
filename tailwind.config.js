@@ -43,7 +43,7 @@ module.exports = {
         primary: "#006ffd",
         secondary: "#3ac0a0",
         surface: "#f8f9fe",
-        error: "#ffe2e5",
+        error: "#ff0000",
         text: {
           primary: "#1f2024",
           secondary: "#71727a",

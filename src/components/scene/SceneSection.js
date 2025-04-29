@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { ReactFlow, Controls, Background, useNodesState, useEdgesState, addEdge, Panel, ReactFlowProvider } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { Typography, Avatar, Tag, Button, message, Spin, Modal, Input } from 'antd';
-import { EditOutlined, EyeOutlined, DeleteOutlined, PlusOutlined, MinusOutlined, PlusCircleOutlined } from '@ant-design/icons';
+import { EditOutlined, EyeOutlined, DeleteOutlined, PlusOutlined, MinusOutlined, PlusCircleOutlined, DownOutlined, RightOutlined } from '@ant-design/icons';
 import AnnotationModal from '../annotations/AnnotationModal';
 import ContextMenu from '../annotations/ContextMenu';
 import * as annotationService from '../../services/annotationService';
@@ -26,6 +26,7 @@ const SceneSection = ({ isEditable = false }) => {
   const [editContent, setEditContent] = useState('');
   const [addNodeModalVisible, setAddNodeModalVisible] = useState(false);
   const [newNodeContent, setNewNodeContent] = useState('');
+  const [expandedNodes, setExpandedNodes] = useState(new Set());
 
   useEffect(() => {
     Promise.all([
@@ -35,6 +36,20 @@ const SceneSection = ({ isEditable = false }) => {
       setLoading(false);
     });
   }, []);
+
+  useEffect(() => {
+    const handleGlobalClick = () => {
+      if (contextMenu) {
+        setContextMenu(null);
+      }
+    };
+
+    document.addEventListener('click', handleGlobalClick);
+
+    return () => {
+      document.removeEventListener('click', handleGlobalClick);
+    };
+  }, [contextMenu]);
 
   const fetchSceneContent = async () => {
     try {
@@ -65,6 +80,8 @@ const SceneSection = ({ isEditable = false }) => {
     if (!isEditable) return;
     
     event.preventDefault();
+    event.stopPropagation();
+    
     setSelectedNode(node);
     setContextMenu({
       x: event.clientX,
@@ -189,6 +206,46 @@ const SceneSection = ({ isEditable = false }) => {
     message.success('添加成功');
   };
 
+  const handleNodeExpand = (nodeId) => {
+    setExpandedNodes(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(nodeId)) {
+        newSet.delete(nodeId);
+      } else {
+        newSet.add(nodeId);
+      }
+      return newSet;
+    });
+  };
+
+  const CustomNode = ({ data }) => {
+    const { label, children } = data;
+    const isExpanded = expandedNodes.includes(data.id);
+
+    return (
+      <div className={styles.customNode}>
+        <div className={styles.nodeContent}>
+          {children && (
+            <Button
+              type="text"
+              icon={isExpanded ? <DownOutlined /> : <RightOutlined />}
+              onClick={() => handleNodeExpand(data.id)}
+              className={styles.expandButton}
+            />
+          )}
+          <span>{label}</span>
+        </div>
+        {isExpanded && children && (
+          <div className={styles.childrenContainer}>
+            {children.map((child) => (
+              <CustomNode key={child.id} data={child} />
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className={styles.loadingContainer}>
@@ -217,6 +274,7 @@ const SceneSection = ({ isEditable = false }) => {
               onEdgesChange={isEditable ? onEdgesChange : undefined}
               onConnect={onConnect}
               onNodeContextMenu={onNodeContextMenu}
+              nodeTypes={{ custom: CustomNode }}
               fitView
               proOptions={{ hideAttribution: true }}
               defaultViewport={{ x: 0, y: 0, zoom: 1 }}

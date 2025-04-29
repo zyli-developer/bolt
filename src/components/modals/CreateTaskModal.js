@@ -20,6 +20,7 @@ const CreateTaskModal = ({ visible, onCancel, cardData }) => {
   const [currentStep, setCurrentStep] = useState(0)
   const [nameValidating, setNameValidating] = useState(false)
   const [confirmSection, setConfirmSection] = useState('basicInfo')
+  const [showTargetDescription, setShowTargetDescription] = useState(false)
   
   // 模拟用户数据
   const mockUsers = [
@@ -46,6 +47,29 @@ const CreateTaskModal = ({ visible, onCancel, cardData }) => {
     },
   ]
 
+  // 初始化表单数据
+  useEffect(() => {
+    if (visible && cardData) {
+      // 如果有cardData，则预填充表单
+      form.setFieldsValue({
+        title: cardData.title || "",
+        description: `基于卡片"${cardData.title?.substring(0, 30)}${cardData.title?.length > 30 ? "..." : ""}"创建的任务`,
+        priority: cardData.priority || "medium",
+        testTarget: cardData.testTarget || "web_app_llm",
+        brand: cardData.brand || "",
+        model: cardData.model || "",
+        version: cardData.version || "",
+        paramCount: cardData.paramCount || "",
+        recommendPrecision: cardData.recommendPrecision || "",
+      });
+      
+      // 如果测评对象是"other"，显示补充描述输入框
+      if (cardData.testTarget === "other") {
+        setShowTargetDescription(true);
+      }
+    }
+  }, [visible, cardData, form]);
+  
   // 检查名称唯一性的函数
   const checkNameUnique = async (name) => {
     if (!name || name.trim() === '') return true
@@ -187,7 +211,7 @@ const CreateTaskModal = ({ visible, onCancel, cardData }) => {
     
     return (
       <div className={styles.confirmSection}>
-        <div className={styles.confirmSectionTitle}>基本信息</div>
+    
         
         <div className={styles.confirmInfoRow}>
           <div className={styles.confirmInfoLabel}>任务名称</div>
@@ -228,10 +252,12 @@ const CreateTaskModal = ({ visible, onCancel, cardData }) => {
           <div className={styles.confirmInfoValue}>{formValues.testTarget}</div>
         </div>
         
-        <div className={styles.confirmInfoRow}>
-          <div className={styles.confirmInfoLabel}>补充描述</div>
-          <div className={styles.confirmInfoValue}>{formValues.targetDescription || '无'}</div>
-        </div>
+        {formValues.testTarget === 'other' && (
+          <div className={styles.confirmInfoRow}>
+            <div className={styles.confirmInfoLabel}>补充描述</div>
+            <div className={styles.confirmInfoValue}>{formValues.targetDescription || '无'}</div>
+          </div>
+        )}
         
         <div className={styles.confirmInfoSection}>
           <div className={styles.confirmInfoRow}>
@@ -365,7 +391,7 @@ const CreateTaskModal = ({ visible, onCancel, cardData }) => {
       case 0:
         return (
           <>
-            <div className={styles.formTitle}>基本信息</div>
+ 
             
             <Form.Item 
               name="title" 
@@ -412,16 +438,28 @@ const CreateTaskModal = ({ visible, onCancel, cardData }) => {
             <Divider />
             
             <Form.Item name="testTarget" label="测评对象" rules={[{ required: true, message: "请选择测评对象" }]}>
-              <Select placeholder="Please select">
-                <Option value="target1">测评对象1</Option>
-                <Option value="target2">测评对象2</Option>
-                <Option value="target3">测评对象3</Option>
+              <Select placeholder="Please select" onChange={(value) => {
+                setShowTargetDescription(value === 'other');
+              }}>
+                <Option value="web_app_llm">大语言模型（网页、app端）</Option>
+                <Option value="local_llm">大语言模型（本地部署）</Option>
+                <Option value="smart_cockpit">智能座舱</Option>
+                <Option value="smart_watch">智能手表</Option>
+                <Option value="smart_toy">智能玩具</Option>
+                <Option value="smart_furniture">智能家具</Option>
+                <Option value="other">其他</Option>
               </Select>
             </Form.Item>
             
-            <Form.Item name="targetDescription">
-              <TextArea rows={2} placeholder="请补充描述" className={styles.textArea} />
-            </Form.Item>
+            {showTargetDescription && (
+              <Form.Item
+                name="targetDescription"
+                label="补充描述"
+                rules={[{ required: true, message: "请输入补充描述" }]}
+              >
+                <TextArea rows={2} placeholder="请补充描述" className={styles.textArea} />
+              </Form.Item>
+            )}
             
             <div className={styles.infoText}>选填但很重要：填写越详细，测试可信度越高。</div>
             
@@ -450,9 +488,7 @@ const CreateTaskModal = ({ visible, onCancel, cardData }) => {
         )
       case 1:
         return (
-          <>
-            <div className={styles.formTitle}>编辑QA</div>
-            
+          <>            
             <div className={styles.qaContainer}>
               <Form.Item 
                 name="questionDescription" 
@@ -483,7 +519,7 @@ const CreateTaskModal = ({ visible, onCancel, cardData }) => {
       case 2:
         return (
           <>
-            <div className={styles.formTitle}>权限分配</div>
+
             
             <div className={styles.permissionText}>
               针对以下三项工作，分别选择有操作权限的用户：
@@ -606,32 +642,34 @@ const CreateTaskModal = ({ visible, onCancel, cardData }) => {
       </div>
       
       <div className={styles.contentContainer}>
-        <Form
-          form={form}
-          layout="vertical"
+      <Form
+        form={form}
+        layout="vertical"
           className={styles.form}
-          initialValues={{
-            permission: "workspace",
+        initialValues={{
+          permission: "workspace",
             title: cardData?.title || "",
             description: cardData ? `基于卡片"${cardData?.title?.substring(0, 30)}${cardData?.title?.length > 30 ? "..." : ""}"创建的任务` : "",
             questionDescription: "",
             answerDescription: "",
             sceneEditors: [],
             templateEditors: [],
-            viewpointEditors: []
+            viewpointEditors: [],
+            targetDescriptionVisible: false,
+            priority: "medium"
           }}
         >
           {renderContent()}
         </Form>
       </div>
-      
+
       <div className={styles.footerButtons}>
         <Button onClick={handleBack}>
           {currentStep === 0 ? '返回' : '上一步'}
         </Button>
         <Button onClick={handleSubmit}>
-          保存
-        </Button>
+              保存
+            </Button>
         {currentStep === 3 ? (
           <Button type="primary" onClick={handleSubmit}>
             确认创建
@@ -641,7 +679,7 @@ const CreateTaskModal = ({ visible, onCancel, cardData }) => {
             保存并进入下一步
           </Button>
         )}
-      </div>
+          </div>
     </Modal>
   )
 }
