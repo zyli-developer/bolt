@@ -5,7 +5,7 @@ const useStyles = createStyles(({ css }) => {
     container: css`
       display: flex;
       gap: 24px;
-      padding: 16px;
+ 
       height: calc(100vh - 300px);
       overflow: hidden;
     `,
@@ -60,7 +60,6 @@ const useStyles = createStyles(({ css }) => {
       width: 320px;
       background-color: #fff;
       border-radius: 8px;
-      padding: 24px;
       overflow: auto;
     `,
     annotationTitle: css`

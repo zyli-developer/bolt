@@ -6,6 +6,7 @@ const useStyles = createStyles(({ css }) => {
       display: flex; 
       flex-direction: column;
       height: 100%;
+      width: 100%;
     `,
     mainContent: css`
       display: flex;
@@ -13,17 +14,23 @@ const useStyles = createStyles(({ css }) => {
       background: #FAFAFA;
       border-radius: 0 0 12px 12px;
       flex: 1;
+      width: 100%;
     `,
     leftMenu: css`
       width: 110px;
       border-right: 1px solid #f0f0f0;
       padding: 16px 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
     `,
     taskOverviewTitle: css`
       padding: 0 0 40px;
       font-size: 14px;
       font-weight: 600;
       color: #000;
+      text-align: center;
     `,
     timelineDot: css`
       width: 24px;
@@ -59,18 +66,29 @@ const useStyles = createStyles(({ css }) => {
       padding: 24px;
       display: flex;
       flex-direction: column;
+      width: calc(100% - 110px);
     `,
     progressContainer: css`
       display: flex; 
       flex-direction: column; 
       align-items: center; 
       justify-content: center;
-      height: 400px;
+      min-height: calc(100vh - 200px);
+      height: 100%;
+      width: 100%;
       text-align: center;
+      background: #FAFAFA;
+      border-radius: 12px;
+      padding: 40px 20px;
     `,
     progressText: css`
       margin-top: 24px; 
       margin-bottom: 8px;
+    `,
+    progressCard: css`
+      background: #f9f9f9;
+      border-radius: 8px;
+      overflow: hidden;
     `,
     loadingContainer: css`
       text-align: center; 
@@ -83,12 +101,14 @@ const useStyles = createStyles(({ css }) => {
       background: #FAFAFA;
       border-radius: 12px;
       margin: -24px;
+      width: 100%;
     `,
     scoreSection: css`
       background: #EAF2FF;
       padding: 16px;
       border-radius: 12px;
       margin-bottom: 24px;
+      width: 100%;
     `,
     scoreHeader: css`
       display: flex; 
@@ -118,6 +138,7 @@ const useStyles = createStyles(({ css }) => {
     `,
     infoSection: css`
       margin-bottom: 24px;
+      width: 100%;
     `,
     infoRow: css`
       display: flex;
@@ -142,6 +163,7 @@ const useStyles = createStyles(({ css }) => {
     `,
     annotationSection: css`
       margin-bottom: 24px;
+      width: 100%;
     `,
     annotationHeader: css`
       display: flex; 
@@ -159,7 +181,7 @@ const useStyles = createStyles(({ css }) => {
     `,
     annotationTable: css`
       margin-top: 8px;
-      width: 676px;
+      width: 100%;
     `,
     summaryIcon: css`
       color: #52c41a;
@@ -180,11 +202,13 @@ const useStyles = createStyles(({ css }) => {
     `,
     section: css`
       border-radius: 8px;
+      width: 100%;
     `,
     testSummary: css`
       background: #f9f9f9;
       border-radius: 8px;
       padding: 16px;
+      width: 100%;
     `,
     parametersGrid: css`
       display: grid;
@@ -212,10 +236,12 @@ const useStyles = createStyles(({ css }) => {
       border: 1px solid #ffe58f;
       border-radius: 8px;
       padding: 12px 16px;
+      width: 100%;
     `,
     testButton: css`
       text-align: center;
       margin-top: 24px;
+      width: 100%;
     `,
     buttonLarge: css`
       min-width: 200px;

@@ -136,7 +136,7 @@ const TaskDetailPage = () => {
       modifiedTime: { hour: '16:40', date: '11/26' }
     }
   ];
-  
+
   // 注释表格列定义
   const annotationColumns = [
     {
@@ -224,14 +224,14 @@ const TaskDetailPage = () => {
           taskService.getAllModelEvaluations()
         ])
         setTask(taskData)
-        
+
         // 设置注释数据
         if (taskData && taskData.annotations) {
           setAnnotationData(taskData.annotations);
         } else if (taskAnnotationData && taskAnnotationData.data) {
           setAnnotationData(taskAnnotationData.data);
         }
-        
+
         // 如果没有评估数据，提供默认数据
         if (!evaluationData || Object.keys(evaluationData).length === 0) {
           const defaultEvaluationData = {
@@ -276,7 +276,7 @@ const TaskDetailPage = () => {
         } else {
           setEvaluationData(evaluationData);
         }
-        
+
         // 初始化增强图表数据
         if (taskData && taskData.chartData) {
           setEnhancedChartData(getEnhancedChartData(taskData.chartData));
@@ -284,7 +284,7 @@ const TaskDetailPage = () => {
           // 使用默认图表数据
           setEnhancedChartData(getEnhancedChartData());
         }
-        
+
         setError(null)
       } catch (err) {
         console.error(`获取数据失败 (ID: ${id}):`, err)
@@ -348,26 +348,26 @@ const TaskDetailPage = () => {
     if (isTaskStarted) {
       switch (currentStep) {
         case 1:
-    return (
+          return (
             <div className="qa-section" style={{
               background: '#FAFAFA',
               borderRadius: '12px',
               margin: '-24px'
             }}>
               <QASection isEditable={true} />
-        </div>
+            </div>
           );
         case 2:
           return (
             <div className="scene-section">
               <SceneSection isEditable={true} />
-      </div>
+            </div>
           );
         case 3:
-    return (
+          return (
             <div className="template-section">
               <TemplateSection isEditable={true} />
-      </div>
+            </div>
           );
         case 4:
           return renderConfirmTest();
@@ -381,7 +381,7 @@ const TaskDetailPage = () => {
     // 未开始任务时显示原有内容
     switch (activeSection) {
       case 'overview':
-  return (
+        return (
           <>
             {/* 积分说明区域 */}
             <div className="score-section" style={{
@@ -407,7 +407,7 @@ const TaskDetailPage = () => {
                   <CaretDownOutlined style={{ marginLeft: '4px', color: '#8f9098' }} /> :
                   <CaretRightOutlined style={{ marginLeft: '4px', color: '#8f9098' }} />
                 }
-        </div>
+              </div>
               {isScoreExpanded && (
                 <div style={{ fontSize: '14px', color: '#8f9098' }}>
                   <div>根据此任务的配置，预计每次测试消耗XXX积分*。</div>
@@ -417,7 +417,7 @@ const TaskDetailPage = () => {
                   </div>
                 </div>
               )}
-      </div>
+            </div>
 
             {/* 任务信息区域 */}
             <div className="task-info-section" style={{ marginBottom: '24px' }}>
@@ -427,7 +427,7 @@ const TaskDetailPage = () => {
               }}>
                 <div style={{ width: '80px', color: '#8f9098' }}>任务名称</div>
                 <div style={{ flex: 1 }}>{task.title}</div>
-          </div>
+              </div>
               <div className="info-row" style={{
                 display: 'flex',
                 marginBottom: '16px'
@@ -436,7 +436,7 @@ const TaskDetailPage = () => {
                 <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Avatar size={24}>{task.author?.name?.charAt(0)}</Avatar>
                   <span>{task.author?.name}</span>
-        </div>
+                </div>
               </div>
               <div className="info-row" style={{
                 display: 'flex',
@@ -451,12 +451,12 @@ const TaskDetailPage = () => {
               }}>
                 <div style={{ width: '80px', color: '#8f9098' }}>关键词</div>
                 <div style={{ flex: 1 }}>
-          {task.tags.map((tag, index) => (
+                  {task.tags.map((tag, index) => (
                     <Tag key={index} style={{ borderRadius: '12px', marginRight: '8px' }}>{tag}</Tag>
-          ))}
+                  ))}
                 </div>
-        </div>
-      </div>
+              </div>
+            </div>
 
             {/* 注释表格区域 */}
             <div className="annotation-section">
@@ -504,7 +504,7 @@ const TaskDetailPage = () => {
                   )}
                 </div>
               )}
-                  </div>
+            </div>
           </>
         );
       case 'qa':
@@ -515,20 +515,20 @@ const TaskDetailPage = () => {
             margin: '-24px'
           }}>
             <QASection isEditable={false} />
-                  </div>
+          </div>
         );
       case 'scene':
         return (
           <div className="scene-section">
 
             <SceneSection isEditable={false} />
-                  </div>
+          </div>
         );
       case 'template':
         return (
           <div className="template-section">
             <TemplateSection isEditable={false} />
-                  </div>
+          </div>
         );
       default:
         return null;
@@ -605,7 +605,7 @@ const TaskDetailPage = () => {
         }}>
           <Progress type="circle" percent={testProgress} />
           <div style={{ marginTop: '24px' }}>测试进行中，请稍候...</div>
-                      </div>
+        </div>
       );
     }
 
@@ -641,7 +641,7 @@ const TaskDetailPage = () => {
   const toggleModelPanel = (modelKey) => {
     setExpandedModel(expandedModel === modelKey ? false : modelKey);
   };
-  
+
   // 获取模型颜色
   const getModelColor = (modelKey) => {
     switch (modelKey) {
@@ -659,7 +659,7 @@ const TaskDetailPage = () => {
         return '#8f9098';
     }
   };
-  
+
   // 准备增强图表数据
   const getEnhancedChartData = (chartData) => {
     if (!chartData) {
@@ -713,16 +713,16 @@ const TaskDetailPage = () => {
   const renderResultPage = () => {
     const modelOptions = Object.keys(evaluationData);
     const currentEvaluation = evaluationData[selectedModel] || evaluationData.claude3;
-    
+
     if (!task || !enhancedChartData || !currentEvaluation) {
       return (
         <div style={{ textAlign: 'center', padding: '40px 0' }}>
           <Spin size="large" />
           <div style={{ marginTop: '16px' }}>加载评估结果...</div>
-                    </div>
+        </div>
       );
     }
-    
+
     return (
       <div className="evaluation-charts-wrapper" style={{ gap: "4px", marginTop: "4px" }}>
         {/* 左侧评估区域 */}
@@ -757,7 +757,7 @@ const TaskDetailPage = () => {
                   <Option value="deepseek">DeepSeek</Option>
                 </Select>
               </div>
-                    </div>
+            </div>
 
             <div className="evaluation-model-info" style={{ gap: "4px" }}>
               {selectedModels.map(modelKey => (
@@ -771,21 +771,21 @@ const TaskDetailPage = () => {
                         <div className="model-name" style={{ fontSize: "14px" }}>
                           {evaluationData[modelKey]?.name}
                           <span className="model-usage" style={{ fontSize: "12px", marginLeft: "4px" }}>128k</span>
-                      </div>
+                        </div>
                         <div className="model-tags" style={{ gap: "4px" }}>
                           {evaluationData[modelKey]?.tags?.map((tag, index) => (
                             <span key={index} className="model-tag" style={{ padding: "0 4px", fontSize: "11px" }}>
                               {tag}
                             </span>
                           ))}
-                    </div>
-                  </div>
+                        </div>
+                      </div>
                     </div>
                     <div className="model-panel-icon">
                       {expandedModel === modelKey ? <MinusOutlined /> : <PlusOutlined />}
                     </div>
                   </div>
-                  
+
                   {expandedModel === modelKey && (
                     <div className="model-panel-content" style={{ padding: "0 8px 8px" }}>
                       <div className="evaluation-content" style={{ padding: "8px" }}>
@@ -799,7 +799,7 @@ const TaskDetailPage = () => {
           </div>
         </div>
 
-              {/* 右侧图表区域 */}
+        {/* 右侧图表区域 */}
         <div className="evaluation-right-section" style={{ gap: "4px" }}>
           {/* 折线图区域 */}
           <div className="line-chart-section" style={{ padding: "8px" }}>
@@ -814,35 +814,35 @@ const TaskDetailPage = () => {
 
             <div className="line-chart-container" style={{ height: "150px", marginTop: "4px" }}>
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart 
-                  data={enhancedChartData.line} 
+                <AreaChart
+                  data={enhancedChartData.line}
                   margin={{ top: 2, right: 5, left: 0, bottom: 2 }}
                 >
                   {/* 渐变定义 */}
                   <defs>
                     {Object.keys(evaluationData).map(modelKey => (
                       <linearGradient key={modelKey} id={`color${modelKey}`} x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor={getModelColor(modelKey)} stopOpacity={0.2}/>
-                        <stop offset="95%" stopColor={getModelColor(modelKey)} stopOpacity={0}/>
+                        <stop offset="5%" stopColor={getModelColor(modelKey)} stopOpacity={0.2} />
+                        <stop offset="95%" stopColor={getModelColor(modelKey)} stopOpacity={0} />
                       </linearGradient>
                     ))}
                   </defs>
-                  <CartesianGrid 
-                    vertical={false} 
+                  <CartesianGrid
+                    vertical={false}
                     horizontal={true}
                     stroke="#f0f0f0"
                   />
-                  <XAxis 
-                    dataKey="month" 
-                              axisLine={false}
+                  <XAxis
+                    dataKey="month"
+                    axisLine={false}
                     tickLine={false}
                     tick={{ fontSize: 10, fill: '#8f9098' }}
                   />
-                  <YAxis 
+                  <YAxis
                     hide={true}
                     domain={[0, 'dataMax + 20']}
                   />
-                  <RechartsTooltip 
+                  <RechartsTooltip
                     cursor={false}
                     contentStyle={{
                       background: '#fff',
@@ -897,19 +897,19 @@ const TaskDetailPage = () => {
                   <PolarAngleAxis dataKey="name" tick={{ fontSize: 10, fill: "#8f9098" }} />
                   <PolarRadiusAxis domain={[0, 100]} tick={{ fontSize: 9, fill: "#8f9098" }} axisLine={false} />
                   {selectedModels.map(modelKey => (
-                              <Radar
+                    <Radar
                       key={modelKey}
-                      name={evaluationData[modelKey]?.name} 
-                      dataKey={modelKey} 
-                      stroke={getModelColor(modelKey)} 
-                      fill={getModelColor(modelKey)} 
-                                fillOpacity={0.2}
-                              />
+                      name={evaluationData[modelKey]?.name}
+                      dataKey={modelKey}
+                      stroke={getModelColor(modelKey)}
+                      fill={getModelColor(modelKey)}
+                      fillOpacity={0.2}
+                    />
                   ))}
-                          </RadarChart>
-                        </ResponsiveContainer>
-                      </div>
-                          </div>
+                </RadarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
 
           {/* 历史记录区域 */}
           <div className="history-section-wrapper" style={{ padding: "8px" }}>
@@ -917,12 +917,12 @@ const TaskDetailPage = () => {
               <div className="history-time" style={{ fontSize: "12px" }}>{currentEvaluation.updatedAt}</div>
               <div className="history-author" style={{ fontSize: "12px" }}>
                 by <span>{currentEvaluation.updatedBy}</span>
-                          </div>
+              </div>
               <div className="history-content" style={{ fontSize: "12px", lineHeight: "1.4", marginTop: "4px" }}>{currentEvaluation.history}</div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+            </div>
+          </div>
+        </div>
+      </div>
     );
   };
 
@@ -931,7 +931,7 @@ const TaskDetailPage = () => {
     // 只允许点击已完成的步骤和当前步骤
     if (stepNumber <= currentStep) {
       setCurrentStep(stepNumber);
-      
+
       // 根据步骤设置activeSection
       switch (stepNumber) {
         case 1:
@@ -1128,7 +1128,7 @@ const TaskDetailPage = () => {
       {/* 隐藏头部的community/workspace/peison的tab */}
       <div className="hide-tabs-nav" style={{ display: 'none' }}>
         {/* 这里本应显示tab，但现在设置为不显示 */}
-        </div>
+      </div>
 
       {/* 面包屑导航 */}
       <div className="task-detail-breadcrumb">
@@ -1146,7 +1146,7 @@ const TaskDetailPage = () => {
             }
           ]}
         />
-                      </div>
+      </div>
 
       {/* 任务标题和信息 */}
       <div className="task-detail-title-section">
@@ -1155,18 +1155,18 @@ const TaskDetailPage = () => {
           <div className="task-creator-info">
             <Avatar size={40} className="creator-avatar">
               {task.author?.name?.charAt(0)}
-          </Avatar>
+            </Avatar>
             <span className="creator-text">
               by <span className="creator-name">{task.author?.name}</span> from{" "}
               <span className="creator-source">{task.source}</span>
             </span>
-                    </div>
+          </div>
           <div className="task-tags">
-          {task.tags.map((tag, index) => (
+            {task.tags.map((tag, index) => (
               <Tag key={index} className="task-dimension-tag">
-              {tag}
-            </Tag>
-          ))}
+                {tag}
+              </Tag>
+            ))}
           </div>
           <div className="task-actions-top">
             <Button icon={<StarOutlined />} className="follow-button">
@@ -1195,7 +1195,7 @@ const TaskDetailPage = () => {
             // 判断步骤状态：当前步骤、已完成步骤、未完成步骤
             const isCurrentStep = currentStep === item.step;
             const isCompletedStep = currentStep > item.step;
-            
+
             return (
               <div key={item.step} className={`step ${isCurrentStep ? 'current-step' : ''}`} style={{
                 display: 'flex',
@@ -1204,7 +1204,7 @@ const TaskDetailPage = () => {
                 gap: '4px',
                 cursor: isCurrentStep || isCompletedStep ? 'pointer' : 'default'
               }}
-              onClick={() => isCurrentStep || isCompletedStep ? handleStepClick(item.step) : null}
+                onClick={() => isCurrentStep || isCompletedStep ? handleStepClick(item.step) : null}
               >
                 <div className="step-icon" style={{
                   width: '20px',
@@ -1220,16 +1220,16 @@ const TaskDetailPage = () => {
                   color: isCurrentStep ? '#fff' : isCompletedStep ? '#006ffd' : '#8f9098'
                 }}>
                   {isCompletedStep ? <CheckOutlined style={{ fontSize: '12px' }} /> : item.step}
-                    </div>
+                </div>
                 <div className="step-label" style={{
                   fontSize: '12px',
                   fontWeight: 700,
                   color: isCurrentStep ? '#006ffd' : isCompletedStep ? '#006ffd' : '#8f9098'
                 }}>{item.label}</div>
-                      </div>
+              </div>
             );
           })}
-                    </div>
+        </div>
 
         {/* 主要内容区域 */}
         <div className="main-content" style={{
@@ -1253,9 +1253,9 @@ const TaskDetailPage = () => {
                 color: '#000'
               }}>
                 任务概览
-                  </div>
+              </div>
 
-                  <Timeline>
+              <Timeline>
                 {[
                   { key: 'overview', label: '概览' },
                   { key: 'qa', label: 'QA' },
@@ -1279,7 +1279,7 @@ const TaskDetailPage = () => {
                         onClick={() => setActiveSection(item.key)}
                       >
                         <TimelineIcon active={activeSection === item.key} />
-                          </div>
+                      </div>
                     }
                     style={{
                       padding: '0 0 32px'
@@ -1296,10 +1296,10 @@ const TaskDetailPage = () => {
                       onClick={() => setActiveSection(item.key)}
                     >
                       {item.label}
-                        </div>
-                      </Timeline.Item>
-                    ))}
-                  </Timeline>
+                    </div>
+                  </Timeline.Item>
+                ))}
+              </Timeline>
             </div>
           )}
 
@@ -1308,8 +1308,8 @@ const TaskDetailPage = () => {
             flex: 1,
           }}>
             {renderContent()}
-            </div>
-            </div>
+          </div>
+        </div>
 
         {/* 修改底部按钮区域 */}
         <div style={{
@@ -1319,7 +1319,7 @@ const TaskDetailPage = () => {
           justifyContent: 'center'
         }}>
           {renderFooterButtons()}
-      </div>
+        </div>
       </div>
 
       <style jsx global>{`

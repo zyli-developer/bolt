@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Progress, Card, List, Typography, Space, Alert, Button, Timeline, Tag, Avatar, Table } from 'antd';
-import { CheckCircleOutlined, InfoCircleOutlined, ArrowLeftOutlined, CaretDownOutlined, CaretRightOutlined } from '@ant-design/icons';
+import { CheckCircleOutlined, InfoCircleOutlined, ArrowLeftOutlined, CaretDownOutlined, CaretRightOutlined, SyncOutlined } from '@ant-design/icons';
 import MainContentLayout from '../layout/MainContentLayout';
 import * as qaService from '../../services/qaService';
 import * as sceneService from '../../services/sceneService';
@@ -114,22 +114,44 @@ const TestConfirmation = ({
   // 渲染测试进行中的UI
   const renderTestingContent = () => {
     return (
-      <div className={styles.progressContainer}>
-        <Progress 
-          type="circle" 
-          percent={testProgress} 
-          status="active"
-          strokeColor={{
-            '0%': '#108ee9',
-            '100%': '#87d068',
-          }}
-        />
-        <Title level={4} className={styles.progressText}>
-          测试进行中，请稍候...
-        </Title>
-        <Text type="secondary">
-          预计剩余时间：{Math.ceil((100 - testProgress) / 10)} 分钟
-        </Text>
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: 'calc(100vh - 200px)',
+        width: '100%',
+        background: '#f5f5f5',
+        padding: 0,
+        margin: 0
+      }}>
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          <Progress 
+            type="circle" 
+            percent={testProgress}
+            strokeColor="#1677FF"
+            trailColor="#f3f3f3"
+            width={120}
+            format={percent => (
+              <span style={{ fontSize: '20px', fontWeight: 'normal', color: '#000' }}>
+                {percent}%
+              </span>
+            )}
+            strokeWidth={6}
+          />
+          <div style={{ 
+            marginTop: '20px', 
+            fontSize: '14px', 
+      
+          }}>
+            测试进行中，请稍候...
+          </div>
+        </div>
       </div>
     );
   };
@@ -237,8 +259,17 @@ const TestConfirmation = ({
             size="large" 
             onClick={onStartTest}
             className={styles.buttonLarge}
+            style={{
+              height: '48px',
+              fontSize: '16px',
+              fontWeight: '500',
+              borderRadius: '24px',
+              width: '280px',
+              boxShadow: '0 2px 10px rgba(0, 111, 253, 0.2)'
+            }}
+            icon={<CheckCircleOutlined />}
           >
-            开始测试
+            确认无误，开始测试
           </Button>
         </div>
       </Space>
@@ -247,10 +278,6 @@ const TestConfirmation = ({
 
   // 根据activeSection渲染不同的内容
   const renderSectionContent = () => {
-    if (isTesting) {
-      return renderTestingContent();
-    }
-
     switch (activeSection) {
       case 'overview':
         return (
@@ -325,7 +352,8 @@ const TestConfirmation = ({
                   pagination={false}
                   size="small"
                   className={styles.annotationTable}
-                  scroll={{ x: 676 }}
+                  style={{ width: "100%" }}
+                  scroll={{ x: true }}
                 />
               )}
             </div>
@@ -357,54 +385,60 @@ const TestConfirmation = ({
   };
 
   return (
-    <div className={styles.container}>
-      {/* 使用与TaskDetailPage相同的MainContentLayout */}
-      <div className={styles.mainContent}>
-        {/* 左侧导航菜单 */}
-        <div className={styles.leftMenu}>
-          {/* 任务概览标题 */}
-          <div className={styles.taskOverviewTitle}>
-            任务概览
-          </div>
+    <div className={styles.container} style={{ width: "100%" }}>
+      {isTesting ? (
+        // 测试进行中时，显示进度条占据整个页面
+        renderTestingContent()
+      ) : (
+        // 非测试状态时，显示常规任务概览布局
+        <div className={styles.mainContent} style={{ width: "100%" }}>
+          {/* 左侧导航菜单 */}
+          <div className={styles.leftMenu}>
+            {/* 任务概览标题 */}
+            <div className={styles.taskOverviewTitle}>
+              任务概览
+            </div>
 
-          <Timeline>
-            {[
-              { key: 'overview', label: '概览' },
-              { key: 'qa', label: 'QA' },
-              { key: 'scene', label: '场景' },
-              { key: 'template', label: '模板' }
-            ].map((item) => (
-              <Timeline.Item
-                key={item.key}
-                dot={
-                  <div 
-                    className={`${styles.timelineDot} ${activeSection === item.key ? styles.timelineDotActive : styles.timelineDotInactive}`}
+            <Timeline>
+              {[
+                { key: 'overview', label: '概览' },
+                { key: 'qa', label: 'QA' },
+                { key: 'scene', label: '场景' },
+                { key: 'template', label: '模板' }
+              ].map((item) => (
+                <Timeline.Item
+                  key={item.key}
+                  dot={
+                    <div 
+                      className={`${styles.timelineDot} ${activeSection === item.key ? styles.timelineDotActive : styles.timelineDotInactive}`}
+                      onClick={() => setActiveSection(item.key)}
+                    >
+                      <TimelineIcon active={activeSection === item.key} />
+                    </div>
+                  }
+                  className={styles.timelineItem}
+                  color={activeSection === item.key ? '#006ffd' : '#8f9098'}
+                  style={{ marginLeft: 0 }}
+                >
+                  <div
+                    className={`${styles.timelineText} ${activeSection === item.key ? styles.timelineTextActive : styles.timelineTextInactive}`}
                     onClick={() => setActiveSection(item.key)}
                   >
-                    <TimelineIcon active={activeSection === item.key} />
+                    {item.label}
                   </div>
-                }
-                className={styles.timelineItem}
-                color={activeSection === item.key ? '#006ffd' : '#8f9098'}
-              >
-                <div
-                  className={`${styles.timelineText} ${activeSection === item.key ? styles.timelineTextActive : styles.timelineTextInactive}`}
-                  onClick={() => setActiveSection(item.key)}
-                >
-                  {item.label}
-                </div>
-              </Timeline.Item>
-            ))}
-          </Timeline>
-        </div>
+                </Timeline.Item>
+              ))}
+            </Timeline>
+          </div>
 
-        {/* 右侧内容区域 */}
-        <div className={styles.rightContent}>
-          <div style={{ flex: 1 }}>
-            {renderSectionContent()}
+          {/* 右侧内容区域 */}
+          <div className={styles.rightContent} style={{ width: "calc(100% - 110px)" }}>
+            <div style={{ flex: 1, width: "100%" }}>
+              {renderSectionContent()}
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
