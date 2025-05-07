@@ -1,6 +1,6 @@
 import { createStyles } from 'antd-style';
 
-const useStyles = createStyles(({ css }) => {
+const useStyles = createStyles(({ token, css }) => {
   return {
     container: css`
       display: flex;
@@ -37,10 +37,28 @@ const useStyles = createStyles(({ css }) => {
       color: #333;
       position: relative;
       white-space: pre-wrap;
+      
+      /* 默认状态下禁用文本选择 */
+      user-select: none;
+      cursor: default;
+      
+      /* 在编辑模式下启用文本选择 */
+      .edit-mode & {
+        user-select: text;
+        cursor: text;
+      }
+      
+      &::selection, *::selection {
+        background-color: rgba(24, 144, 255, 0.2);
+      }
     `,
     annotatedText: css`
       background-color: #E6F7FF;
       position: relative;
+      
+      &::selection, *::selection {
+        background-color: rgba(24, 144, 255, 0.3);
+      }
     `,
     annotationMarker: css`
       position: absolute;
@@ -61,6 +79,7 @@ const useStyles = createStyles(({ css }) => {
       background-color: #fff;
       border-radius: 8px;
       overflow: auto;
+      padding: 16px;
     `,
     annotationTitle: css`
       margin-bottom: 16px;
@@ -69,21 +88,34 @@ const useStyles = createStyles(({ css }) => {
       gap: 4px;
     `,
     annotationPanel: css`
-      margin-bottom: 4px;
+      margin-bottom: 8px;
+      border: 1px solid #f0f0f0;
+      border-radius: 6px;
+      overflow: hidden;
+      transition: all 0.3s;
+      
+      &:hover {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
     `,
     annotationPanelHeader: css`
       padding: 8px;
-      border-radius: 6px;
+      border-radius: 6px 6px 0 0;
       cursor: pointer;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      transition: background-color 0.3s;
     `,
     annotationPanelExpanded: css`
       background-color: #E6F7FF;
     `,
     annotationPanelCollapsed: css`
       background-color: #f8f9fa;
+      
+      &:hover {
+        background-color: #f0f7ff;
+      }
     `,
     annotationPanelLeft: css`
       display: flex;
@@ -98,6 +130,7 @@ const useStyles = createStyles(({ css }) => {
       font-size: 14px;
       color: #333;
       word-break: break-all;
+      line-height: 1.6;
     `,
     annotationMeta: css`
       font-size: 12px;
@@ -105,7 +138,9 @@ const useStyles = createStyles(({ css }) => {
       margin-top: 4px;
     `,
     annotationPanelContent: css`
-      padding: 8px;
+      padding: 12px;
+      background-color: #fff;
+      border-top: 1px solid #f0f0f0;
     `,
     annotationContent: css`
       margin-bottom: 8px;
@@ -136,6 +171,11 @@ const useStyles = createStyles(({ css }) => {
     annotationPanelIcon: css`
       display: flex;
       align-items: center;
+    `,
+    // 讨论相关样式
+    selectedTextHighlight: css`
+      background-color: rgba(24, 144, 255, 0.1);
+      border-bottom: 1px dashed ${token.colorPrimary};
     `,
   };
 });

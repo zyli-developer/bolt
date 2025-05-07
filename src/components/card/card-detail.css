@@ -343,10 +343,7 @@
   height: 300px;
 }
 
-.line-chart-section,
-.radar-chart-section {
-  height: 100%;
-}
+
 
 /* 底部按钮区域样式 */
 .like-button,

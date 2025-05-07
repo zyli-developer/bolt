@@ -1,13 +1,17 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useContext } from 'react';
 import { ReactFlow, Controls, Background, useNodesState, useEdgesState, addEdge, Panel, ReactFlowProvider } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { Typography, Avatar, Tag, Button, message, Spin, Modal, Input } from 'antd';
 import { EditOutlined, EyeOutlined, DeleteOutlined, PlusOutlined, MinusOutlined, PlusCircleOutlined } from '@ant-design/icons';
 import AnnotationModal from '../annotations/AnnotationModal';
 import ContextMenu from '../annotations/ContextMenu';
+import TextContextMenu from '../context/TextContextMenu';
+import DiscussModal from '../modals/DiscussModal';
+import CommentsList from '../common/CommentsList';
 import * as annotationService from '../../services/annotationService';
 import * as templateService from '../../services/templateService';
 import useStyles from '../../styles/components/template/TemplateSection';
+import { OptimizationContext } from '../../contexts/OptimizationContext';
 
 const { Title } = Typography;
 const { TextArea } = Input;
@@ -26,6 +30,16 @@ const TemplateSection = ({ isEditable = false }) => {
   const [editContent, setEditContent] = useState('');
   const [addNodeModalVisible, setAddNodeModalVisible] = useState(false);
   const [newNodeContent, setNewNodeContent] = useState('');
+  const [discussModalVisible, setDiscussModalVisible] = useState(false);
+  const [selectedText, setSelectedText] = useState('');
+
+  // 引入全局优化上下文
+  const { 
+    currentOptimizationStep, 
+    currentStepComments,
+    addComment,
+    setStepComments
+  } = useContext(OptimizationContext);
 
   useEffect(() => {
     Promise.all([
@@ -36,9 +50,19 @@ const TemplateSection = ({ isEditable = false }) => {
     });
   }, []);
 
+  // 当从优化上下文获取到注释数据时，更新本地状态
   useEffect(() => {
-    const handleGlobalClick = () => {
-      if (contextMenu) {
+    if (currentOptimizationStep === 3 && currentStepComments && currentStepComments.length > 0) {
+      setAnnotations(currentStepComments);
+    }
+  }, [currentOptimizationStep, currentStepComments]);
+
+  useEffect(() => {
+    const handleGlobalClick = (e) => {
+      // 检查点击的元素是否为右键菜单本身或其子元素
+      const isClickInsideMenu = e.target.closest('.contextMenuContainer');
+      
+      if (contextMenu && !isClickInsideMenu) {
         setContextMenu(null);
       }
     };
@@ -64,6 +88,11 @@ const TemplateSection = ({ isEditable = false }) => {
     try {
       const data = await annotationService.getAnnotations();
       setAnnotations(data);
+      
+      // 将获取到的注释也同步到全局状态
+      if (currentOptimizationStep === 3) {
+        setStepComments(3, data);
+      }
     } catch (error) {
       message.error('获取注释失败');
     }
@@ -82,6 +111,7 @@ const TemplateSection = ({ isEditable = false }) => {
     event.stopPropagation();
     
     setSelectedNode(node);
+    setSelectedText(node.data.label || '');
     setContextMenu({
       x: event.clientX,
       y: event.clientY,
@@ -92,12 +122,19 @@ const TemplateSection = ({ isEditable = false }) => {
   const handleContextMenuAction = (action) => {
     setContextMenu(null);
     switch (action) {
+      case 'discuss':
+        setDiscussModalVisible(true);
+        break;
       case 'addAnnotation':
+      case 'annotate':
         setModalVisible(true);
         break;
       case 'edit':
         setEditContent(selectedNode.data.label);
         setEditModalVisible(true);
+        break;
+      case 'select':
+        console.log('连续选择功能', selectedNode.data.label);
         break;
       case 'delete':
         handleDeleteNode();
@@ -114,12 +151,22 @@ const TemplateSection = ({ isEditable = false }) => {
         return;
       }
 
-      await annotationService.addAnnotation({
+      const annotationData = {
         ...data,
         nodeId: selectedNode.id,
-      });
+        id: `annotation-${Date.now()}` // 确保有唯一ID
+      };
 
-      await fetchAnnotations();
+      await annotationService.addAnnotation(annotationData);
+
+      // 更新本地状态
+      setAnnotations(prev => [...prev, annotationData]);
+      
+      // 同时更新全局状态
+      if (currentOptimizationStep === 3) {
+        addComment(annotationData);
+      }
+      
       setModalVisible(false);
       setSelectedNode(null);
       message.success('添加注释成功');
@@ -131,7 +178,16 @@ const TemplateSection = ({ isEditable = false }) => {
   const handleDeleteAnnotation = async (id) => {
     try {
       await annotationService.deleteAnnotation(id);
-      await fetchAnnotations();
+      
+      // 更新本地状态
+      const updatedAnnotations = annotations.filter(item => item.id !== id);
+      setAnnotations(updatedAnnotations);
+      
+      // 同时更新全局状态
+      if (currentOptimizationStep === 3) {
+        setStepComments(3, updatedAnnotations);
+      }
+      
       message.success('删除注释成功');
     } catch (error) {
       message.error('删除注释失败');
@@ -261,76 +317,33 @@ const TemplateSection = ({ isEditable = false }) => {
       </div>
 
       {/* 右侧注释列表 */}
-      <div className={styles.annotationSidebar}>
-        <Title level={5} className={styles.annotationTitle}>注释列表</Title>
-        
-        <div className={styles.annotationList}>
-          {annotations.map(item => (
-            <div className={styles.annotationPanel} key={item.id}>
-              <div 
-                className={`${styles.annotationPanelHeader} ${expandedAnnotation === item.id ? styles.expandedHeader : styles.collapsedHeader}`}
-                onClick={() => setExpandedAnnotation(expandedAnnotation === item.id ? null : item.id)}
-              >
-                <div className={styles.annotationPanelLeft}>
-                  <Avatar size={32}>{item.author.avatar}</Avatar>
-                  <div className={styles.annotationInfo}>
-                    <div className={styles.annotationText}>
-                      {nodes.find(node => node.id === item.nodeId)?.data.label}
-                    </div>
-                    <div className={styles.annotationMeta}>
-                      {item.author.name} · {item.time}
-                    </div>
-                  </div>
-                </div>
-                <div>
-                  {expandedAnnotation === item.id ? <MinusOutlined /> : <PlusOutlined />}
-                </div>
-              </div>
-              
-              {expandedAnnotation === item.id && (
-                <div className={styles.annotationPanelContent}>
-                  <div className={styles.annotationContent}>
-                    <p className={styles.annotationTextContent}>{item.content}</p>
-                    
-                    {item.attachments?.length > 0 && (
-                      <div className={styles.attachmentContainer}>
-                        {item.attachments.map((file, index) => (
-                          <Tag key={index} className={styles.attachmentTag}>
-                            <a href={file.url} target="_blank" rel="noopener noreferrer">
-                              {file.name}
-                            </a>
-                          </Tag>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  {isEditable && (
-                    <div className={styles.actionContainer}>
-                      <Button 
-                        type="text" 
-                        icon={<DeleteOutlined />} 
-                        danger
-                        size="small"
-                        onClick={() => handleDeleteAnnotation(item.id)}
-                      >
-                        删除
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+      <div className="template-sidebar-container" style={{ 
+        width: '320px', 
+        flexShrink: 0,
+        overflowY: 'auto',
+        backgroundColor: '#fff',
+        borderRadius: '8px' 
+      }}>
+        <CommentsList 
+          comments={annotations}
+          isEditable={isEditable}
+          expandedId={expandedAnnotation}
+          onToggleExpand={setExpandedAnnotation}
+          onMouseEnter={handleMouseEnter}
+          onDelete={handleDeleteAnnotation}
+          contextType="template"
+          title="模板观点"
+          nodes={nodes}
+        />
       </div>
 
       {/* 右键菜单 */}
       {contextMenu && (
-        <ContextMenu
+        <TextContextMenu
           x={contextMenu.x}
           y={contextMenu.y}
           onAction={handleContextMenuAction}
-          showEditDelete={isEditable}
+          onClose={() => setContextMenu(null)}
         />
       )}
 
@@ -397,6 +410,13 @@ const TemplateSection = ({ isEditable = false }) => {
           onClick={() => setAddNodeModalVisible(true)}
         />
       )}
+
+      {/* 讨论对话框 */}
+      <DiscussModal
+        visible={discussModalVisible}
+        onClose={() => setDiscussModalVisible(false)}
+        selectedText={selectedText}
+      />
     </div>
   );
 };

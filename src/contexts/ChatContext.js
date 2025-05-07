@@ -270,6 +270,9 @@ export const ChatProvider = ({ children }) => {
         pending: true // 标记为待发送状态
       }]);
       
+      // 确保聊天窗口打开
+      setIsChatOpen(true);
+      
       // 发送消息
       const sentMessage = await timService.sendMessage(activeUser.id, message);
       console.log("消息发送成功，更新本地消息状态", sentMessage);
@@ -286,7 +289,18 @@ export const ChatProvider = ({ children }) => {
           : msg
       ));
       
-      // 不再手动获取消息列表，完全依靠事件监听更新
+      // 确保消息成功发送后立即刷新消息列表
+      setTimeout(async () => {
+        try {
+          const messages = await timService.getChatMessages(activeUser.id);
+          if (Array.isArray(messages) && messages.length > 0) {
+            setMessages(messages);
+          }
+        } catch (error) {
+          console.error("获取最新消息失败:", error);
+        }
+      }, 500);
+      
     } catch (error) {
       console.error("发送消息失败:", error);
       
@@ -367,6 +381,23 @@ export const ChatProvider = ({ children }) => {
     
     // 设置活跃用户
     setActiveUser(user);
+    
+    // 如果是新用户，确保立即获取消息
+    if (isChangingUser && sdkReady) {
+      // 使用一个小延迟确保activeUser状态已更新
+      setTimeout(async () => {
+        try {
+          const messages = await timService.getChatMessages(user.id);
+          if (Array.isArray(messages)) {
+            setMessages(messages);
+          }
+        } catch (error) {
+          console.error("获取聊天消息失败:", error);
+        } finally {
+          setLoading(false);
+        }
+      }, 100);
+    }
     
     // 打开聊天窗口
     setIsChatOpen(true);

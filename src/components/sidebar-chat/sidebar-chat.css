@@ -146,6 +146,63 @@
   border-top-left-radius: 4px;
 }
 
+/* 消息中的引用样式 */
+.message-quote {
+  display: flex;
+  margin-bottom: 8px;
+  padding: 8px;
+  background-color: rgba(0, 0, 0, 0.06);
+  border-radius: 8px;
+}
+
+.message-quote-bar {
+  width: 3px;
+  background-color: #1677ff;
+  margin-right: 8px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.message-quote-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.message-quote-text {
+  font-size: 14px;
+  color: rgba(0, 0, 0, 0.65);
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.message-quote-label {
+  font-size: 12px;
+  color: #888;
+  background-color: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+  padding: 2px 6px;
+  margin-top: 4px;
+  align-self: flex-start;
+}
+
+.message-user .message-quote {
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+.message-user .message-quote-bar {
+  background-color: white;
+}
+
+.message-user .message-quote-text {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.message-user .message-quote-label {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.9);
+}
+
 .message-time {
   font-size: 12px;
   color: #8f9098;
@@ -180,6 +237,63 @@
   background-color: #fff;
   border-top: 1px solid #f0f0f0;
   position: relative;
+}
+
+/* 多条引用容器 */
+.chat-quotes-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+/* 引用头部样式 */
+.chat-quote-header {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  background-color: #f8f8f8;
+  border-radius: 8px 8px 0 0;
+  position: relative;
+}
+
+/* 最后一个引用特殊样式 */
+.chat-quotes-container .chat-quote-header:last-child {
+  margin-bottom: 1px;
+}
+
+.chat-quote-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  margin-right: 8px;
+  cursor: pointer;
+  color: #999;
+  font-size: 14px;
+}
+
+.chat-quote-icon:hover {
+  color: #666;
+}
+
+.chat-quote-content-text {
+  flex: 1;
+  font-size: 14px;
+  color: #666;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-right: 8px;
+}
+
+.chat-quote-label {
+  font-size: 12px;
+  color: #888;
+  padding: 3px 6px;
+  background-color: #f0f0f0;
+  border-radius: 4px;
+  white-space: nowrap;
 }
 
 .chat-input-container {
@@ -392,4 +506,100 @@
   .chat-sidebar {
     display: none;
   }
+}
+
+/* Sender组件样式 */
+.chat-sender {
+  border-radius: 16px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  width: 100%;
+  transition: all 0.3s ease;
+}
+
+.chat-sender:focus-within {
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* 带引用时的Sender组件样式 */
+.chat-sender.has-quotes {
+  border-top-left-radius: 0 !important;
+  border-top-right-radius: 0 !important;
+}
+
+/* 调整Sender组件中的输入框样式 */
+.chat-sender .antdx-sender-input {
+  font-size: 16px;
+  line-height: 1.5;
+  font-family: inherit;
+}
+
+/* 调整Sender组件中的操作按钮样式 */
+.chat-sender .antdx-sender-actions {
+  margin-right: 8px;
+}
+
+/* 调整Sender组件中的发送按钮样式 */
+.chat-sender .antdx-sender-send-btn {
+  background-color: #0084ff;
+  color: white;
+  border-radius: 50%;
+  margin-right: 8px;
+}
+
+.chat-sender .antdx-sender-send-btn:hover {
+  background-color: #006fdd;
+}
+
+/* 当有引用内容时，调整Sender组件的边框样式 */
+.chat-quote-header + .chat-sender,
+.chat-quotes-container + .chat-sender {
+  border-top-left-radius: 0 !important;
+  border-top-right-radius: 0 !important;
+}
+
+/* 消息控制按钮样式 */
+.message-controls {
+  position: absolute;
+  top: -28px;
+  right: 0;
+  display: flex;
+  gap: 8px;
+  background: white;
+  padding: 4px 8px;
+  border-radius: 18px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+  opacity: 0;
+  transform: translateY(5px);
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.message-bubble:hover .message-controls {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.message-control-btn {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 50%;
+  color: #8f9098;
+  transition: all 0.2s;
+}
+
+.message-control-btn:hover {
+  background-color: #f5f5f5;
+}
+
+.message-control-btn.primary {
+  background-color: #0084ff;
+  color: white;
+}
+
+.message-control-btn.primary:hover {
+  background-color: #0078e7;
 }

@@ -67,4 +67,13 @@ export const deleteAnnotation = (id) => {
       resolve(true);
     }, 500);
   });
-}; 
+};
+
+// 导出默认服务对象
+const annotationService = {
+  getAnnotations,
+  addAnnotation,
+  deleteAnnotation
+};
+
+export default annotationService; 

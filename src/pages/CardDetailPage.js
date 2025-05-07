@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef, useContext } from "react"
 import { useParams, useNavigate, useLocation } from "react-router-dom"
 import {  Button, Avatar, Tag, Spin, Select, Checkbox, Breadcrumb, Switch, Steps, message, Tooltip } from "antd"
 import {
@@ -35,6 +35,7 @@ import taskService from "../services/taskService"
 import { useChatContext } from "../contexts/ChatContext"
 import CreateTaskModal from "../components/modals/CreateTaskModal"
 import TimelineIcon from "../components/icons/TimelineIcon"
+import AnnotationModal from "../components/annotations/AnnotationModal"
 
 // 导入QA组件
 import QASection from "../components/qa/QASection"
@@ -51,7 +52,15 @@ import "../styles/overrides/qa.css"
 import "../styles/overrides/scene.css"
 import "../styles/overrides/template.css"
 import "../styles/overrides/retest.css"
+import "../styles/overrides/evaluation.css"
 
+// 导入右键菜单和讨论模态框组件
+import TextContextMenu from "../components/context/TextContextMenu"
+import DiscussModal from "../components/modals/DiscussModal"
+import { OptimizationContext } from "../contexts/OptimizationContext"
+
+// 导入通用评论列表组件
+import CommentsList from "../components/common/CommentsList";
 
 const { Option } = Select
 
@@ -126,39 +135,6 @@ const TemplateOptimizationSection = ({ comments = [] }) => {
   );
 };
 
-// 注释列表组件
-const CommentsList = ({ comments = [] }) => {
-  if (!comments || comments.length === 0) return null;
-  
-  return (
-    <div className="comments-list" style={{ padding: "8px" }}>
-      <div className="comments-header" style={{ marginBottom: "8px" }}>
-        <span style={{ fontSize: "14px", fontWeight: "500" }}>注释列表</span>
-      </div>
-      <div className="comments-content">
-        {comments.map((comment, index) => (
-          <div key={index} className="comment-item" style={{ marginBottom: "8px", padding: "8px", background: "#f9f9f9", borderRadius: "4px" }}>
-            <div className="comment-header" style={{ display: "flex", alignItems: "center", marginBottom: "4px" }}>
-              <Avatar size={20} className="commenter-avatar">
-                {comment.author?.charAt(0)}
-              </Avatar>
-              <span className="commenter-name" style={{ marginLeft: "4px", fontSize: "12px", fontWeight: "bold" }}>
-                {comment.author}
-              </span>
-              <span className="comment-time" style={{ marginLeft: "8px", fontSize: "11px", color: "#8f9098" }}>
-                {comment.time}
-              </span>
-            </div>
-            <p className="comment-text" style={{ fontSize: "12px", margin: "0", lineHeight: "1.4" }}>
-              {comment.text}
-            </p>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-
 // 自定义QASection包装组件
 const CustomQASection = (props) => {
   // 使用React.forwardRef传递ref等
@@ -194,14 +170,34 @@ const CardDetailPage = () => {
   const [selectedModel, setSelectedModel] = useState("claude")
   const [evaluationData, setEvaluationData] = useState({})
   const [isCreateTaskModalVisible, setIsCreateTaskModalVisible] = useState(false)
-  // 新增状态
-  const [isOptimizationMode, setIsOptimizationMode] = useState(false)
-  const [currentOptimizationStep, setCurrentOptimizationStep] = useState(0)
-  const [comments, setComments] = useState([])
+  
+  // 使用全局优化模式上下文
+  const { 
+    isOptimizationMode, setIsOptimizationMode,
+    currentOptimizationStep, setCurrentOptimizationStep,
+    currentStepComments: comments, setComments, addComment
+  } = useContext(OptimizationContext);
+  
+  // 保留本地状态存储
   const [savedData, setSavedData] = useState({})
   const [isTesting, setIsTesting] = useState(false);
   const [testProgress, setTestProgress] = useState(0);
   const [isTaskStarted, setIsTaskStarted] = useState(false);
+  
+  // 添加右键菜单和讨论模态框相关状态
+  const [contextMenu, setContextMenu] = useState(null);
+  const [selectedText, setSelectedText] = useState('');
+  const [discussModalVisible, setDiscussModalVisible] = useState(false);
+  const [annotationModalVisible, setAnnotationModalVisible] = useState(false);
+  const evaluationTextRef = useRef(null);
+
+  // 添加注释展开状态
+  const [expandedComment, setExpandedComment] = useState(null);
+  
+  // 处理注释展开切换
+  const handleCommentToggle = (id) => {
+    setExpandedComment(expandedComment === id ? null : id);
+  };
 
   // Determine if we came from explore or tasks
   const isFromExplore = location.pathname.includes("/explore") || location.state?.from === "explore"
@@ -213,6 +209,13 @@ const CardDetailPage = () => {
     setIsOptimizationMode(checked);
     // 重置到第一步
     setCurrentOptimizationStep(0);
+    
+    // 设置body的类，以便全局样式生效
+    if (checked) {
+      document.body.classList.add('optimization-mode');
+    } else {
+      document.body.classList.remove('optimization-mode');
+    }
   };
 
   // 保存当前修改的数据
@@ -257,25 +260,8 @@ const CardDetailPage = () => {
       saveCurrentData();
     }
     
-    // 根据步骤加载不同数据
-    if (current === 0) {
-      // 结果质询步骤的注释
-      setComments([
-        { author: 'Jackson', time: '2025-04-24 09:45', text: '这个模型在语音识别方面表现优秀，尤其是对儿童语音的识别准确率比预期高' },
-        { author: 'Alice', time: '2025-04-24 10:12', text: '安全性设计符合国际标准，没有发现明显漏洞' }
-      ]);
-    } else if (current === 1) {
-      // QA优化步骤的注释
-      setComments([
-        { author: 'Bob', time: '2025-04-25 11:30', text: '建议优化错误处理机制，当前在特殊情况下可能会返回不明确的错误信息' }
-      ]);
-    } else if (current === 2 || current === 3) {
-      // 场景优化和模板优化步骤不需要设置注释，因为组件内部已有注释功能
-      setComments([]);
-    } else {
-      // 其他步骤暂无注释
-      setComments([]);
-    }
+    // 注意：不再需要在这里设置注释数据，因为现在使用全局上下文
+    // 各组件会从OptimizationContext中读取并更新自己所需的数据
   };
 
   // 返回按钮处理函数
@@ -599,6 +585,108 @@ const CardDetailPage = () => {
     }, 1500);
   };
 
+  // 处理文本选择事件
+  const handleTextSelection = (event) => {
+    // 仅在优化模式下启用右键菜单
+    if (!isOptimizationMode) return;
+    
+    // 获取选中的文本
+    const selection = window.getSelection();
+    const selectedText = selection.toString().trim();
+    
+    // 如果有选中文本，显示右键菜单
+    if (selectedText) {
+      event.preventDefault();
+      setSelectedText(selectedText);
+      setContextMenu({
+        x: event.clientX,
+        y: event.clientY
+      });
+    }
+  };
+
+  // 处理右键菜单项点击
+  const handleContextMenuAction = (action) => {
+    switch (action) {
+      case 'discuss':
+        setDiscussModalVisible(true);
+        break;
+      case 'annotate':
+        // 打开添加观点模态框
+        setAnnotationModalVisible(true);
+        break;
+      case 'select':
+        // 可以在这里实现连续选功能
+        console.log('连续选', selectedText);
+        break;
+      default:
+        break;
+    }
+  };
+
+  // 全局点击事件，用于关闭右键菜单
+  useEffect(() => {
+    const handleGlobalClick = () => {
+      if (contextMenu) {
+        setContextMenu(null);
+      }
+    };
+
+    // 全局右键点击事件，针对.evaluation-text元素
+    const handleGlobalContextMenu = (event) => {
+      // 检查点击的元素是否是evaluation-text或其子元素
+      const isEvaluationText = event.target.closest('.evaluation-text');
+      
+      if (isEvaluationText && isOptimizationMode) {
+        handleTextSelection(event);
+      } else {
+        setContextMenu(null);
+      }
+    };
+    
+    document.addEventListener('click', handleGlobalClick);
+    document.addEventListener('contextmenu', handleGlobalContextMenu);
+    
+    return () => {
+      document.removeEventListener('click', handleGlobalClick);
+      document.removeEventListener('contextmenu', handleGlobalContextMenu);
+    };
+  }, [contextMenu, isOptimizationMode]);
+
+  // 处理添加注释的逻辑
+  const handleSaveAnnotation = (data) => {
+    try {
+      if (!selectedText) {
+        message.error('请选择文本');
+        return;
+      }
+
+      const annotationData = {
+        ...data,
+        selectedText,
+        id: `comment-${Date.now()}`, // 生成唯一ID
+        time: new Date().toISOString()
+      };
+
+      // 添加到全局上下文中
+      addComment(annotationData);
+      
+      setAnnotationModalVisible(false);
+      setContextMenu(null);
+      message.success('添加成功');
+    } catch (error) {
+      console.error('添加注释失败', error);
+      message.error('添加失败');
+    }
+  };
+
+  // 组件卸载时清理body上的类
+  useEffect(() => {
+    return () => {
+      document.body.classList.remove('optimization-mode');
+    };
+  }, []);
+
   if (loading) {
     return (
       <div className={`card-detail-page ${isChatOpen ? "chat-open" : "chat-closed"}`}>
@@ -756,8 +844,8 @@ const CardDetailPage = () => {
                               </div>
                               
                               {expandedModel === modelKey && (
-                                <div className="model-panel-content" style={{ padding: "0 8px 8px" }}>
-                                  <div className="evaluation-content" style={{ padding: "8px" }}>
+                                <div className={`model-panel-content ${isOptimizationMode ? 'optimization-mode' : ''}`} style={{ padding: "0 8px 8px" }}>
+                                  <div className={`evaluation-content ${isOptimizationMode ? 'optimization-mode' : ''}`} style={{ padding: "8px" }}>
                                     <p className="evaluation-text" style={{ fontSize: "12px", margin: 0, lineHeight: "1.4" }}>{evaluationData[modelKey]?.description}</p>
                                   </div>
                                 </div>
@@ -893,12 +981,21 @@ const CardDetailPage = () => {
                     </div>
                   </div>
                   
-                  {/* 右侧注释列表 - 只在有注释时显示 */}
-                  {comments.length > 0 && (
-                    <div className="comments-section" style={{ flex: 1 }}>
-                      <CommentsList comments={comments} />
-                    </div>
-                  )}
+                  {/* 右侧注释列表 - 始终显示 */}
+                  <div className="comments-section" style={{ 
+                    flex: 1, 
+                    backgroundColor: '#fff',
+                    borderRadius: '8px',
+                    maxHeight: 'calc(100vh - 320px)',
+                    overflow: 'hidden'
+                  }}>
+                    <CommentsList 
+                      comments={comments} 
+                      title="注释列表"
+                      expandedId={expandedComment}
+                      onToggleExpand={handleCommentToggle}
+                    />
+                  </div>
                 </>
               ) : currentOptimizationStep === 1 ? (
                 // QA优化界面
@@ -1013,8 +1110,8 @@ const CardDetailPage = () => {
                   </div>
                   
                   {expandedModel === modelKey && (
-                    <div className="model-panel-content" style={{ padding: "0 8px 8px" }}>
-                      <div className="evaluation-content" style={{ padding: "8px" }}>
+                    <div className={`model-panel-content ${isOptimizationMode ? 'optimization-mode' : ''}`} style={{ padding: "0 8px 8px" }}>
+                      <div className={`evaluation-content ${isOptimizationMode ? 'optimization-mode' : ''}`} style={{ padding: "8px" }}>
                         <p className="evaluation-text" style={{ fontSize: "12px", margin: 0, lineHeight: "1.4" }}>{evaluationData[modelKey]?.description}</p>
                       </div>
                     </div>
@@ -1445,6 +1542,31 @@ const CardDetailPage = () => {
         visible={isCreateTaskModalVisible}
         onCancel={handleCancelCreateTask}
         cardData={card}
+      />
+      
+      {/* 右键菜单 */}
+      {contextMenu && (
+        <TextContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          onAction={handleContextMenuAction}
+          onClose={() => setContextMenu(null)}
+        />
+      )}
+      
+      {/* 讨论模态框 */}
+      <DiscussModal
+        visible={discussModalVisible}
+        onClose={() => setDiscussModalVisible(false)}
+        selectedText={selectedText}
+      />
+
+      {/* 添加观点模态框 */}
+      <AnnotationModal
+        visible={annotationModalVisible}
+        onClose={() => setAnnotationModalVisible(false)}
+        onSave={handleSaveAnnotation}
+        selectedText={selectedText}
       />
     </div>
   )

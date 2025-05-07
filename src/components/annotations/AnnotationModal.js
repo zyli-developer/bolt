@@ -4,23 +4,26 @@ import { UploadOutlined } from '@ant-design/icons';
 
 const { TextArea } = Input;
 
-const AnnotationModal = ({ visible, onClose, onSave, selectedText }) => {
-  const [content, setContent] = useState('');
+const AnnotationModal = ({ visible, onClose, onSave, selectedText, initialContent = '' }) => {
+  const [summary, setSummary] = useState('');
+  const [content, setContent] = useState(initialContent);
   const [fileList, setFileList] = useState([]);
 
   const handleSave = () => {
     if (!content.trim()) {
-      message.error('请输入注释内容');
+      message.error('请输入观点内容');
       return;
     }
 
     onSave({
+      summary,
       content,
       attachments: fileList,
       selectedText
     });
     
     // 重置表单
+    setSummary('');
     setContent('');
     setFileList([]);
   };
@@ -50,17 +53,33 @@ const AnnotationModal = ({ visible, onClose, onSave, selectedText }) => {
       width={520}
     >
       <div style={{ marginBottom: 16 }}>
+        <div style={{ marginBottom: 8, color: '#666' }}>摘要：</div>
+        <Input
+          value={summary}
+          onChange={(e) => setSummary(e.target.value)}
+          placeholder="请输入摘要..."
+        />
+      </div>
+      
+      <div style={{ marginBottom: 16 }}>
         <div style={{ marginBottom: 8, color: '#666' }}>选中文本：</div>
         <div style={{ 
           padding: 8,
           background: '#f5f5f5',
           borderRadius: 4,
-          fontSize: 14
+          fontSize: 14,
+          maxHeight: '3em',
+          lineHeight: '1.5em',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          display: '-webkit-box',
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: 'vertical'
         }}>{selectedText}</div>
       </div>
       
       <div style={{ marginBottom: 16 }}>
-        <div style={{ marginBottom: 8 }}>注释内容：</div>
+        <div style={{ marginBottom: 8 }}>观点内容：</div>
         <TextArea
           value={content}
           onChange={(e) => setContent(e.target.value)}

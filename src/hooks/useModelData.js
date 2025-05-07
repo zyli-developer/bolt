@@ -7,26 +7,29 @@ import { useCallback } from 'react';
 const useModelData = () => {
   /**
    * 获取模型颜色
+   * 为不同模型分配统一的颜色标识
    * @param {string} modelKey - 模型标识
    * @returns {string} 模型对应的颜色值
    */
   const getModelColor = useCallback((modelKey) => {
+    // 不同模型对应不同的颜色
     switch (modelKey) {
       case 'claude3.5':
-        return '#3ac0a0';
+        return '#3ac0a0'; // 绿色
       case 'claude3.6':
-        return '#006ffd';
+        return '#006ffd'; // 蓝色
       case 'claude3.7':
-        return '#722ed1';
+        return '#722ed1'; // 紫色
       case 'agent2':
-        return '#ff7a45';
+        return '#ff7a45'; // 橙色
       case 'deepseek':
-        return '#722ed1';
+        return '#722ed1'; // 紫色
       default:
-        return '#8f9098';
+        return '#8f9098'; // 默认灰色
     }
   }, []);
 
+  // 返回模型数据处理相关的方法
   return {
     getModelColor
   };

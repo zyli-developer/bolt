@@ -4,6 +4,7 @@
   "private": true,
   "dependencies": {
     "@ant-design/icons": "^5.2.6",
+    "@ant-design/x": "^1.2.0",
     "@tencentcloud/chat": "^3.5.3",
     "@xyflow/react": "^12.6.0",
     "antd": "^5.10.0",
