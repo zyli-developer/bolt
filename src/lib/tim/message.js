@@ -4,6 +4,7 @@
 import { getTIMInstance } from './core';
 import { CONVERSATION_TYPE, MESSAGE_TYPE, CUSTOM_MESSAGE_TYPE } from './constants';
 import TencentCloudChat from '@tencentcloud/chat';
+import { createSessionStartMessage, createSessionEndMessage, extractSessionData as extractSessionDataUtil } from './customMessage';
 
 // 消息发送防重复缓存 - SDK层面
 const messageDeduplicationCache = new Map();
@@ -90,34 +91,20 @@ export async function sendSessionStartMessage(quoteContent, to, isGroup = false,
     // 使用TencentCloudChat.TYPES而不是tim.TYPES
     const convType = isGroup ? TencentCloudChat.TYPES.CONV_GROUP : TencentCloudChat.TYPES.CONV_C2C;
     
-    // 如果没有提供sessionId，则自动生成
-    const actualSessionId = sessionId || `session_${Date.now()}`;
-    // 如果没有提供timestamp，则使用当前时间
-    const actualTimestamp = timestamp || Date.now();
-    
-    // 创建自定义消息
-    const sessionData = {
-      sessionType: CUSTOM_MESSAGE_TYPE.SESSION_START,
-      quoteContent: quoteContent,
-      timestamp: actualTimestamp,
-      sessionId: actualSessionId
-    };
-    
-    // 打印日志
-    console.log(`创建会话开始消息: ID=${actualSessionId}, 时间=${new Date(actualTimestamp).toLocaleString()}, 引用内容=${quoteContent.substring(0, 50)}...`);
-    
-    const message = tim.createCustomMessage({
+    // 使用customMessage模块创建会话开始消息
+    const message = createSessionStartMessage({
       to,
       conversationType: convType,
-      payload: {
-        data: JSON.stringify(sessionData),
-        description: '引用会话开始', 
-        extension: 'session_divider'
-      },
-      // 使用cloudCustomData保存会话信息，确保跨平台可用
-      cloudCustomData: JSON.stringify(sessionData)
+      sessionId,
+      quoteContent,
+      timestamp
     });
-
+    
+    // 打印日志
+    const actualSessionId = sessionId || (message.payload?.data ? JSON.parse(message.payload.data).sessionId : `session_${Date.now()}`);
+    const actualTimestamp = timestamp || Date.now();
+    
+    console.log(`创建会话开始消息: ID=${actualSessionId}, 时间=${new Date(actualTimestamp).toLocaleString()}, 引用内容=${quoteContent?.substring(0, 50)}...`);
     console.log('创建Session开始消息成功，开始发送');
     
     // 发送消息
@@ -134,6 +121,7 @@ export async function sendSessionStartMessage(quoteContent, to, isGroup = false,
 /**
  * 发送自定义Session结束消息
  * @param {string} sessionId 会话ID
+ * @param {string} quoteContent 引用内容 
  * @param {string} to 接收方ID
  * @param {boolean} isGroup 是否群聊
  * @returns {Promise<Object>} 消息对象
@@ -149,26 +137,16 @@ export async function sendSessionEndMessage(sessionId, quoteContent, to, isGroup
     // 使用TencentCloudChat.TYPES而不是tim.TYPES
     const convType = isGroup ? TencentCloudChat.TYPES.CONV_GROUP : TencentCloudChat.TYPES.CONV_C2C;
     
-    // 创建自定义消息
-    const sessionData = {
-      sessionType: CUSTOM_MESSAGE_TYPE.SESSION_END,
-      quoteContent: quoteContent,
-      timestamp: Date.now(),
-      sessionId: sessionId
-    };
-    
-    const message = tim.createCustomMessage({
+    // 使用customMessage模块创建会话结束消息
+    const message = createSessionEndMessage({
       to,
       conversationType: convType,
-      payload: {
-        data: JSON.stringify(sessionData),
-        description: '引用会话结束', 
-        extension: 'session_divider'
-      },
-      // 使用cloudCustomData保存会话信息，确保跨平台可用
-      cloudCustomData: JSON.stringify(sessionData)
+      sessionId,
+      quoteContent
     });
-
+    
+    const endTimestamp = Date.now();
+    console.log(`创建会话结束消息: ID=${sessionId}, 时间=${new Date(endTimestamp).toLocaleString()}`);
     console.log('创建Session结束消息成功，开始发送');
     
     // 发送消息
@@ -263,26 +241,5 @@ export async function setMessageRead(conversationID) {
  * @returns {Object|null} Session数据或null
  */
 export function extractSessionData(message) {
-  try {
-    // 优先从cloudCustomData中获取
-    if (message.cloudCustomData) {
-      const cloudData = JSON.parse(message.cloudCustomData);
-      if (cloudData.sessionType) {
-        return cloudData;
-      }
-    }
-    
-    // 从payload.data中获取
-    if (message.type === TencentCloudChat.TYPES.MSG_CUSTOM) {
-      const data = JSON.parse(message.payload?.data);
-      if (data.sessionType) {
-        return data;
-      }
-    }
-    
-    return null;
-  } catch (error) {
-    console.error('提取Session数据失败', error);
-    return null;
-  }
+  return extractSessionDataUtil(message);
 } 

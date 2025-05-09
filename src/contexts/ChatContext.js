@@ -47,6 +47,20 @@ export const ChatProvider = ({ children }) => {
         timService.addEventListener(TIM_EVENT.SDK_READY, () => {
           console.log("SDK已准备就绪");
           setSdkReady(true);
+          
+          // SDK就绪后，尝试从本地存储恢复会话历史
+          try {
+            const savedHistory = localStorage.getItem('session_history');
+            if (savedHistory) {
+              const parsedHistory = JSON.parse(savedHistory);
+              if (Array.isArray(parsedHistory)) {
+                console.log("从本地存储恢复会话历史", parsedHistory);
+                setSessionHistory(parsedHistory);
+              }
+            }
+          } catch(err) {
+            console.error("恢复会话历史失败", err);
+          }
         });
 
         // 添加SDK_NOT_READY事件监听
@@ -225,6 +239,133 @@ export const ChatProvider = ({ children }) => {
     fetchMessages();
   }, [activeUser, initialized, sdkReady]);
 
+  // 监听会话历史变化，保存到本地存储
+  useEffect(() => {
+    if (sessionHistory.length > 0) {
+      try {
+        localStorage.setItem('session_history', JSON.stringify(sessionHistory));
+        console.log("会话历史已保存到本地存储", sessionHistory);
+      } catch(err) {
+        console.error("保存会话历史失败", err);
+      }
+    }
+  }, [sessionHistory]);
+
+  // 添加一个新的Effect钩子，用于监听消息中的会话标记
+  useEffect(() => {
+    if (!messages.length) return;
+    
+    // 查找会话相关消息
+    const sessionMessages = messages.filter(msg => 
+      msg.type === 'custom' && 
+      msg.sessionData && 
+      (msg.sessionData.sessionType === CUSTOM_MESSAGE_TYPE.SESSION_START || 
+       msg.sessionData.sessionType === CUSTOM_MESSAGE_TYPE.SESSION_END)
+    );
+    
+    if (sessionMessages.length > 0) {
+      console.log(`发现${sessionMessages.length}条会话相关消息`);
+      
+      // 处理会话开始消息
+      const startMessages = sessionMessages.filter(msg => 
+        msg.sessionData && msg.sessionData.sessionType === CUSTOM_MESSAGE_TYPE.SESSION_START
+      );
+      
+      // 处理会话结束消息
+      const endMessages = sessionMessages.filter(msg => 
+        msg.sessionData && msg.sessionData.sessionType === CUSTOM_MESSAGE_TYPE.SESSION_END
+      );
+      
+      // 更新会话历史
+      if (startMessages.length > 0 || endMessages.length > 0) {
+        setSessionHistory(prev => {
+          const updatedHistory = [...prev];
+          
+          // 处理开始消息
+          for (const msg of startMessages) {
+            const sessionId = msg.sessionData.sessionId;
+            const existingIndex = updatedHistory.findIndex(s => s.id === sessionId);
+            
+            if (existingIndex >= 0) {
+              // 更新现有会话
+              updatedHistory[existingIndex] = {
+                ...updatedHistory[existingIndex],
+                quoteContent: msg.sessionData.quoteContent,
+                startTime: msg.sessionData.timestamp,
+                status: SESSION_STATUS.OPENED,
+                isPersistent: true
+              };
+            } else {
+              // 添加新会话
+              updatedHistory.push({
+                id: sessionId,
+                quoteContent: msg.sessionData.quoteContent,
+                startTime: msg.sessionData.timestamp,
+                status: SESSION_STATUS.OPENED,
+                isPersistent: true
+              });
+            }
+          }
+          
+          // 处理结束消息
+          for (const msg of endMessages) {
+            const sessionId = msg.sessionData.sessionId;
+            const existingIndex = updatedHistory.findIndex(s => s.id === sessionId);
+            
+            if (existingIndex >= 0) {
+              // 更新现有会话
+              updatedHistory[existingIndex] = {
+                ...updatedHistory[existingIndex],
+                endTime: msg.sessionData.timestamp,
+                status: SESSION_STATUS.CLOSED,
+                isPersistent: true
+              };
+            } else {
+              // 添加新会话（异常情况，只有结束消息）
+              updatedHistory.push({
+                id: sessionId,
+                quoteContent: msg.sessionData.quoteContent || '',
+                startTime: 0,
+                endTime: msg.sessionData.timestamp,
+                status: SESSION_STATUS.CLOSED,
+                isPersistent: true
+              });
+            }
+          }
+          
+          console.log('更新会话历史:', updatedHistory);
+          return updatedHistory;
+        });
+        
+        // 如果有活跃会话但不在会话历史中，使用找到的第一个开始会话
+        if (!currentSession && startMessages.length > 0) {
+          const latestStartMsg = startMessages.sort((a, b) => 
+            (b.sessionData.timestamp || 0) - (a.sessionData.timestamp || 0)
+          )[0];
+          
+          if (latestStartMsg) {
+            const correspondingEndMsg = endMessages.find(msg => 
+              msg.sessionData.sessionId === latestStartMsg.sessionData.sessionId
+            );
+            
+            if (!correspondingEndMsg) {
+              // 只有当没有对应的结束消息时，才设置为当前会话
+              setCurrentSession({
+                id: latestStartMsg.sessionData.sessionId,
+                quoteContent: latestStartMsg.sessionData.quoteContent,
+                startTime: latestStartMsg.sessionData.timestamp,
+                status: SESSION_STATUS.OPENED,
+                isPersistent: true
+              });
+              
+              console.log('恢复活跃会话:', latestStartMsg.sessionData.sessionId);
+            }
+          }
+        }
+      }
+    }
+  }, [messages]);
+
   const toggleChat = () => {
     setIsChatOpen(!isChatOpen);
   };
@@ -267,7 +408,9 @@ export const ChatProvider = ({ children }) => {
             id: sessionData.sessionId,
             quoteContent: sessionData.quoteContent,
             startTime: sessionData.timestamp,
-            status: SESSION_STATUS.OPENED
+            status: SESSION_STATUS.OPENED,
+            isPersistent: sessionData.isPersistent || true, // 支持跨段历史记录
+            creator: sessionData.creator || 'unknown'
           };
           
           setCurrentSession(newSession);
@@ -378,7 +521,8 @@ export const ChatProvider = ({ children }) => {
       const historyEntry = {
         ...currentSession,
         endTime: endTime,
-        status: SESSION_STATUS.CLOSED
+        status: SESSION_STATUS.CLOSED,
+        isPersistent: true // 标记为持久化会话，支持跨段历史记录
       };
       
       // 更新会话历史
@@ -388,7 +532,7 @@ export const ChatProvider = ({ children }) => {
         if (existingIndex >= 0) {
           const updated = [...prev];
           updated[existingIndex] = historyEntry;
-          console.log(`更新会话历史: 会话${currentSession.id}结束时间=${new Date(endTime).toLocaleString()}`);
+          console.log(`更新已有会话: ID=${currentSession.id}, 结束时间=${new Date(endTime).toLocaleString()}`);
           return updated;
         } else {
           console.log(`添加会话历史: 会话${currentSession.id}, 开始=${new Date(currentSession.startTime).toLocaleString()}, 结束=${new Date(endTime).toLocaleString()}`);
@@ -406,20 +550,23 @@ export const ChatProvider = ({ children }) => {
           sessionType: CUSTOM_MESSAGE_TYPE.SESSION_END,
           sessionId: currentSession.id,
           quoteContent: currentSession.quoteContent,
-          timestamp: endTime
+          timestamp: endTime,
+          isPersistent: true // 支持跨段历史
         }),
         sessionData: sessionData || {
           sessionType: CUSTOM_MESSAGE_TYPE.SESSION_END,
           sessionId: currentSession.id,
           quoteContent: currentSession.quoteContent,
-          timestamp: endTime
+          timestamp: endTime,
+          isPersistent: true
         },
         payload: {
           data: JSON.stringify(sessionData || {
             sessionType: CUSTOM_MESSAGE_TYPE.SESSION_END,
             sessionId: currentSession.id,
             quoteContent: currentSession.quoteContent,
-            timestamp: endTime
+            timestamp: endTime,
+            isPersistent: true
           }),
           description: '引用会话结束'
         },
@@ -497,7 +644,9 @@ export const ChatProvider = ({ children }) => {
             id: sessionData.sessionId,
             quoteContent: sessionData.quoteContent,
             startTime: sessionData.timestamp,
-            status: SESSION_STATUS.OPENED
+            status: SESSION_STATUS.OPENED,
+            isPersistent: sessionData.isPersistent || true, // 支持跨段历史记录
+            creator: sessionData.creator || 'unknown'
           };
           
           // 更新当前会话状态
@@ -506,8 +655,12 @@ export const ChatProvider = ({ children }) => {
             
             // 添加到会话历史
             setSessionHistory(prev => {
+              // 检查是否存在同ID会话，避免重复添加
               if (prev.some(s => s.id === newSession.id)) {
-                return prev;
+                // 如果存在，更新会话状态为打开
+                return prev.map(s => s.id === newSession.id 
+                  ? {...s, status: SESSION_STATUS.OPENED} 
+                  : s);
               }
               console.log(`接收到会话开始消息: ID=${newSession.id}, 时间=${new Date(newSession.startTime).toLocaleString()}`);
               return [...prev, newSession];
@@ -516,7 +669,7 @@ export const ChatProvider = ({ children }) => {
           
           // 返回处理后的消息对象，确保UI可以正确显示
           return {
-            ...msg,
+              ...msg, 
             id: msg.ID || `session-start-${Date.now()}`,
             sender: 'system',
             type: 'custom',
@@ -540,7 +693,9 @@ export const ChatProvider = ({ children }) => {
               updated[existingIndex] = {
                 ...updated[existingIndex],
                 endTime: endTime,
-                status: SESSION_STATUS.CLOSED
+                status: SESSION_STATUS.CLOSED,
+                isPersistent: sessionData.isPersistent || true, // 支持跨段历史记录
+                closedBy: sessionData.closedBy || 'unknown'
               };
               console.log(`更新已有会话: ID=${sessionData.sessionId}, 结束时间=${new Date(endTime).toLocaleString()}`);
               return updated;
@@ -552,7 +707,9 @@ export const ChatProvider = ({ children }) => {
                 quoteContent: sessionData.quoteContent,
                 startTime: sessionData.timestamp || 0,
                 endTime: endTime,
-                status: SESSION_STATUS.CLOSED
+                status: SESSION_STATUS.CLOSED,
+                isPersistent: sessionData.isPersistent || true, // 支持跨段历史记录
+                closedBy: sessionData.closedBy || 'unknown'
               }];
             }
           });
@@ -710,6 +867,44 @@ export const ChatProvider = ({ children }) => {
     setIsChatOpen(true);
   };
 
+  // 刷新消息列表
+  const refreshMessages = async () => {
+    if (!activeUser || !initialized || !sdkReady) return;
+    
+    try {
+      setLoading(true);
+      console.log(`刷新用户(${activeUser.id})的聊天消息`);
+      const freshMessages = await timService.getChatMessages(activeUser.id);
+      
+      if (Array.isArray(freshMessages)) {
+        console.log(`刷新获取到${freshMessages.length}条消息`);
+        
+        // 检查是否有会话相关消息
+        const sessionDividers = freshMessages.filter(msg => 
+          msg.type === 'custom' && msg.sessionData
+        );
+        
+        if (sessionDividers.length > 0) {
+          console.log(`发现${sessionDividers.length}条会话分割线消息:`, 
+            sessionDividers.map(msg => ({
+              id: msg.id,
+              type: msg.sessionData.sessionType,
+              sessionId: msg.sessionData.sessionId
+            }))
+          );
+        }
+        
+        setMessages(freshMessages);
+      } else {
+        console.warn('刷新获取到的消息不是数组:', freshMessages);
+      }
+    } catch (error) {
+      console.error("刷新聊天消息失败:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <ChatContext.Provider
       value={{
@@ -733,7 +928,8 @@ export const ChatProvider = ({ children }) => {
         sessionHistory,
         expandedSessions,
         endCurrentSession,
-        toggleSessionExpand
+        toggleSessionExpand,
+        refreshMessages // 添加刷新消息的函数
       }}
     >
       {children}

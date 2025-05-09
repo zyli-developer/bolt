@@ -221,6 +221,12 @@ const CardDetailPage = () => {
     // 重置到第一步
     setCurrentOptimizationStep(0);
     
+    // 关闭连续选择模式并清除高亮
+    if (isMultiSelectActive) {
+      setIsMultiSelectActive(false);
+      clearAllHighlights();
+    }
+    
     // 设置body的类，以便全局样式生效
     if (checked) {
       document.body.classList.add('optimization-mode');
@@ -245,6 +251,12 @@ const CardDetailPage = () => {
       [currentOptimizationStep]: currentData
     }));
     
+    // 关闭连续选择模式并清除高亮
+    if (isMultiSelectActive) {
+      setIsMultiSelectActive(false);
+      clearAllHighlights();
+    }
+    
     console.log("数据已保存", currentData);
   };
 
@@ -252,6 +264,12 @@ const CardDetailPage = () => {
   const saveAndNext = () => {
     // 先保存当前数据
     saveCurrentData();
+    
+    // 关闭连续选择模式并清除高亮
+    if (isMultiSelectActive) {
+      setIsMultiSelectActive(false);
+      clearAllHighlights();
+    }
     
     // 进入下一步，确保不会超出步骤范围
     if (currentOptimizationStep < STEP_TITLES.length - 1) {
@@ -269,6 +287,12 @@ const CardDetailPage = () => {
     if (current !== currentOptimizationStep) {
       // 如果是切换到不同步骤，保存当前步骤的数据
       saveCurrentData();
+      
+      // 关闭连续选择模式并清除高亮
+      if (isMultiSelectActive) {
+        setIsMultiSelectActive(false);
+        clearAllHighlights();
+      }
     }
     
     // 注意：不再需要在这里设置注释数据，因为现在使用全局上下文
@@ -277,6 +301,12 @@ const CardDetailPage = () => {
 
   // 返回按钮处理函数
   const handleBack = () => {
+    // 关闭连续选择模式并清除高亮
+    if (isMultiSelectActive) {
+      setIsMultiSelectActive(false);
+      clearAllHighlights();
+    }
+    
     // 关闭优化模式
     setIsOptimizationMode(false);
   };
@@ -285,6 +315,13 @@ const CardDetailPage = () => {
   const handlePrevStep = () => {
     if (currentOptimizationStep > 0) {
       saveCurrentData(); // 先保存当前步骤数据
+      
+      // 关闭连续选择模式并清除高亮
+      if (isMultiSelectActive) {
+        setIsMultiSelectActive(false);
+        clearAllHighlights();
+      }
+      
       setCurrentOptimizationStep(currentOptimizationStep - 1);
     } else {
       // 如果已经是第一步，则关闭优化模式
@@ -566,6 +603,12 @@ const CardDetailPage = () => {
 
   // 开始测试方法
   const handleStartTest = () => {
+    // 关闭连续选择模式并清除高亮
+    if (isMultiSelectActive) {
+      setIsMultiSelectActive(false);
+      clearAllHighlights();
+    }
+    
     setIsTesting(true);
     setTestProgress(0);
     
@@ -586,6 +629,12 @@ const CardDetailPage = () => {
   
   // 处理提交测试结果
   const handleSubmitResults = () => {
+    // 关闭连续选择模式并清除高亮
+    if (isMultiSelectActive) {
+      setIsMultiSelectActive(false);
+      clearAllHighlights();
+    }
+    
     // 模拟提交测试结果到服务器
     message.success('测试结果已成功提交');
     

@@ -42,6 +42,7 @@ const ChatArea = () => {
     switchActiveUser,
     currentSession,
     endCurrentSession,
+    refreshMessages
   } = useChatContext()
 
   const [inputValue, setInputValue] = useState("")
@@ -282,6 +283,57 @@ const ChatArea = () => {
       }
     }
   };
+
+  // 组件挂载时和活跃用户变化时主动刷新消息
+  useEffect(() => {
+    if (activeUser && activeUser.id) {
+      console.log('ChatArea组件主动刷新消息，activeUser:', activeUser.id);
+      refreshMessages().catch(err => {
+        console.error('刷新消息失败:', err);
+      });
+    }
+  }, [activeUser?.id]);
+
+  // 页面可见性变化时刷新消息，确保切换回页面时能看到最新消息
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && activeUser) {
+        console.log('页面变为可见，刷新消息');
+        refreshMessages().catch(err => {
+          console.error('可见性变化刷新消息失败:', err);
+        });
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [activeUser?.id]);
+
+  // 定时刷新消息，确保长时间打开页面也能看到最新消息
+  useEffect(() => {
+    // 避免重复创建定时器
+    let refreshInterval = null;
+    
+    if (activeUser && activeUser.id) {
+      refreshInterval = setInterval(() => {
+        if (document.visibilityState === 'visible') {
+          console.log('定时刷新消息');
+          refreshMessages().catch(err => {
+            console.error('定时刷新消息失败:', err);
+          });
+        }
+      }, 60000); // 每分钟刷新一次
+    }
+    
+    return () => {
+      if (refreshInterval) {
+        clearInterval(refreshInterval);
+      }
+    };
+  }, [activeUser?.id]);
 
   return (
     <div className="chat-container">

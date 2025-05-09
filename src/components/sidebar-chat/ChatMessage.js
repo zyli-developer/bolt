@@ -8,6 +8,7 @@ import { useChatContext } from '../../contexts/ChatContext';
 import TextContextMenu from '../context/TextContextMenu';
 import { extractSessionData } from '../../lib/tim/message';
 import { CUSTOM_MESSAGE_TYPE } from '../../lib/tim/constants';
+import '../../styles/components/sidebar-chat/ChatMessage.css'; // 导入样式文件
 
 // 引用类型定义
 const QUOTE_TYPES = {
@@ -560,6 +561,10 @@ const ChatMessage = ({ message }) => {
     // 调试信息
     console.log(`渲染会话分割线: ID=${sessionId}, 类型=${isStart ? '开始' : '结束'}, 展开状态=${isExpanded}`);
     
+    // 获取当前会话的引用内容和信息
+    const quoteContent = sessionInfo.quoteContent || '无引用内容';
+    const sessionType = isStart ? '开始' : '结束';
+    
     return (
       <div 
         className={`session-divider ${isStart ? 'session-start' : 'session-end'} ${!isExpanded ? 'session-collapsed' : ''}`} 
@@ -571,7 +576,7 @@ const ChatMessage = ({ message }) => {
           {isStart ? (
             <>
               <span className="divider-text">引用会话开始</span>
-              <div className="divider-quote">{sessionInfo.quoteContent || '无引用内容'}</div>
+              <div className="divider-quote">{quoteContent}</div>
             </>
           ) : (
             <span className="divider-text">引用会话结束</span>
@@ -588,6 +593,11 @@ const ChatMessage = ({ message }) => {
             {isExpanded ? <UpOutlined /> : <DownOutlined />}
           </button>
         </div>
+        {isStart && (
+          <div className="session-divider-footer">
+            <span className="session-id-info">会话ID: {sessionId.substring(0, 8)}...</span>
+          </div>
+        )}
       </div>
     );
   };
@@ -645,7 +655,6 @@ const ChatMessage = ({ message }) => {
       // 获取所有会话分割线
       const allDividers = document.querySelectorAll('.session-divider');
       if (allDividers.length < 2) {
-        console.log('没有找到足够的分割线，默认显示所有消息');
         return true; // 如果没有找到足够的分割线，默认显示
       }
       
@@ -696,6 +705,11 @@ const ChatMessage = ({ message }) => {
       if (prevStartDivider && nextEndDivider && prevStartDivider.sessionId === nextEndDivider.sessionId) {
         messageSessionId = prevStartDivider.sessionId;
         console.log(`消息确定在会话${messageSessionId}内，会话展开状态: ${expandedSessions[messageSessionId] !== false ? '展开' : '折叠'}`);
+      } else if (prevStartDivider) {
+        // 即使没找到结束分割线，也可能在会话中
+        // 这种情况在跨段历史记录中可能出现，即开始分割线在当前段，结束分割线在另一段
+        messageSessionId = prevStartDivider.sessionId;
+        console.log(`消息可能在会话${messageSessionId}内(未找到结束分割线)，会话展开状态: ${expandedSessions[messageSessionId] !== false ? '展开' : '折叠'}`);
       } else {
         console.log('消息不在任何会话内，或会话状态不完整(缺少开始/结束分割线)');
       }
@@ -703,7 +717,17 @@ const ChatMessage = ({ message }) => {
     
     // 如果找到了消息所属的会话ID，检查该会话是否应该显示
     if (messageSessionId) {
-      return expandedSessions[messageSessionId] !== false; // 默认展开
+      const shouldShow = expandedSessions[messageSessionId] !== false; // 默认展开
+      
+      // 为支持跨段历史记录，添加额外的会话判断逻辑
+      // 如果在sessionHistory中也找不到这个会话，可能是需要从服务端获取的跨段会话
+      if (!shouldShow && !sessionHistory.some(s => s.id === messageSessionId)) {
+        // 对于未知会话，默认显示消息，但打印警告
+        console.warn(`未在会话历史中找到会话${messageSessionId}，可能是跨段会话，默认显示消息`);
+        return true;
+      }
+      
+      return shouldShow;
     }
     
     // 如果无法确定会话，默认显示消息
@@ -726,6 +750,21 @@ const ChatMessage = ({ message }) => {
     );
   };
 
+  // 检查消息是否在会话中
+  const isInActiveSession = () => {
+    // 根据消息ID检查是否属于当前会话
+    if (currentSession && message.sessionId === currentSession.id) {
+      return true;
+    }
+    
+    // 检查消息是否在任何会话中
+    const sessionId = message.sessionId || 
+                     (message.sessionData && message.sessionData.sessionId) || 
+                     (message.cloudCustomData && JSON.parse(message.cloudCustomData)?.sessionId);
+    
+    return !!sessionId;
+  };
+
   // 如果是分割线消息，渲染分割线
   if (isSessionDivider()) {
     return renderSessionDivider();
@@ -737,11 +776,11 @@ const ChatMessage = ({ message }) => {
   }
 
   return (
-    <div className={`message-container ${isUser ? "message-right" : "message-left"} ${isMultiSelectActive ? 'multi-select-mode' : ''}`} ref={messageRef}>
+    <div className={`message-container ${isUser ? "message-right" : "message-left"} ${isMultiSelectActive ? 'multi-select-mode' : ''} ${isInActiveSession() ? 'in-session' : ''}`} ref={messageRef}>
       {/* 不再在这里渲染会话引用栏，改为在ChatArea中渲染 */}
       
       <div 
-        className={`message-bubble ${isUser ? "message-user" : "message-other"} ${message.pending ? 'pending' : ''} ${message.error ? 'error' : ''}`} 
+        className={`message-bubble ${isUser ? "message-user" : "message-other"} ${message.pending ? 'pending' : ''} ${message.error ? 'error' : ''} ${message.type === 'custom' ? 'custom-message' : ''}`} 
         style={{ position: 'relative' }}
         onContextMenu={handleContextMenu}
       >

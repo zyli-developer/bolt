@@ -166,7 +166,7 @@ export async function getChatMessages(userId) {
     console.log(`开始获取消息列表: ${conversationID}`);
     const messageList = await TIM.getMessageList({
       conversationID,
-      count: 20 // 一次获取20条消息
+      count: 50 // 增加获取消息数量，确保能获取到所有会话相关消息
     });
     
     // 确保messageList是数组
@@ -195,7 +195,75 @@ export async function getChatMessages(userId) {
       // 确定消息发送方向
       const isIncoming = message.flow === 'in';
       
-      // 尝试从不同的属性提取文本内容
+      // 获取时间戳
+      const timestamp = message.time 
+        ? formatDate(new Date(message.time * 1000)) 
+        : message.timestamp || formatDate(new Date());
+      
+      // 获取消息基本信息
+      const baseMessage = {
+        id: messageId,
+        sender: isIncoming ? 'other' : 'user',
+        timestamp: timestamp,
+        time: message.time || Math.floor(Date.now() / 1000),
+        flow: message.flow
+      };
+      
+      // 处理自定义消息
+      if (message.type === 'TIMCustomElem' || message.type === 'TIM.TYPES.MSG_CUSTOM') {
+        try {
+          // 处理会话分割线等自定义消息
+          let customData = null;
+          
+          // 尝试从不同位置提取自定义数据
+          if (message.payload && message.payload.data) {
+            customData = JSON.parse(message.payload.data);
+          } else if (message.cloudCustomData) {
+            customData = JSON.parse(message.cloudCustomData);
+          }
+          
+          if (customData) {
+            console.log('解析到自定义消息数据:', customData);
+            
+            // 检查是否是会话相关的消息
+            if (customData.sessionType) {
+              return {
+                ...baseMessage,
+                type: 'custom',
+                sessionData: customData,
+                sessionId: customData.sessionId,
+                text: customData.sessionType === 'session_start' 
+                  ? `引用会话开始: ${customData.quoteContent || ''}`
+                  : '引用会话结束',
+                cloudCustomData: message.cloudCustomData,
+                // 保留原始消息的所有关键属性
+                payload: message.payload || {
+                  data: JSON.stringify(customData),
+                  description: customData.sessionType === 'session_start' ? '引用会话开始' : '引用会话结束'
+                }
+              };
+            }
+          }
+          
+          // 其他类型的自定义消息
+          return {
+            ...baseMessage,
+            type: 'custom',
+            text: message.payload?.description || '自定义消息',
+            payload: message.payload,
+            cloudCustomData: message.cloudCustomData
+          };
+        } catch (e) {
+          console.error('解析自定义消息失败', e);
+          return {
+            ...baseMessage,
+            type: 'custom',
+            text: message.payload?.description || '自定义消息(解析失败)'
+          };
+        }
+      }
+      
+      // 处理文本消息
       let textContent = '';
       if (message.payload && message.payload.text) {
         textContent = message.payload.text;
@@ -205,27 +273,30 @@ export async function getChatMessages(userId) {
         textContent = message.text;
       }
       
-      // 获取时间戳
-      const timestamp = message.time 
-        ? formatDate(new Date(message.time * 1000)) 
-        : message.timestamp || formatDate(new Date());
-      
-      // 返回格式化的消息对象
+      // 返回普通文本消息
       return {
-        id: messageId,
-        sender: isIncoming ? 'other' : 'user',
-        text: textContent,
-        timestamp: timestamp
+        ...baseMessage,
+        text: textContent
       };
     });
     
-    // 过滤掉无效消息
-    const validMessages = formattedMessages.filter(msg => msg.text && msg.text.trim() !== '');
+    // 保留所有消息，包括自定义消息
+    console.log(`消息格式转换完成，转换后消息数: ${formattedMessages.length}`);
     
-    console.log(`消息格式转换完成，转换后有效消息数: ${validMessages.length}`, 
-      validMessages.length > 0 ? validMessages[0] : '无消息');
+    // 打印分析会话消息
+    const sessionMessages = formattedMessages.filter(msg => msg.type === 'custom' && msg.sessionData);
+    if (sessionMessages.length > 0) {
+      console.log(`发现会话相关消息: ${sessionMessages.length}条`, sessionMessages.map(msg => ({
+        id: msg.id,
+        sessionId: msg.sessionId,
+        type: msg.sessionData.sessionType,
+        timestamp: msg.timestamp
+      })));
+    } else {
+      console.log('未发现任何会话相关消息');
+    }
     
-    return validMessages;
+    return formattedMessages;
   } catch (error) {
     console.error('获取聊天消息失败', error);
     return []; // 出错时返回空数组
