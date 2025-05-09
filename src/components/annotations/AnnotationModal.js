@@ -98,7 +98,7 @@ const AnnotationModal = ({ visible, onClose, onSave, selectedText, initialConten
         <div style={{ marginBottom: 8, color: '#666' }}>选中文本：</div>
         <div style={{ 
           padding: 8,
-          background: '#f5f5f5',
+          background: '#fff',
           borderRadius: 4,
           fontSize: 14,
           maxHeight: '150px',

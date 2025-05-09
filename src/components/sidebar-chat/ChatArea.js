@@ -40,10 +40,13 @@ const ChatArea = () => {
     createNewChat, 
     chatUsers,
     switchActiveUser,
+    currentSession,
+    endCurrentSession,
   } = useChatContext()
 
   const [inputValue, setInputValue] = useState("")
   const [quotes, setQuotes] = useState([]) // 使用数组保存多个引用
+  const [isQuoteEnabled, setIsQuoteEnabled] = useState(false)
   const messagesEndRef = useRef(null)
   const messagesContainerRef = useRef(null)
   const [showScrollTop, setShowScrollTop] = useState(false)
@@ -51,6 +54,17 @@ const ChatArea = () => {
   
   // 从全局上下文获取优化模式状态
   const { isOptimizationMode, currentOptimizationStep, setComments } = useContext(OptimizationContext);
+
+  // 监听quotes数组变化，实时更新引用功能状态
+  useEffect(() => {
+    // 当quotes数组有内容时，表示引用功能已开启
+    setIsQuoteEnabled(quotes.length > 0);
+    
+    // 当当前已经有引用会话时，不重复开启
+    if (quotes.length > 0 && !currentSession) {
+      console.log('引用功能已开启，随时可以开始新的会话');
+    }
+  }, [quotes, currentSession]);
 
   // 自动滚动到底部
   const scrollToBottom = () => {
@@ -115,9 +129,7 @@ const ChatArea = () => {
   // 发送消息
   const handleSendMessage = () => {
     if (inputValue.trim()) {
-      // 根据是否有引用内容，使用不同的格式发送消息
-      if (quotes.length > 0) {
-        // 有引用内容时，使用自定义格式
+      if (isQuoteEnabled) {
         const quotesFormatted = quotes.map(quote => 
           `【引用:${quote.type}】${quote.content}【/引用】`
         ).join('\n');
@@ -125,12 +137,10 @@ const ChatArea = () => {
         const formattedMessage = `${quotesFormatted}\n${inputValue}`;
         sendMessage(formattedMessage);
       } else {
-        // 没有引用内容，正常发送
         sendMessage(inputValue);
       }
       
       setInputValue("");
-      // 清空引用内容
       setQuotes([]);
     }
   }
@@ -139,7 +149,7 @@ const ChatArea = () => {
   const handleSubmit = (value) => {
     if (value.trim()) {
       // 根据是否有引用内容，使用不同的格式发送消息
-      if (quotes.length > 0) {
+      if (isQuoteEnabled) {
         // 有引用内容时，使用自定义格式
         const quotesFormatted = quotes.map(quote => 
           `【引用:${quote.type}】${quote.content}【/引用】`
@@ -161,16 +171,27 @@ const ChatArea = () => {
   // 处理Sender组件输入变化
   const handleInputChange = (value) => {
     setInputValue(value)
+    
+    // 可以在这里添加额外的逻辑，比如检测输入中是否包含引用标记等
+    // 如果需要更复杂的实时分析，可以在这里添加
   }
 
   // 清除指定引用内容
   const handleClearQuote = (quoteId) => {
-    setQuotes(prevQuotes => prevQuotes.filter(quote => quote.id !== quoteId));
+    setQuotes(prevQuotes => {
+      const newQuotes = prevQuotes.filter(quote => quote.id !== quoteId);
+      // 如果清除后没有引用内容，更新引用状态
+      if (newQuotes.length === 0) {
+        console.log('所有引用已清除，引用功能已关闭');
+      }
+      return newQuotes;
+    });
   }
 
   // 清除所有引用
   const clearAllQuotes = () => {
     setQuotes([]);
+    console.log('所有引用已清除，引用功能已关闭');
   }
 
   // 处理创建新会话
@@ -286,6 +307,23 @@ const ChatArea = () => {
           <CloseOutlined />
         </button>
       </div>
+      
+      {/* 当前会话引用栏 - 独立显示在消息列表顶部 */}
+      {currentSession && (
+        <div className="active-session-bar">
+          <div className="active-session-content">
+            <div className="active-session-quote">
+              {currentSession.quoteContent}
+            </div>
+            <button 
+              className="close-session-btn" 
+              onClick={endCurrentSession}
+            >
+              关闭引用
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* 聊天消息区域 */}
       <div className="chat-messages" ref={messagesContainerRef}>
@@ -298,7 +336,10 @@ const ChatArea = () => {
             {validMessages.map((message, index) => (
               <ChatMessage 
                 key={getMessageKey(message, index)} 
-                message={message} 
+                message={{
+                  ...message,
+                  isFirstMessage: index === 0 // 标记第一条消息
+                }} 
               />
             ))}
             <div ref={messagesEndRef} />
@@ -336,7 +377,7 @@ const ChatArea = () => {
 
       {/* 聊天输入区域 - 使用Sender组件 */}
       <div className="chat-input-wrapper">
-        {quotes.length > 0 && (
+        {isQuoteEnabled && (
           <div className="chat-quotes-wrapper">
             {/* 提示按钮区域 - 移到quotes外部，只显示一次 */}
             <div className="chat-quote-actions">
@@ -355,20 +396,20 @@ const ChatArea = () => {
             </div>
             
             {/* 引用内容容器 */}
-          <div className="chat-quotes-container">
-            {quotes.map((quote) => (
+            <div className="chat-quotes-container">
+              {quotes.map((quote) => (
                 <div key={quote.id}>
                   <div className="chat-quote-header">
-                <div className="chat-quote-icon">
-                  <CloseOutlined onClick={() => handleClearQuote(quote.id)} />
-                </div>
-                <div className="chat-quote-content-text">{quote.content}</div>
-                <div className="chat-quote-label">
-                  {quote.type === 'viewpoint' ? '观点' : '文本'}
+                    <div className="chat-quote-icon">
+                      <CloseOutlined onClick={() => handleClearQuote(quote.id)} />
                     </div>
+                    <div className="chat-quote-content-text">{quote.content}</div>
+                    <div className="chat-quote-label">
+                      {quote.type === 'viewpoint' ? '观点' : '文本'}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
             </div>
           </div>
         )}
@@ -376,9 +417,9 @@ const ChatArea = () => {
           value={inputValue}
           onChange={handleInputChange}
           onSubmit={handleSubmit}
-          placeholder="请输入文字"
+          placeholder={isQuoteEnabled ? "请输入对引用内容的回复..." : "请输入文字"}
           autoSize={{ minRows: 1, maxRows: 4 }}
-          className={`chat-sender ${quotes.length > 0 ? 'has-quotes' : ''}`}
+          className={`chat-sender ${isQuoteEnabled ? 'has-quotes' : ''}`}
           submitType="enter"
           disabled={!activeUser}
         />

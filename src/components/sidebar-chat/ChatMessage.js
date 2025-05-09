@@ -1,10 +1,13 @@
 import React, { useState, useContext, useRef, useEffect } from 'react';
-import { ArrowLeftOutlined, ArrowRightOutlined, PlusOutlined, MessageOutlined, UnorderedListOutlined } from '@ant-design/icons';
+import { ArrowLeftOutlined, ArrowRightOutlined, PlusOutlined, MessageOutlined, UnorderedListOutlined, UpOutlined, DownOutlined } from '@ant-design/icons';
 import AnnotationModal from '../annotations/AnnotationModal';
 import annotationService from '../../services/annotationService';
 import { message as messageApi } from 'antd';
 import { OptimizationContext } from '../../contexts/OptimizationContext';
+import { useChatContext } from '../../contexts/ChatContext';
 import TextContextMenu from '../context/TextContextMenu';
+import { extractSessionData } from '../../lib/tim/message';
+import { CUSTOM_MESSAGE_TYPE } from '../../lib/tim/constants';
 
 // 引用类型定义
 const QUOTE_TYPES = {
@@ -13,6 +16,14 @@ const QUOTE_TYPES = {
 };
 
 const ChatMessage = ({ message }) => {
+  const { 
+    currentSession, 
+    sessionHistory, 
+    expandedSessions, 
+    toggleSessionExpand,
+    endCurrentSession
+  } = useChatContext();
+  
   const isUser = message.sender === "user";
   const [isAnnotationModalVisible, setIsAnnotationModalVisible] = useState(false);
   const [contextMenu, setContextMenu] = useState(null);
@@ -31,6 +42,105 @@ const ChatMessage = ({ message }) => {
     currentOptimizationStep,
     addComment
   } = useContext(OptimizationContext);
+  
+  // 检查当前消息是否是Session分割线
+  const isSessionDivider = () => {
+    // 检查消息对象中的类型标记
+    if (message.type === 'custom' && message.sessionData) {
+      return true;
+    }
+    
+    // 检查消息的cloudCustomData
+    if (message.cloudCustomData) {
+      try {
+        const cloudData = JSON.parse(message.cloudCustomData);
+        if (cloudData.sessionType && (
+          cloudData.sessionType === CUSTOM_MESSAGE_TYPE.SESSION_START ||
+          cloudData.sessionType === CUSTOM_MESSAGE_TYPE.SESSION_END
+        )) {
+          return true;
+        }
+      } catch (e) {
+        console.error('解析cloudCustomData失败', e);
+      }
+    }
+    
+    // 从消息中提取sessionData
+    const sessionData = extractSessionData(message);
+    return sessionData && (
+      sessionData.sessionType === CUSTOM_MESSAGE_TYPE.SESSION_START || 
+      sessionData.sessionType === CUSTOM_MESSAGE_TYPE.SESSION_END
+    );
+  };
+  
+  // 获取Session信息
+  const getSessionInfo = () => {
+    if (!isSessionDivider()) return null;
+    
+    // 如果消息对象中已有sessionData，直接使用
+    if (message.sessionData) {
+      return {
+        id: message.sessionData.sessionId,
+        type: message.sessionData.sessionType,
+        quoteContent: message.sessionData.quoteContent
+      };
+    }
+    
+    // 从cloudCustomData中提取
+    if (message.cloudCustomData) {
+      try {
+        const cloudData = JSON.parse(message.cloudCustomData);
+        if (cloudData.sessionType) {
+          return {
+            id: cloudData.sessionId,
+            type: cloudData.sessionType,
+            quoteContent: cloudData.quoteContent
+          };
+        }
+      } catch (e) {
+        console.error('解析sessionInfo失败', e);
+      }
+    }
+    
+    // 使用extractSessionData提取
+    const sessionData = extractSessionData(message);
+    if (!sessionData) return null;
+    
+    return {
+      id: sessionData.sessionId,
+      type: sessionData.sessionType,
+      quoteContent: sessionData.quoteContent
+    };
+  };
+  
+  // 检查会话是否展开
+  const isSessionExpanded = () => {
+    const sessionInfo = getSessionInfo();
+    if (!sessionInfo) return true;
+    
+    return expandedSessions[sessionInfo.id] !== false; // 默认展开
+  };
+  
+  // 处理会话展开/折叠
+  const handleToggleExpand = () => {
+    const sessionInfo = getSessionInfo();
+    if (!sessionInfo) return;
+    
+    const sessionId = sessionInfo.id;
+    const currentExpandedState = expandedSessions[sessionId] !== false;
+    
+    console.log(`切换会话${sessionId}的展开状态: ${currentExpandedState ? '展开→折叠' : '折叠→展开'}`);
+    
+    // 调用context中的函数切换会话展开状态
+    toggleSessionExpand(sessionId);
+  };
+  
+  // 处理会话关闭
+  const handleCloseSession = () => {
+    if (currentSession) {
+      endCurrentSession();
+    }
+  };
 
   // 处理右键菜单
   const handleContextMenu = (e) => {
@@ -438,8 +548,198 @@ const ChatMessage = ({ message }) => {
     }
   }
 
+  // 渲染Session分割线
+  const renderSessionDivider = () => {
+    const sessionInfo = getSessionInfo();
+    if (!sessionInfo) return null;
+    
+    const isStart = sessionInfo.type === CUSTOM_MESSAGE_TYPE.SESSION_START;
+    const isExpanded = isSessionExpanded();
+    const sessionId = sessionInfo.id;
+    
+    // 调试信息
+    console.log(`渲染会话分割线: ID=${sessionId}, 类型=${isStart ? '开始' : '结束'}, 展开状态=${isExpanded}`);
+    
+    return (
+      <div 
+        className={`session-divider ${isStart ? 'session-start' : 'session-end'} ${!isExpanded ? 'session-collapsed' : ''}`} 
+        data-session-id={sessionId}
+        onClick={handleToggleExpand}
+      >
+        <div className="session-divider-line"></div>
+        <div className="session-divider-content">
+          {isStart ? (
+            <>
+              <span className="divider-text">引用会话开始</span>
+              <div className="divider-quote">{sessionInfo.quoteContent || '无引用内容'}</div>
+            </>
+          ) : (
+            <span className="divider-text">引用会话结束</span>
+          )}
+          <button 
+            className="toggle-expand-btn" 
+            onClick={(e) => {
+              e.stopPropagation(); // 阻止冒泡，避免触发外层div的onClick
+              handleToggleExpand();
+            }}
+            title={isExpanded ? "收起会话" : "展开会话"}
+            aria-label={isExpanded ? "收起会话" : "展开会话"}
+          >
+            {isExpanded ? <UpOutlined /> : <DownOutlined />}
+          </button>
+        </div>
+      </div>
+    );
+  };
+  
+  // 判断消息是否属于指定的会话
+  const belongsToSession = (sessionId) => {
+    if (!message || !sessionId) return false;
+    
+    // 如果消息本身包含sessionId信息，直接比较
+    if (message.sessionData && message.sessionData.sessionId === sessionId) {
+      return true;
+    }
+    
+    // 如果消息包含cloudCustomData，解析并检查
+    if (message.cloudCustomData) {
+      try {
+        const cloudData = JSON.parse(message.cloudCustomData);
+        if (cloudData.sessionId === sessionId) {
+          return true;
+        }
+      } catch (e) {}
+    }
+    
+    // 获取消息时间（优先使用time字段，其次是timestamp的解析值）
+    const messageTimeMs = message.time 
+      ? message.time * 1000  // 如果有time字段（秒），转换为毫秒
+      : message.timestamp
+        ? (typeof message.timestamp === 'string' 
+            ? new Date(message.timestamp).getTime()
+            : message.timestamp)
+        : Date.now(); // 兜底使用当前时间
+    
+    // 通过时间判断消息是否属于会话
+    const session = sessionHistory.find(s => s.id === sessionId);
+    if (session) {
+      return messageTimeMs >= session.startTime && 
+             messageTimeMs <= (session.endTime || Date.now());
+    }
+    
+    return false;
+  };
+  
+  // 在处于会话中且消息是普通消息时，检查是否应该显示
+  const shouldRenderMessage = () => {
+    // 如果是Session分割线则始终显示
+    if (isSessionDivider()) {
+      return true;
+    }
+    
+    // 查找当前消息所属的会话ID
+    let messageSessionId = null;
+    
+    // 如果消息上没有明确的sessionId，检查消息在DOM中的位置来确定会话
+    if (messageRef.current) {
+      // 获取所有会话分割线
+      const allDividers = document.querySelectorAll('.session-divider');
+      if (allDividers.length < 2) {
+        console.log('没有找到足够的分割线，默认显示所有消息');
+        return true; // 如果没有找到足够的分割线，默认显示
+      }
+      
+      // 根据DOM位置确定当前消息所处的会话
+      const messageElement = messageRef.current;
+      
+      // 将分割线转为数组，并根据DOM位置排序
+      const dividersArray = Array.from(allDividers);
+      
+      // 查找当前消息的位置
+      const messageBoundingRect = messageElement.getBoundingClientRect();
+      const messageTop = messageBoundingRect.top;
+      
+      // 寻找当前消息前后的分割线
+      let prevStartDivider = null;
+      let nextEndDivider = null;
+      
+      for (let i = 0; i < dividersArray.length; i++) {
+        const divider = dividersArray[i];
+        const dividerRect = divider.getBoundingClientRect();
+        const isStartDivider = divider.classList.contains('session-start');
+        const isEndDivider = divider.classList.contains('session-end');
+        const sessionId = divider.getAttribute('data-session-id');
+        
+        // 检查分割线相对于消息的位置
+        if (dividerRect.top < messageTop) {
+          // 分割线在消息上方
+          if (isStartDivider) {
+            prevStartDivider = { divider, sessionId };
+            console.log(`找到消息上方的开始分割线，会话ID: ${sessionId}`);
+          } else if (isEndDivider && prevStartDivider && divider.getAttribute('data-session-id') === prevStartDivider.sessionId) {
+            // 如果找到对应会话的结束分割线，说明消息不在该会话内
+            console.log(`在消息上方找到会话${prevStartDivider.sessionId}的结束分割线，消息不在该会话内`);
+            prevStartDivider = null;
+          }
+        } else if (dividerRect.top > messageTop && isEndDivider) {
+          // 分割线在消息下方且是结束分割线
+          if (prevStartDivider && divider.getAttribute('data-session-id') === prevStartDivider.sessionId) {
+            // 找到了对应的结束分割线，说明消息在该会话内
+            nextEndDivider = { divider, sessionId };
+            console.log(`找到消息下方的结束分割线，会话ID: ${sessionId}，消息在会话${prevStartDivider.sessionId}内`);
+            break;
+          }
+        }
+      }
+      
+      // 如果找到了开始分割线和结束分割线，消息在这个会话中
+      if (prevStartDivider && nextEndDivider && prevStartDivider.sessionId === nextEndDivider.sessionId) {
+        messageSessionId = prevStartDivider.sessionId;
+        console.log(`消息确定在会话${messageSessionId}内，会话展开状态: ${expandedSessions[messageSessionId] !== false ? '展开' : '折叠'}`);
+      } else {
+        console.log('消息不在任何会话内，或会话状态不完整(缺少开始/结束分割线)');
+      }
+    }
+    
+    // 如果找到了消息所属的会话ID，检查该会话是否应该显示
+    if (messageSessionId) {
+      return expandedSessions[messageSessionId] !== false; // 默认展开
+    }
+    
+    // 如果无法确定会话，默认显示消息
+    return true;
+  };
+  
+  // 渲染会话顶部悬浮引用
+  const renderActiveSessionBar = () => {
+    if (!currentSession) return null;
+    
+    return (
+      <div className="active-session-bar">
+        <div className="active-session-content">
+          <div className="active-session-quote">{currentSession.quoteContent}</div>
+          <button className="close-session-btn" onClick={handleCloseSession}>
+            关闭引用
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  // 如果是分割线消息，渲染分割线
+  if (isSessionDivider()) {
+    return renderSessionDivider();
+  }
+  
+  // 如果消息应该被折叠，则不渲染
+  if (!shouldRenderMessage()) {
+    return null;
+  }
+
   return (
     <div className={`message-container ${isUser ? "message-right" : "message-left"} ${isMultiSelectActive ? 'multi-select-mode' : ''}`} ref={messageRef}>
+      {/* 不再在这里渲染会话引用栏，改为在ChatArea中渲染 */}
+      
       <div 
         className={`message-bubble ${isUser ? "message-user" : "message-other"} ${message.pending ? 'pending' : ''} ${message.error ? 'error' : ''}`} 
         style={{ position: 'relative' }}

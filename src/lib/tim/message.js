@@ -2,7 +2,7 @@
  * 腾讯云即时通讯IM消息模块
  */
 import { getTIMInstance } from './core';
-import { CONVERSATION_TYPE, MESSAGE_TYPE } from './constants';
+import { CONVERSATION_TYPE, MESSAGE_TYPE, CUSTOM_MESSAGE_TYPE } from './constants';
 import TencentCloudChat from '@tencentcloud/chat';
 
 // 消息发送防重复缓存 - SDK层面
@@ -66,6 +66,118 @@ export async function sendTextMessage(text, to, isGroup = false) {
     return imResponse.data.message;
   } catch (error) {
     console.error('发送文本消息失败', error);
+    throw error;
+  }
+}
+
+/**
+ * 发送自定义Session开始消息
+ * @param {string} quoteContent 引用的内容
+ * @param {string} to 接收方ID
+ * @param {boolean} isGroup 是否群聊
+ * @param {string} sessionId 自定义的会话ID，如果不传则自动生成
+ * @param {number} timestamp 时间戳，如果不传则使用当前时间
+ * @returns {Promise<Object>} 消息对象
+ */
+export async function sendSessionStartMessage(quoteContent, to, isGroup = false, sessionId = null, timestamp = null) {
+  const tim = getTIMInstance();
+  if (!tim) {
+    console.error('TIM SDK未初始化，无法发送消息');
+    throw new Error('TIM SDK未初始化');
+  }
+
+  try {
+    // 使用TencentCloudChat.TYPES而不是tim.TYPES
+    const convType = isGroup ? TencentCloudChat.TYPES.CONV_GROUP : TencentCloudChat.TYPES.CONV_C2C;
+    
+    // 如果没有提供sessionId，则自动生成
+    const actualSessionId = sessionId || `session_${Date.now()}`;
+    // 如果没有提供timestamp，则使用当前时间
+    const actualTimestamp = timestamp || Date.now();
+    
+    // 创建自定义消息
+    const sessionData = {
+      sessionType: CUSTOM_MESSAGE_TYPE.SESSION_START,
+      quoteContent: quoteContent,
+      timestamp: actualTimestamp,
+      sessionId: actualSessionId
+    };
+    
+    // 打印日志
+    console.log(`创建会话开始消息: ID=${actualSessionId}, 时间=${new Date(actualTimestamp).toLocaleString()}, 引用内容=${quoteContent.substring(0, 50)}...`);
+    
+    const message = tim.createCustomMessage({
+      to,
+      conversationType: convType,
+      payload: {
+        data: JSON.stringify(sessionData),
+        description: '引用会话开始', 
+        extension: 'session_divider'
+      },
+      // 使用cloudCustomData保存会话信息，确保跨平台可用
+      cloudCustomData: JSON.stringify(sessionData)
+    });
+
+    console.log('创建Session开始消息成功，开始发送');
+    
+    // 发送消息
+    const imResponse = await tim.sendMessage(message);
+    console.log('发送Session开始消息成功', imResponse.data.message);
+    
+    return imResponse.data.message;
+  } catch (error) {
+    console.error('发送Session开始消息失败', error);
+    throw error;
+  }
+}
+
+/**
+ * 发送自定义Session结束消息
+ * @param {string} sessionId 会话ID
+ * @param {string} to 接收方ID
+ * @param {boolean} isGroup 是否群聊
+ * @returns {Promise<Object>} 消息对象
+ */
+export async function sendSessionEndMessage(sessionId, quoteContent, to, isGroup = false) {
+  const tim = getTIMInstance();
+  if (!tim) {
+    console.error('TIM SDK未初始化，无法发送消息');
+    throw new Error('TIM SDK未初始化');
+  }
+
+  try {
+    // 使用TencentCloudChat.TYPES而不是tim.TYPES
+    const convType = isGroup ? TencentCloudChat.TYPES.CONV_GROUP : TencentCloudChat.TYPES.CONV_C2C;
+    
+    // 创建自定义消息
+    const sessionData = {
+      sessionType: CUSTOM_MESSAGE_TYPE.SESSION_END,
+      quoteContent: quoteContent,
+      timestamp: Date.now(),
+      sessionId: sessionId
+    };
+    
+    const message = tim.createCustomMessage({
+      to,
+      conversationType: convType,
+      payload: {
+        data: JSON.stringify(sessionData),
+        description: '引用会话结束', 
+        extension: 'session_divider'
+      },
+      // 使用cloudCustomData保存会话信息，确保跨平台可用
+      cloudCustomData: JSON.stringify(sessionData)
+    });
+
+    console.log('创建Session结束消息成功，开始发送');
+    
+    // 发送消息
+    const imResponse = await tim.sendMessage(message);
+    console.log('发送Session结束消息成功', imResponse.data.message);
+    
+    return imResponse.data.message;
+  } catch (error) {
+    console.error('发送Session结束消息失败', error);
     throw error;
   }
 }
@@ -142,5 +254,35 @@ export async function setMessageRead(conversationID) {
   } catch (error) {
     console.error('设置消息已读失败', error);
     throw error;
+  }
+}
+
+/**
+ * 从自定义消息中提取Session数据
+ * @param {Object} message 消息对象
+ * @returns {Object|null} Session数据或null
+ */
+export function extractSessionData(message) {
+  try {
+    // 优先从cloudCustomData中获取
+    if (message.cloudCustomData) {
+      const cloudData = JSON.parse(message.cloudCustomData);
+      if (cloudData.sessionType) {
+        return cloudData;
+      }
+    }
+    
+    // 从payload.data中获取
+    if (message.type === TencentCloudChat.TYPES.MSG_CUSTOM) {
+      const data = JSON.parse(message.payload?.data);
+      if (data.sessionType) {
+        return data;
+      }
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('提取Session数据失败', error);
+    return null;
   }
 } 

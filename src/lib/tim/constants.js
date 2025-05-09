@@ -30,6 +30,12 @@ export const MESSAGE_TYPE = {
   LOCATION: 'TIMLocationElem', // 位置消息
 }
 
+// 自定义消息业务类型
+export const CUSTOM_MESSAGE_TYPE = {
+  SESSION_START: 'session_start', // Session开始
+  SESSION_END: 'session_end', // Session结束
+}
+
 // 消息优先级
 export const MESSAGE_PRIORITY = {
   HIGH: 'high', // 高优先级
@@ -40,3 +46,9 @@ export const MESSAGE_PRIORITY = {
 
 // 腾讯云IM事件 - 使用SDK原生事件常量
 export const TIM_EVENT = TencentCloudChat.EVENT; 
+
+// Session状态
+export const SESSION_STATUS = {
+  OPENED: 'opened',
+  CLOSED: 'closed',
+} 

@@ -315,18 +315,18 @@ const QASection = ({ isEditable = false }) => {
             }
             return <span key={index}>{char}</span>;
           })}
-        </div>
-        
+      </div>
+
         {/* 右键菜单 */}
-        {contextMenu && (
-          <TextContextMenu
-            x={contextMenu.x}
-            y={contextMenu.y}
-            onAction={handleContextMenuAction}
-            onClose={() => setContextMenu(null)}
+      {contextMenu && (
+        <TextContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          onAction={handleContextMenuAction}
+          onClose={() => setContextMenu(null)}
             isMultiSelectActive={isMultiSelectActive}
-          />
-        )}
+        />
+      )}
       </div>
 
       {/* 右侧注释列表 */}
