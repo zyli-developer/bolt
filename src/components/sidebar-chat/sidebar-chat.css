@@ -239,11 +239,39 @@
   position: relative;
 }
 
+/* 新增：整体引用包装容器 */
+.chat-quotes-wrapper {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 8px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* 引用操作按钮容器 */
+.chat-quote-actions {
+  display: flex;
+  justify-content: flex-start;
+  gap: 8px;
+  padding: 8px 12px 4px 12px;
+  background-color: #f8f8f8;
+  border-radius: 8px 8px 0 0;
+}
+
 /* 多条引用容器 */
 .chat-quotes-container {
   display: flex;
   flex-direction: column;
   gap: 1px;
+  border-radius: 0 0 8px 8px;
+  overflow: hidden;
+}
+
+/* 调整引用头部样式，移除上方圆角 */
+.chat-quote-actions + .chat-quotes-container .chat-quote-header:first-child {
+  border-radius: 0;
+  border-top: 1px solid #f0f0f0;
 }
 
 /* 引用头部样式 */
@@ -252,13 +280,12 @@
   align-items: center;
   padding: 8px 12px;
   background-color: #f8f8f8;
-  border-radius: 8px 8px 0 0;
   position: relative;
 }
 
 /* 最后一个引用特殊样式 */
 .chat-quotes-container .chat-quote-header:last-child {
-  margin-bottom: 1px;
+  border-radius: 0 0 8px 8px;
 }
 
 .chat-quote-icon {
@@ -602,4 +629,120 @@
 
 .message-control-btn.primary:hover {
   background-color: #0078e7;
+}
+
+/* 引用操作按钮 */
+.chat-quote-action-btn {
+  background-color: #f5f5f5;
+  border: 1px solid #e8e8e8;
+  border-radius: 20px;
+  padding: 5px 15px;
+  font-size: 13px;
+  color: rgba(0, 0, 0, 0.75);
+  cursor: pointer;
+  transition: all 0.2s;
+  outline: none;
+  box-shadow: none;
+  font-weight: normal;
+  line-height: 1.2;
+}
+
+.chat-quote-action-btn:hover {
+  background-color: #efefef;
+  border-color: #ddd;
+  color: rgba(0, 0, 0, 0.85);
+}
+
+.chat-quote-action-btn:active {
+  background-color: #e8e8e8;
+  transform: translateY(1px);
+}
+
+/* 消息右键菜单 */
+.message-context-menu {
+  position: fixed;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 6px 0;
+  min-width: 120px;
+  z-index: 1000;
+  animation: fadeIn 0.15s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.message-context-menu-item {
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 14px;
+  color: rgba(0, 0, 0, 0.75);
+  transition: background-color 0.2s;
+  user-select: none;
+}
+
+.message-context-menu-item:hover {
+  background-color: #f5f5f5;
+  color: #1890ff;
+}
+
+/* 高亮文本样式 */
+.text-highlight-selection {
+  background-color: rgba(24, 144, 255, 0.15);
+  border-radius: 2px;
+  padding: 1px 0;
+  border-bottom: 1px dashed #1890ff;
+  position: relative;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.text-highlight-selection:hover {
+  background-color: rgba(24, 144, 255, 0.25);
+}
+
+/* 连续选择模式指示器 */
+.multi-select-mode .message-bubble::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  border: 2px solid rgba(24, 144, 255, 0.5);
+  border-radius: 12px;
+  pointer-events: none;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(24, 144, 255, 0.3);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(24, 144, 255, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(24, 144, 255, 0);
+  }
+}
+
+/* 临时多选模式体样式 */
+body.multi-select-temp {
+  cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="%231890ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>'), auto;
+}
+
+/* 连续选择模式下的活跃状态 */
+.message-control-btn.active {
+  background-color: #1890ff;
+  color: white;
 }

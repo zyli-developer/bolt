@@ -11,6 +11,7 @@ import "./components/card/card-detail.css" // 导入卡片详情页样式
 import "./components/evaluation/evaluation.css" // 导入评估页面样式
 import "./components/sidebar/user-info-styles.css" // 导入用户信息区域样式
 import "./components/sidebar-chat/sidebar-chat.css" // 导入聊天区域样式
+import colorToken from "./styles/utils/colorToken";
 
 // 启用MSW进行API模拟
 import { worker } from "./mocks/browser"
@@ -25,15 +26,7 @@ root.render(
       locale={zhCN}
       theme={{
         token: {
-          colorPrimary: "#006ffd",
-          colorSuccess: "#3ac0a0",
-          colorError: "#ff0000",
-          colorTextBase: "#1f2024",
-          colorTextSecondary: "#71727a",
-          colorTextTertiary: "#8f9098",
-          colorBorder: "#c5c6cc",
-          colorBgContainer: "#ffffff",
-          colorBgLayout: "#f8f9fe",
+          ...colorToken,
         },
       }}
     >

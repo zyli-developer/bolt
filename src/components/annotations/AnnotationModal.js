@@ -1,13 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Modal, Input, Upload, Button, message } from 'antd';
 import { UploadOutlined } from '@ant-design/icons';
 
 const { TextArea } = Input;
 
 const AnnotationModal = ({ visible, onClose, onSave, selectedText, initialContent = '' }) => {
+
   const [summary, setSummary] = useState('');
-  const [content, setContent] = useState(initialContent);
+  const [content, setContent] = useState('');
   const [fileList, setFileList] = useState([]);
+
+  
+  // visible变为true时(即Modal打开时)，使用initialContent更新content
+  useEffect(() => {
+    if (visible) {
+      // 确保每次打开模态框时都使用最新的initialContent
+      setContent(initialContent || '');
+  
+    }
+  }, [visible, initialContent]);
+  
+  // 当Modal关闭时重置表单
+  useEffect(() => {
+    if (!visible) {
+      // 仅当Modal关闭时重置表单，不在open时重置
+      return;
+    }
+  }, [visible]);
 
   const handleSave = () => {
     if (!content.trim()) {
@@ -22,10 +41,17 @@ const AnnotationModal = ({ visible, onClose, onSave, selectedText, initialConten
       selectedText
     });
     
-    // 重置表单
+    // 不在这里重置表单，以避免关闭Modal时再次触发重置
+    // 在onCancel或visible变为false时再重置
+  };
+
+  const handleCancel = () => {
+    // 关闭Modal时重置表单
     setSummary('');
     setContent('');
     setFileList([]);
+    // 调用onClose
+    onClose();
   };
 
   const uploadProps = {
@@ -46,11 +72,18 @@ const AnnotationModal = ({ visible, onClose, onSave, selectedText, initialConten
     <Modal
       title="添加观点"
       open={visible}
-      onCancel={onClose}
+      onCancel={handleCancel}
       onOk={handleSave}
       okText="保存"
       cancelText="取消"
       width={520}
+      destroyOnClose={true}
+      afterClose={() => {
+        // Modal完全关闭后执行的回调，确保表单重置
+        setSummary('');
+        setContent('');
+        setFileList([]);
+      }}
     >
       <div style={{ marginBottom: 16 }}>
         <div style={{ marginBottom: 8, color: '#666' }}>摘要：</div>
@@ -68,13 +101,13 @@ const AnnotationModal = ({ visible, onClose, onSave, selectedText, initialConten
           background: '#f5f5f5',
           borderRadius: 4,
           fontSize: 14,
-          maxHeight: '3em',
+          maxHeight: '150px',
+          minHeight: '60px',
           lineHeight: '1.5em',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          display: '-webkit-box',
-          WebkitLineClamp: 2,
-          WebkitBoxOrient: 'vertical'
+          overflow: 'auto',
+          whiteSpace: 'pre-wrap',
+          wordBreak: 'break-word',
+          border: '1px solid #e8e8e8'
         }}>{selectedText}</div>
       </div>
       

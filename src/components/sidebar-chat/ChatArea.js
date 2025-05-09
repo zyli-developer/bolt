@@ -24,6 +24,12 @@ const QUOTE_TYPES = {
   VIEWPOINT: 'viewpoint',
 }
 
+// 引用操作类型
+const QUOTE_ACTIONS = {
+  WHAT_DOES_IT_MEAN: 'what_does_it_mean',
+  HOW_TO_OPTIMIZE: 'how_to_optimize',
+}
+
 const ChatArea = () => {
   const { 
     messages, 
@@ -224,6 +230,38 @@ const ChatArea = () => {
     console.log('ChatArea渲染，消息数量:', validMessages.length, '活跃用户:', activeUser);
   }, [validMessages.length, activeUser]);
 
+  // 处理引用操作
+  const handleQuoteAction = (actionType, quoteContent) => {
+    // 根据操作类型生成不同的文本
+    let actionText = '';
+    
+    switch (actionType) {
+      case QUOTE_ACTIONS.WHAT_DOES_IT_MEAN:
+        actionText = `这是什么意思？`;
+        break;
+      case QUOTE_ACTIONS.HOW_TO_OPTIMIZE:
+        actionText = `如何优化这里？`;
+        break;
+      default:
+        actionText = '';
+    }
+    
+    // 如果有操作文本，填入到输入框而不是直接发送
+    if (actionText) {
+      // 保留引用内容，不清空quotes
+      // 只更新输入框内容
+      setInputValue(actionText);
+      
+      // 聚焦到输入框（可选）
+      const inputElement = document.querySelector('.antdx-sender-input');
+      if (inputElement) {
+        setTimeout(() => {
+          inputElement.focus();
+        }, 0);
+      }
+    }
+  };
+
   return (
     <div className="chat-container">
       {/* 聊天头部 */}
@@ -299,18 +337,39 @@ const ChatArea = () => {
       {/* 聊天输入区域 - 使用Sender组件 */}
       <div className="chat-input-wrapper">
         {quotes.length > 0 && (
+          <div className="chat-quotes-wrapper">
+            {/* 提示按钮区域 - 移到quotes外部，只显示一次 */}
+            <div className="chat-quote-actions">
+              <button 
+                className="chat-quote-action-btn"
+                onClick={() => handleQuoteAction(QUOTE_ACTIONS.WHAT_DOES_IT_MEAN, quotes[0]?.content || '')}
+              >
+                这是什么意思
+              </button>
+              <button 
+                className="chat-quote-action-btn"
+                onClick={() => handleQuoteAction(QUOTE_ACTIONS.HOW_TO_OPTIMIZE, quotes[0]?.content || '')}
+              >
+                如何优化这里
+              </button>
+            </div>
+            
+            {/* 引用内容容器 */}
           <div className="chat-quotes-container">
             {quotes.map((quote) => (
-              <div className="chat-quote-header" key={quote.id}>
+                <div key={quote.id}>
+                  <div className="chat-quote-header">
                 <div className="chat-quote-icon">
                   <CloseOutlined onClick={() => handleClearQuote(quote.id)} />
                 </div>
                 <div className="chat-quote-content-text">{quote.content}</div>
                 <div className="chat-quote-label">
                   {quote.type === 'viewpoint' ? '观点' : '文本'}
+                    </div>
                 </div>
               </div>
             ))}
+            </div>
           </div>
         )}
         <Sender

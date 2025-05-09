@@ -15,16 +15,60 @@
 }
 
 /* QA区域的文本选择样式 */
-.contentText {
-  user-select: text;
-  cursor: text;
+.contentText, .qa-content-text {
+  user-select: text !important;
+  cursor: text !important;
   position: relative;
   line-height: 1.6;
 }
 
 .contentText::selection,
-.contentText *::selection {
+.contentText *::selection,
+.qa-content-text::selection,
+.qa-content-text *::selection {
   background-color: rgba(24, 144, 255, 0.2);
+}
+
+/* 确保QA区域中的高亮效果显示正常 */
+.qa-content-text .text-highlight-selection,
+.contentText .text-highlight-selection,
+.text-highlight-selection {
+  background-color: rgba(24, 144, 255, 0.15) !important;
+  border-radius: 2px !important;
+  padding: 1px 0 !important;
+  border-bottom: 1px dashed #1890ff !important;
+  position: relative !important;
+  cursor: pointer !important;
+  transition: background-color 0.2s !important;
+  color: inherit !important;
+  display: inline !important;
+}
+
+.qa-content-text .text-highlight-selection:hover,
+.contentText .text-highlight-selection:hover,
+.text-highlight-selection:hover {
+  background-color: rgba(24, 144, 255, 0.25) !important;
+}
+
+/* 连续选择模式指示器 */
+.multi-select-mode .contentText,
+.multi-select-mode .qa-content-text {
+  position: relative;
+  border: 2px solid rgba(24, 144, 255, 0.3);
+  border-radius: 4px;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(24, 144, 255, 0.3);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(24, 144, 255, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(24, 144, 255, 0);
+  }
 }
 
 /* 注释文本样式增强 */

@@ -8,71 +8,106 @@ const useStyles = createStyles(({ token, css }) => {
  
       height: calc(100vh - 300px);
       overflow: hidden;
+      
+      /* 确保QA界面中高亮效果显示正常 */
+      &.multi-select-mode {
+        position: relative;
+      }
+      
+      &.multi-select-mode .contentText::before,
+      &.multi-select-mode .qa-content-text::before {
+        content: '';
+        position: absolute;
+        top: -2px;
+        left: -2px;
+        right: -2px;
+        bottom: -2px;
+      
+        border-radius: 4px;
+        pointer-events: none;
+        animation: pulse 2s infinite;
+      }
+      
+      .text-highlight-selection {
+        background-color: rgba(24, 144, 255, 0.15);
+        border-radius: 2px;
+        padding: 1px 0;
+        border-bottom: 1px dashed #1890ff;
+        position: relative;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+      
+      .text-highlight-selection:hover {
+        background-color: rgba(24, 144, 255, 0.25);
+      }
     `,
     loadingContainer: css`
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100%;
+      width: 100%;
     `,
     leftSection: css`
       flex: 1;
-      background-color: #fff;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      padding: 16px;
+      background-color: white;
       border-radius: 8px;
-      padding: 24px;
-      overflow: auto;
     `,
     headerSection: css`
-      margin-bottom: 16px;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid ${token.colorBorderSecondary};
     `,
     headerTitle: css`
       margin: 0;
     `,
     contentText: css`
-      font-size: 14px;
-      line-height: 1.8;
-      color: #333;
-      position: relative;
+      padding: 16px;
+      background-color: ${token.colorBgContainer};
+      border-radius: 8px;
+      margin-bottom: 16px;
+      font-size: 15px;
+      line-height: 1.6;
+      max-height: calc(100% - 80px);
+      overflow-y: auto;
       white-space: pre-wrap;
-      
-      /* 默认状态下禁用文本选择 */
-      user-select: none;
-      cursor: default;
-      
-      /* 在编辑模式下启用文本选择 */
-      .edit-mode & {
-        user-select: text;
-        cursor: text;
-      }
-      
-      &::selection, *::selection {
-        background-color: rgba(24, 144, 255, 0.2);
-      }
+      position: relative;
+      user-select: text;
+      transition: background-color 0.3s;
     `,
     annotatedText: css`
-      background-color: #E6F7FF;
+      background-color: rgba(255, 211, 41, 0.15);
+      border-radius: 2px;
+      padding: 1px 0;
+      border-bottom: 1px dashed rgba(255, 211, 41, 0.8);
       position: relative;
+      cursor: pointer;
+      transition: background-color 0.2s;
       
-      &::selection, *::selection {
-        background-color: rgba(24, 144, 255, 0.3);
+      &:hover {
+        background-color: rgba(255, 211, 41, 0.25);
       }
     `,
     annotationMarker: css`
-      position: absolute;
-      top: -12px;
-      right: -12px;
-      background: #1890ff;
-      color: #fff;
-      border-radius: 50%;
-      width: 16px;
-      height: 16px;
+      display: none;
+    `,
+    actionButton: css`
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 12px;
+      
+      &.active {
+        color: ${token.colorPrimary};
+        background-color: ${token.colorPrimaryBg};
+      }
     `,
     rightSection: css`
       width: 320px;
@@ -176,6 +211,16 @@ const useStyles = createStyles(({ token, css }) => {
     selectedTextHighlight: css`
       background-color: rgba(24, 144, 255, 0.1);
       border-bottom: 1px dashed ${token.colorPrimary};
+    `,
+    // 连续选择相关样式
+    highlightText: css`
+      background-color: rgba(24, 144, 255, 0.15);
+      border-radius: 2px;
+      padding: 1px 0;
+      border-bottom: 1px dashed #1890ff;
+      position: relative;
+      cursor: pointer;
+      transition: background-color 0.2s;
     `,
   };
 });

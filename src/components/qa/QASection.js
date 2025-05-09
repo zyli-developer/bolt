@@ -1,32 +1,36 @@
-import React, { useState, useEffect, useCallback, useRef, useContext } from 'react';
+import React, { useState, useEffect, useRef, useContext } from 'react';
 import { Typography, Avatar, Tag, Button, message, Spin } from 'antd';
-import { EditOutlined, EyeOutlined, DeleteOutlined, PlusOutlined, MinusOutlined } from '@ant-design/icons';
+import { EditOutlined, EyeOutlined, DeleteOutlined, PlusOutlined, MinusOutlined, UnorderedListOutlined } from '@ant-design/icons';
 import AnnotationModal from '../annotations/AnnotationModal';
-import TextContextMenu from '../context/TextContextMenu';
 import DiscussModal from '../modals/DiscussModal';
 import CommentsList from '../common/CommentsList';
 import * as annotationService from '../../services/annotationService';
 import * as qaService from '../../services/qaService';
 import useStyles from '../../styles/components/qa/QASection';
 import { OptimizationContext } from '../../contexts/OptimizationContext';
+import useMultiSelect from '../../hooks/useMultiSelect';
+import TextContextMenu from '../context/TextContextMenu';
+import '../../styles/components/MultiSelect.css';
 
 const { Title } = Typography;
 
+/**
+ * QA优化界面组件
+ */
 const QASection = ({ isEditable = false }) => {
   const { styles } = useStyles();
   
   const [annotations, setAnnotations] = useState([]);
   const [expandedAnnotation, setExpandedAnnotation] = useState(null);
-  const [contextMenu, setContextMenu] = useState(null);
-  const [selectedText, setSelectedText] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [selectedRange, setSelectedRange] = useState(null);
   const [qaContent, setQAContent] = useState({ title: '', content: '' });
   const contentRef = useRef(null);
   
   // 添加讨论模态框状态
   const [discussModalVisible, setDiscussModalVisible] = useState(false);
+  const [annotationModalVisible, setAnnotationModalVisible] = useState(false);
+  const [selectedModalText, setSelectedModalText] = useState('');
 
   // 引入全局优化上下文
   const { 
@@ -35,6 +39,55 @@ const QASection = ({ isEditable = false }) => {
     addComment,
     setStepComments
   } = useContext(OptimizationContext);
+
+  // 使用连续选择hook
+  const multiSelect = useMultiSelect(contentRef);
+  const {
+    isMultiSelectActive,
+    setIsMultiSelectActive,
+    selectedTexts,
+    selectedText,
+    contextMenu,
+    setContextMenu,
+    handleContextMenu,
+    toggleMultiSelect,
+    clearAllHighlights,
+    getCombinedText,
+    syncHighlightsToDOM,
+    resetAllState
+  } = multiSelect;
+
+  // 处理全局点击事件关闭右键菜单
+  useEffect(() => {
+    const handleGlobalClick = (e) => {
+      // 如果点击的不是右键菜单内部元素，且右键菜单显示中，则关闭菜单
+      if (contextMenu && !e.target.closest('.text-context-menu')) {
+        setContextMenu(null);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleGlobalClick);
+    
+    return () => {
+      document.removeEventListener('mousedown', handleGlobalClick);
+    };
+  }, [contextMenu, setContextMenu]);
+
+  // 防止默认的浏览器右键菜单
+  useEffect(() => {
+    const preventDefaultContextMenu = (e) => {
+      // 只在容器内阻止默认右键菜单
+      if (contentRef.current && contentRef.current.contains(e.target)) {
+        e.preventDefault();
+      }
+    };
+    
+    document.addEventListener('contextmenu', preventDefaultContextMenu);
+    
+    return () => {
+      document.removeEventListener('contextmenu', preventDefaultContextMenu);
+    };
+  }, []);
 
   useEffect(() => {
     Promise.all([
@@ -75,67 +128,54 @@ const QASection = ({ isEditable = false }) => {
     }
   };
 
-  const handleTextSelection = useCallback((e) => {
-    // 恢复权限限制，仅在编辑模式下可以选择文本
-    if (!isEditable) return;
-    
-    const selection = window.getSelection();
-    const selectedText = selection.toString().trim();
-    
-    if (selectedText) {
-      // 获取选中文本的范围
-      const range = selection.getRangeAt(0);
-      const preSelectionRange = range.cloneRange();
-      preSelectionRange.selectNodeContents(contentRef.current);
-      preSelectionRange.setEnd(range.startContainer, range.startOffset);
-      
-      const start = preSelectionRange.toString().length;
-      const end = start + selectedText.length;
-
-      setSelectedText(selectedText);
-      setSelectedRange({ start, end });
-      setContextMenu({
-        x: e.clientX,
-        y: e.clientY
-      });
-    } else {
-      setContextMenu(null);
-      setSelectedRange(null);
-    }
-  }, [isEditable]);
-
+  // 处理右键菜单项点击
   const handleContextMenuAction = (action) => {
-    setContextMenu(null);
-    
     switch (action) {
       case 'discuss':
+        // 打开讨论模态框
+        setSelectedModalText(getCombinedText());
         setDiscussModalVisible(true);
+        setContextMenu(null);
+        // 关闭连续选择模式并彻底清除状态
+        if (isMultiSelectActive) {
+          resetAllState();
+          setIsMultiSelectActive(false);
+        }
         break;
       case 'annotate':
-        // 已经在isEditable模式下，无需再次判断
-      setModalVisible(true);
+        // 打开添加观点模态框
+        setSelectedModalText(getCombinedText());
+        setAnnotationModalVisible(true);
+        setContextMenu(null);
+        // 关闭连续选择模式并彻底清除状态
+        if (isMultiSelectActive) {
+          resetAllState();
+          setIsMultiSelectActive(false);
+        }
         break;
       case 'select':
-        // 实现连续选择的功能，可以在此添加
-        console.log('连续选择功能', selectedText);
+        // 切换连续选择模式
+        if (isMultiSelectActive) {
+          resetAllState();
+          setIsMultiSelectActive(false);
+        } else {
+          resetAllState(); // 防止有残留状态
+          setIsMultiSelectActive(true);
+        }
+        setContextMenu(null);
         break;
       default:
+        setContextMenu(null);
         break;
     }
   };
 
   const handleSaveAnnotation = async (data) => {
     try {
-      if (!selectedRange) {
-        message.error('请重新选择要注释的文本');
-        return;
-      }
-
+      // 创建注释数据对象
       const annotationData = {
         ...data,
-        start: selectedRange.start,
-        end: selectedRange.end,
-        selectedText: selectedText,
+        selectedText: data.selectedText,
         id: `annotation-${Date.now()}` // 确保有唯一ID
       };
 
@@ -149,8 +189,16 @@ const QASection = ({ isEditable = false }) => {
         addComment(annotationData);
       }
       
+      // 关闭模态框
+      setAnnotationModalVisible(false);
       setModalVisible(false);
-      setSelectedRange(null);
+      
+      // 确保连续选择状态关闭并彻底清除状态
+      if (isMultiSelectActive) {
+        resetAllState();
+        setIsMultiSelectActive(false);
+      }
+      
       message.success('添加注释成功');
     } catch (error) {
       message.error('添加注释失败');
@@ -180,6 +228,16 @@ const QASection = ({ isEditable = false }) => {
     setExpandedAnnotation(id);
   };
 
+  // 处理自定义右键菜单，只在用户点击右键时显示
+  const handleContentContextMenu = (e) => {
+    // 阻止默认右键菜单
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // 显示自定义右键菜单
+    handleContextMenu(e);
+  };
+
   if (loading) {
     return (
       <div className={styles.loadingContainer}>
@@ -189,26 +247,53 @@ const QASection = ({ isEditable = false }) => {
   }
 
   return (
-    <div className={`${styles.container} ${isEditable ? 'edit-mode' : ''}`}>
+    <div className={`${styles.container} ${isEditable ? 'edit-mode' : ''} ${isMultiSelectActive ? 'multi-select-mode' : ''}`}>
       {/* 左侧文本区域 */}
       <div className={styles.leftSection}>
         <div className={styles.headerSection}>
           <Title level={5} className={styles.headerTitle}>{qaContent.title}</Title>
-          {isEditable ? (
-            <Button type="text" icon={<EyeOutlined />}>预览</Button>
-          ) : null}
+          {isEditable && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Button 
+                type="text" 
+                icon={<UnorderedListOutlined />} 
+                className={`${styles.actionButton} ${isMultiSelectActive ? 'active' : ''}`}
+                onClick={() => {
+                  // 如果已激活，则先清除状态，再关闭
+                  if (isMultiSelectActive) {
+                    resetAllState();
+                    setIsMultiSelectActive(false);
+                  } else {
+                    // 如果未激活，则先开启状态
+                    resetAllState(); // 防止有残留状态
+                    setIsMultiSelectActive(true);
+                  }
+                }}
+                title={isMultiSelectActive ? "关闭连续选择" : "连续选择"}
+              />
+              <Button 
+                type="text" 
+                icon={<PlusOutlined />} 
+                className={styles.actionButton}
+                onClick={() => setAnnotationModalVisible(true)}
+              >
+                添加观点
+              </Button>
+              <Button 
+                type="text" 
+                icon={<EyeOutlined />} 
+                className={styles.actionButton}
+              >
+                预览
+              </Button>
+            </div>
+          )}
         </div>
         
         <div 
           ref={contentRef}
-          className={styles.contentText}
-          onMouseUp={handleTextSelection}
-          onContextMenu={(e) => {
-            e.preventDefault();
-            if (isEditable) {
-              handleTextSelection(e);
-            }
-          }}
+          className={`${styles.contentText} qa-content-text`}
+          onContextMenu={handleContentContextMenu}
         >
           {qaContent.content.split('').map((char, index) => {
             const annotation = annotations.find(a => index >= a.start && index < a.end);
@@ -231,6 +316,17 @@ const QASection = ({ isEditable = false }) => {
             return <span key={index}>{char}</span>;
           })}
         </div>
+        
+        {/* 右键菜单 */}
+        {contextMenu && (
+          <TextContextMenu
+            x={contextMenu.x}
+            y={contextMenu.y}
+            onAction={handleContextMenuAction}
+            onClose={() => setContextMenu(null)}
+            isMultiSelectActive={isMultiSelectActive}
+          />
+        )}
       </div>
 
       {/* 右侧注释列表 */}
@@ -253,29 +349,38 @@ const QASection = ({ isEditable = false }) => {
         />
       </div>
 
-      {/* 右键菜单 - 使用通用的TextContextMenu组件 */}
-      {contextMenu && (
-        <TextContextMenu
-          x={contextMenu.x}
-          y={contextMenu.y}
-          onAction={handleContextMenuAction}
-          onClose={() => setContextMenu(null)}
-        />
-      )}
-
       {/* 添加注释的 Modal */}
       <AnnotationModal
-        visible={modalVisible}
-        onClose={() => setModalVisible(false)}
+        visible={annotationModalVisible}
+        onClose={() => {
+          setAnnotationModalVisible(false);
+          // 确保连续选择状态关闭并彻底清除状态
+          if (isMultiSelectActive) {
+            resetAllState();
+            setIsMultiSelectActive(false);
+          }
+          // 清空选中的文本
+          setSelectedModalText('');
+        }}
         onSave={handleSaveAnnotation}
-        selectedText={selectedText}
+        selectedText={selectedModalText}
+        initialContent={selectedModalText}
       />
       
       {/* 讨论对话框 */}
       <DiscussModal
         visible={discussModalVisible}
-        onClose={() => setDiscussModalVisible(false)}
-        selectedText={selectedText}
+        onClose={() => {
+          setDiscussModalVisible(false);
+          // 确保连续选择状态关闭并彻底清除状态
+          if (isMultiSelectActive) {
+            resetAllState();
+            setIsMultiSelectActive(false);
+          }
+          // 清空选中的文本
+          setSelectedModalText('');
+        }}
+        selectedText={selectedModalText}
       />
     </div>
   );

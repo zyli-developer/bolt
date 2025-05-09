@@ -194,6 +194,17 @@ const CardDetailPage = () => {
   // 添加注释展开状态
   const [expandedComment, setExpandedComment] = useState(null);
   
+  // 添加连续选择相关状态
+  const [isMultiSelectActive, setIsMultiSelectActive] = useState(false);
+  const [selectedTexts, setSelectedTexts] = useState([]);
+  const [selectionRanges, setSelectionRanges] = useState([]);
+  
+  // 临时多选模式（按Ctrl/Command键触发）
+  const [isMultiSelectTempMode, setIsMultiSelectTempMode] = useState(false);
+  
+  // 添加用于模态框显示的文本状态
+  const [selectedModalText, setSelectedModalText] = useState('');
+  
   // 处理注释展开切换
   const handleCommentToggle = (id) => {
     setExpandedComment(expandedComment === id ? null : id);
@@ -594,8 +605,53 @@ const CardDetailPage = () => {
     const selection = window.getSelection();
     const selectedText = selection.toString().trim();
     
-    // 如果有选中文本，显示右键菜单
+    const isModifierKeyPressed = event.ctrlKey || event.metaKey; // 检测Ctrl/Command键
+    
+    // 如果有选中文本，显示右键菜单或进行连续选择
     if (selectedText) {
+      // 创建选择的范围信息
+      const range = selection.getRangeAt(0);
+      const newSelectionRange = {
+        range: range.cloneRange(),
+        text: selectedText
+      };
+      
+      // 检查此文本是否已被高亮，避免重复选择
+      const hasHighlight = range.commonAncestorContainer.closest?.('.text-highlight-selection');
+      if (hasHighlight) {
+        // 如果已经是高亮元素，仅显示右键菜单，不进行其他处理
+        event.preventDefault();
+        setContextMenu({
+          x: event.clientX,
+          y: event.clientY
+        });
+        return;
+      }
+      
+      // 连续选择模式处理
+      if (isMultiSelectActive || isMultiSelectTempMode || isModifierKeyPressed) {
+        event.preventDefault();
+        
+        // 检查文本是否已存在于选择列表中
+        if (!selectedTexts.includes(selectedText)) {
+          // 添加到已选择的文本列表
+          setSelectedTexts(prev => [...prev, selectedText]);
+          setSelectionRanges(prev => [...prev, newSelectionRange]);
+          
+          // 应用高亮样式，保持选中状态
+          applyHighlightToSelection(range, selectedText);
+        }
+      } else {
+        // 普通选择，清除之前的选择
+        clearAllHighlights();
+        setSelectedTexts([selectedText]);
+        setSelectionRanges([newSelectionRange]);
+        
+        // 对第一次选中的文本也应用高亮
+        applyHighlightToSelection(range, selectedText);
+      }
+      
+      // 显示右键菜单
       event.preventDefault();
       setSelectedText(selectedText);
       setContextMenu({
@@ -604,20 +660,93 @@ const CardDetailPage = () => {
       });
     }
   };
+  
+  // 应用高亮样式到选中文本
+  const applyHighlightToSelection = (range, text) => {
+    if (!range) return;
+    
+    // 创建高亮元素
+    const highlightEl = document.createElement('span');
+    highlightEl.className = 'text-highlight-selection';
+    highlightEl.textContent = text;
+    
+    // 清除原有内容，插入高亮元素
+    range.deleteContents();
+    range.insertNode(highlightEl);
+  };
+  
+  // 清除所有高亮
+  const clearAllHighlights = () => {
+    // 清除所有高亮元素
+    const highlights = document.querySelectorAll('.text-highlight-selection');
+    highlights.forEach(el => {
+      const parent = el.parentNode;
+      if (parent) {
+        // 将高亮元素替换为其文本内容
+        const textNode = document.createTextNode(el.textContent);
+        parent.replaceChild(textNode, el);
+        parent.normalize(); // 合并相邻的文本节点
+      }
+    });
+    
+    // 重置选择状态
+    setSelectedTexts([]);
+    setSelectionRanges([]);
+  };
+
+  // 打开添加观点模态框前的处理
+  const handleOpenAnnotationModal = () => {
+    // 如果是连续选择模式，合并所有选中的文本
+    // 确保不会重复添加最后选中的文本
+    const textToShow = (isMultiSelectActive || isMultiSelectTempMode) && selectedTexts.length > 0
+      ? Array.from(new Set(selectedTexts)).join('\n\n') // 使用Set去重
+      : selectedText;
+    
+    // 设置要在模态框中显示的文本
+    console.log('textToShow', textToShow);
+    setSelectedModalText(textToShow);
+    
+    // 显示模态框
+    setAnnotationModalVisible(true);
+  };
 
   // 处理右键菜单项点击
   const handleContextMenuAction = (action) => {
     switch (action) {
       case 'discuss':
+        // 如果处于连续选择模式，合并所有选中的文本
+        if ((isMultiSelectActive || isMultiSelectTempMode) && selectedTexts.length > 0) {
+          // 使用Set去重，确保不会重复添加最后选中的文本
+          const combinedText = Array.from(new Set(selectedTexts)).join('\n\n');
+          setSelectedText(combinedText);
+        }
         setDiscussModalVisible(true);
+        
+        // 讨论后关闭连续选择模式
+        setIsMultiSelectActive(false);
         break;
       case 'annotate':
         // 打开添加观点模态框
-        setAnnotationModalVisible(true);
+        handleOpenAnnotationModal();
+        
+        // 添加观点后关闭连续选择模式
+        setIsMultiSelectActive(false);
         break;
       case 'select':
-        // 可以在这里实现连续选功能
-        console.log('连续选', selectedText);
+        // 切换连续选择模式
+        setIsMultiSelectActive(!isMultiSelectActive);
+        
+        // 如果当前有选中的文本，且正在开启连续选择模式，保留当前选中的文本
+        // 只有在关闭连续选择模式时才清除高亮
+        if (isMultiSelectActive) {
+          // 关闭连续选择模式时清除所有高亮
+          clearAllHighlights();
+        }
+        // 如果是开启连续选择模式，且右键菜单是因为选中文本出现的，保留该文本高亮
+        else if (selectedText) {
+          // 当前选中文本已经加入了selectedTexts中，不需要额外操作
+          // 关闭右键菜单后文本会保持高亮状态
+        }
         break;
       default:
         break;
@@ -626,44 +755,116 @@ const CardDetailPage = () => {
 
   // 全局点击事件，用于关闭右键菜单
   useEffect(() => {
-    const handleGlobalClick = () => {
+    // 全局右键点击事件处理
+    const handleGlobalContextMenu = (event) => {
+      // 先检查是否在已高亮元素上右键
+      const isHighlightedText = event.target.closest('.text-highlight-selection');
+      
+      if (isHighlightedText) {
+        // 在已高亮文本上右键，显示右键菜单，但不再添加到已选择列表
+        event.preventDefault();
+        setContextMenu({
+          x: event.clientX,
+          y: event.clientY
+        });
+        return;
+      }
+      
+      // 检查是否在可选择文本的元素上
+      const isSelectableText = 
+        event.target.closest('.evaluation-text') || 
+        event.target.closest('.message-bubble') ||
+        event.target.closest('.qa-section') ||
+        event.target.closest('.scene-section') ||
+        event.target.closest('.template-section');
+      
+      if (isSelectableText && isOptimizationMode) {
+        handleTextSelection(event);
+      } else {
+        // 不是在已高亮的文本上右键，也不是在可选择的文本上右键，则关闭菜单
+        setContextMenu(null);
+      }
+    };
+    
+    // 全局点击处理
+    const handleGlobalClick = (e) => {
+      // 点击其他区域关闭右键菜单，但不清除选择
       if (contextMenu) {
         setContextMenu(null);
       }
-    };
-
-    // 全局右键点击事件，针对.evaluation-text元素
-    const handleGlobalContextMenu = (event) => {
-      // 检查点击的元素是否是evaluation-text或其子元素
-      const isEvaluationText = event.target.closest('.evaluation-text');
       
-      if (isEvaluationText && isOptimizationMode) {
-        handleTextSelection(event);
-      } else {
-        setContextMenu(null);
+      // 检查是否点击了高亮元素
+      const isClickOnHighlight = e.target.closest('.text-highlight-selection');
+      if (isClickOnHighlight) {
+        return; // 点击高亮文本时不清除高亮
+      }
+      
+      // 如果不是连续选择模式，且不是临时多选模式，且不是按着Ctrl/Command键，点击其他区域时清除高亮
+      if (!isMultiSelectActive && !isMultiSelectTempMode && !(e.ctrlKey || e.metaKey)) {
+        clearAllHighlights();
       }
     };
     
+    // 监听键盘事件，处理Ctrl/Command键
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && !isMultiSelectActive) {
+        // Ctrl/Command键按下，临时进入多选模式
+        document.body.classList.add('multi-select-temp');
+        
+        // 如果用户按下了Ctrl/Command，启用临时多选模式功能
+        setIsMultiSelectTempMode(true);
+      }
+    };
+    
+    const handleKeyUp = (e) => {
+      if (!e.ctrlKey && !e.metaKey) {
+        // Ctrl/Command键释放，如果不是永久多选模式，清除临时标记
+        if (!isMultiSelectActive) {
+          document.body.classList.remove('multi-select-temp');
+          
+          // 释放键时，关闭临时多选模式
+          setIsMultiSelectTempMode(false);
+        }
+      }
+    };
+    
+    // 添加事件监听
     document.addEventListener('click', handleGlobalClick);
     document.addEventListener('contextmenu', handleGlobalContextMenu);
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('keyup', handleKeyUp);
     
+    // 组件卸载时移除监听
     return () => {
       document.removeEventListener('click', handleGlobalClick);
       document.removeEventListener('contextmenu', handleGlobalContextMenu);
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('keyup', handleKeyUp);
     };
-  }, [contextMenu, isOptimizationMode]);
+  }, [contextMenu, isOptimizationMode, isMultiSelectActive, isMultiSelectTempMode, selectedTexts, clearAllHighlights]);
+
+  // 组件卸载时清理body上的类
+  useEffect(() => {
+    return () => {
+      document.body.classList.remove('optimization-mode');
+      document.body.classList.remove('multi-select-temp');
+    };
+  }, []);
 
   // 处理添加注释的逻辑
   const handleSaveAnnotation = (data) => {
     try {
-      if (!selectedText) {
+      // 如果是多选模式，使用合并的文本
+      const textToSave = isMultiSelectActive || isMultiSelectTempMode ? selectedTexts.join('\n\n') : selectedText;
+      
+      if (!textToSave) {
         message.error('请选择文本');
         return;
       }
 
       const annotationData = {
         ...data,
-        selectedText,
+        selectedText: textToSave,
         id: `comment-${Date.now()}`, // 生成唯一ID
         time: new Date().toISOString()
       };
@@ -673,6 +874,12 @@ const CardDetailPage = () => {
       
       setAnnotationModalVisible(false);
       setContextMenu(null);
+      
+      // 清除高亮和选择
+      if (isMultiSelectActive || isMultiSelectTempMode) {
+        clearAllHighlights();
+      }
+      
       message.success('添加成功');
     } catch (error) {
       console.error('添加注释失败', error);
@@ -680,12 +887,45 @@ const CardDetailPage = () => {
     }
   };
 
-  // 组件卸载时清理body上的类
+  // 添加一个mouseup事件处理函数，用于处理在连续选择状态下无需右键也能自动高亮
   useEffect(() => {
-    return () => {
-      document.body.classList.remove('optimization-mode');
+    const handleAutoSelection = (event) => {
+      // 只在连续选择模式下启用自动选择高亮
+      if (!isMultiSelectActive) return;
+      
+      // 从window获取当前选区
+      const selection = window.getSelection();
+      const selectedText = selection.toString().trim();
+      
+      // 如果有选中文本
+      if (selectedText) {
+        // 创建选择的范围信息
+        const range = selection.getRangeAt(0);
+        
+        // 检查此文本是否已被高亮，避免重复选择
+        const hasHighlight = range.commonAncestorContainer.closest?.('.text-highlight-selection');
+        if (hasHighlight) return; // 如果已经是高亮元素，不再处理
+        
+        // 检查该文本是否已经在选中列表中，避免重复添加
+        if (selectedTexts.includes(selectedText)) return;
+        
+        // 添加到已选择的文本列表，使用Set避免重复
+        setSelectedTexts(prev => [...new Set([...prev, selectedText])]);
+        
+        // 应用高亮样式，保持选中状态
+        applyHighlightToSelection(range, selectedText);
+      }
     };
-  }, []);
+    
+    // 仅在连续选择模式下添加监听
+    if (isMultiSelectActive) {
+      document.addEventListener('mouseup', handleAutoSelection);
+    }
+    
+    return () => {
+      document.removeEventListener('mouseup', handleAutoSelection);
+    };
+  }, [isMultiSelectActive, selectedTexts]);
 
   if (loading) {
     return (
@@ -709,7 +949,7 @@ const CardDetailPage = () => {
   }
 
   return (
-    <div className={`card-detail-page ${isChatOpen ? "chat-open" : "chat-closed"}`}>
+    <div className={`card-detail-page ${isChatOpen ? "chat-open" : "chat-closed"} ${isMultiSelectActive ? 'multi-select-mode' : ''}`}>
       {/* 隐藏头部的community/workspace/peison的tab */}
       <div className="hide-tabs-nav" style={{ display: 'none' }}>
         {/* 这里本应显示tab，但现在设置为不显示 */}
@@ -1551,22 +1791,35 @@ const CardDetailPage = () => {
           y={contextMenu.y}
           onAction={handleContextMenuAction}
           onClose={() => setContextMenu(null)}
+          isMultiSelectActive={isMultiSelectActive}
         />
       )}
       
       {/* 讨论模态框 */}
       <DiscussModal
         visible={discussModalVisible}
-        onClose={() => setDiscussModalVisible(false)}
-        selectedText={selectedText}
+        onClose={() => {
+          setDiscussModalVisible(false);
+          // 关闭讨论窗口后，如果是连续选择模式，清除所有高亮
+          if (isMultiSelectActive) {
+            clearAllHighlights();
+          }
+        }}
+        selectedText={(isMultiSelectActive || isMultiSelectTempMode) && selectedTexts.length > 0
+          ? Array.from(new Set(selectedTexts)).join('\n\n') // 使用Set去重
+          : selectedText}
       />
 
       {/* 添加观点模态框 */}
       <AnnotationModal
         visible={annotationModalVisible}
-        onClose={() => setAnnotationModalVisible(false)}
+        onClose={() => {
+          setAnnotationModalVisible(false);
+          clearAllHighlights();
+        }}
         onSave={handleSaveAnnotation}
-        selectedText={selectedText}
+        selectedText={selectedModalText}
+        initialContent={selectedModalText}
       />
     </div>
   )

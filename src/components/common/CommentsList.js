@@ -115,7 +115,7 @@ const CommentsList = ({
       return 'Unknown';
     }
   };
-
+  
   return (
     <div className="comments-list" style={customStyles.container}>
       {title && (
@@ -157,7 +157,7 @@ const CommentsList = ({
                     onClick={() => handleToggleExpand(getItemId(item, index))}
                   >
                     {expandedId === getItemId(item, index) ? <MinusOutlined /> : <PlusOutlined />}
-                  </div>
+      </div>
                 )}
               </div>
               
@@ -168,8 +168,8 @@ const CommentsList = ({
                   <div className="comment-content-wrapper">
                     <p className="comment-text">
                       {getDisplayText(item)}
-                    </p>
-                  </div>
+              </p>
+            </div>
                   
                   {/* 附件区域 */}
                   {item.attachments?.length > 0 && (
@@ -221,9 +221,9 @@ const CommentsList = ({
                         >
                           删除
                         </Button>
-                      </div>
-                    )}
-                  </div>
+          </div>
+        )}
+      </div>
                 </div>
               )}
             </div>
