@@ -312,28 +312,6 @@ const ChatArea = () => {
     };
   }, [activeUser?.id]);
 
-  // 定时刷新消息，确保长时间打开页面也能看到最新消息
-  useEffect(() => {
-    // 避免重复创建定时器
-    let refreshInterval = null;
-    
-    if (activeUser && activeUser.id) {
-      refreshInterval = setInterval(() => {
-        if (document.visibilityState === 'visible') {
-          console.log('定时刷新消息');
-          refreshMessages().catch(err => {
-            console.error('定时刷新消息失败:', err);
-          });
-        }
-      }, 60000); // 每分钟刷新一次
-    }
-    
-    return () => {
-      if (refreshInterval) {
-        clearInterval(refreshInterval);
-      }
-    };
-  }, [activeUser?.id]);
 
   return (
     <div className="chat-container">
@@ -448,20 +426,20 @@ const ChatArea = () => {
             </div>
             
             {/* 引用内容容器 */}
-            <div className="chat-quotes-container">
-              {quotes.map((quote) => (
+          <div className="chat-quotes-container">
+            {quotes.map((quote) => (
                 <div key={quote.id}>
                   <div className="chat-quote-header">
-                    <div className="chat-quote-icon">
-                      <CloseOutlined onClick={() => handleClearQuote(quote.id)} />
-                    </div>
-                    <div className="chat-quote-content-text">{quote.content}</div>
-                    <div className="chat-quote-label">
-                      {quote.type === 'viewpoint' ? '观点' : '文本'}
-                    </div>
-                  </div>
+                <div className="chat-quote-icon">
+                  <CloseOutlined onClick={() => handleClearQuote(quote.id)} />
                 </div>
-              ))}
+                <div className="chat-quote-content-text">{quote.content}</div>
+                <div className="chat-quote-label">
+                  {quote.type === 'viewpoint' ? '观点' : '文本'}
+                    </div>
+                </div>
+              </div>
+            ))}
             </div>
           </div>
         )}

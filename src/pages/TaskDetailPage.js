@@ -42,11 +42,13 @@ import QASection from "../components/qa/QASection"
 import SceneSection from '../components/scene/SceneSection'
 import TemplateSection from '../components/template/TemplateSection'
 import TestConfirmation from "../components/task/TestConfirmation"
+import useTaskDetailStyles from '../styles/pages/TaskDetailPage'
 
 const { Title, Text, Paragraph } = Typography
 const { Option } = Select
 
 const TaskDetailPage = () => {
+  const { styles } = useTaskDetailStyles()
   const { id } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
@@ -512,7 +514,6 @@ const TaskDetailPage = () => {
           <div className="qa-section" style={{
             background: '#FAFAFA',
             borderRadius: '12px',
-            margin: '-24px'
           }}>
             <QASection isEditable={false} />
           </div>
@@ -964,19 +965,7 @@ const TaskDetailPage = () => {
           size="large"
           icon={<StartTaskIcon />}
           onClick={handleStartTask}
-          style={{
-            backgroundColor: '#006ffd',
-            border: 'none',
-            color: '#fff',
-            fontSize: '16px',
-            fontWeight: '500',
-            height: '36px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
-            width: '100%',
-            justifyContent: 'center'
-          }}
+          className={styles.startTaskButton}
         >
           开始任务
         </Button>
@@ -989,22 +978,18 @@ const TaskDetailPage = () => {
           <Button
             size="large"
             onClick={() => {/* 处理生成报告 */ }}
-            style={{ flex: 1 }}
+            className={styles.flexButton}
           >
             生成报告
           </Button>
           <Button
             size="large"
             onClick={() => {/* 处理完成任务 */ }}
-            style={{ flex: 1 }}
+            className={styles.flexButton}
           >
             完成任务，提交结果
           </Button>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
-          }}>
+          <div className={styles.optimizeModeContainer}>
             <span>优化模式</span>
             <Switch
               checked={isOptimizeMode}
@@ -1027,7 +1012,7 @@ const TaskDetailPage = () => {
               setCurrentStep(3);
               setActiveSection('template');
             }}
-            style={{ flex: 1 }}
+            className={styles.flexButton}
           >
             上一步
           </Button>
@@ -1038,10 +1023,7 @@ const TaskDetailPage = () => {
               setIsTesting(true);
               setTestProgress(0);
             }}
-            style={{
-              flex: 2,
-              backgroundColor: '#006ffd'
-            }}
+            className={`${styles.primaryButton} ${styles.flexButton2}`}
           >
             确认无误，开始测试
           </Button>
@@ -1076,14 +1058,14 @@ const TaskDetailPage = () => {
               }
             }
           }}
-          style={{ flex: 1 }}
+          className={styles.flexButton}
         >
           {currentStep === 1 ? '返回' : '上一步'}
         </Button>
         <Button
           size="large"
           onClick={handleSave}
-          style={{ flex: 1 }}
+          className={styles.flexButton}
         >
           保存
         </Button>
@@ -1091,10 +1073,7 @@ const TaskDetailPage = () => {
           type="primary"
           size="large"
           onClick={handleSaveAndNext}
-          style={{
-            flex: 2,
-            backgroundColor: '#006ffd'
-          }}
+          className={`${styles.primaryButton} ${styles.flexButton2}`}
         >
           保存并进入下一步
         </Button>
@@ -1126,7 +1105,7 @@ const TaskDetailPage = () => {
   return (
     <div className={`task-detail-page ${isChatOpen ? "chat-open" : "chat-closed"}`}>
       {/* 隐藏头部的community/workspace/peison的tab */}
-      <div className="hide-tabs-nav" style={{ display: 'none' }}>
+      <div className={styles.hideTabsNav}>
         {/* 这里本应显示tab，但现在设置为不显示 */}
       </div>
 
@@ -1180,17 +1159,9 @@ const TaskDetailPage = () => {
       </div>
 
       {/* 下半部分 - 上下结构 */}
-      <div className="task-detail-bottom-section" >
+      <div className={styles.taskDetailBottomSection}>
         {/* 步骤导航 */}
-        <div className="steps-navigation" style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          padding: '0 24px',
-          height: '62px',
-          alignItems: 'center',
-          background: '#FAFAFA',
-          borderRadius: '12px 12px 0 0'
-        }}>
+        <div className={styles.stepsNavigation}>
           {steps.map((item) => {
             // 判断步骤状态：当前步骤、已完成步骤、未完成步骤
             const isCurrentStep = currentStep === item.step;
@@ -1232,18 +1203,12 @@ const TaskDetailPage = () => {
         </div>
 
         {/* 主要内容区域 */}
-        <div className="main-content" style={{
-          display: 'flex',
-          minHeight: 'calc(100vh - 300px)',
-          background: '#FAFAFA',
-          borderRadius: '0 0 12px 12px'
-        }}>
+        <div className={styles.mainContent}>
           {/* 左侧导航菜单 - 仅在未开始任务时显示 */}
           {!isTaskStarted && (
             <div className="left-menu" style={{
               width: '110px',
-
-              padding: '16px 0'
+              padding: '16px 0px 16px 16px'
             }}>
               {/* 任务概览标题 */}
               <div style={{

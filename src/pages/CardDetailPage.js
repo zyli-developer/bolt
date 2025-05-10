@@ -6,6 +6,7 @@ import {  Button, Avatar, Tag, Spin, Select, Checkbox, Breadcrumb, Switch, Steps
 import {
   ArrowLeftOutlined,
   StarOutlined,
+  StarFilled,
   ShareAltOutlined,
   LikeOutlined,
   CommentOutlined,
@@ -57,6 +58,7 @@ import "../styles/overrides/evaluation.css"
 // 导入右键菜单和讨论模态框组件
 import TextContextMenu from "../components/context/TextContextMenu"
 import DiscussModal from "../components/modals/DiscussModal"
+import ShareModal from "../components/modals/ShareModal"
 import { OptimizationContext } from "../contexts/OptimizationContext"
 
 // 导入通用评论列表组件
@@ -170,6 +172,10 @@ const CardDetailPage = () => {
   const [selectedModel, setSelectedModel] = useState("claude")
   const [evaluationData, setEvaluationData] = useState({})
   const [isCreateTaskModalVisible, setIsCreateTaskModalVisible] = useState(false)
+  
+  // 添加关注和分享相关状态
+  const [isFollowing, setIsFollowing] = useState(false)
+  const [isShareModalVisible, setIsShareModalVisible] = useState(false)
   
   // 使用全局优化模式上下文
   const { 
@@ -976,6 +982,32 @@ const CardDetailPage = () => {
     };
   }, [isMultiSelectActive, selectedTexts]);
 
+  // 处理关注切换
+  const handleToggleFollow = () => {
+    setIsFollowing(prev => !prev);
+    message.success(isFollowing ? '已取消关注' : '已关注');
+  };
+  
+  // 处理分享按钮点击
+  const handleShare = () => {
+    setIsShareModalVisible(true);
+  };
+  
+  // 关闭分享模态框
+  const handleCloseShareModal = () => {
+    setIsShareModalVisible(false);
+  };
+  
+  // 为ShareModal组件格式化当前选中的模型
+  const getFormattedModels = () => {
+    if (!evaluationData) return [];
+    
+    return selectedModels.map(modelKey => ({
+      label: evaluationData[modelKey]?.name || modelKey,
+      value: modelKey
+    }));
+  };
+
   if (loading) {
     return (
       <div className={`card-detail-page ${isChatOpen ? "chat-open" : "chat-closed"}`}>
@@ -1043,10 +1075,29 @@ const CardDetailPage = () => {
             ))}
           </div>
           <div className="task-actions-top">
-            <Button icon={<StarOutlined />} className="follow-button" size="small" style={{ height: "24px", padding: "0 8px" }}>
-              关注
+            <Button 
+              icon={isFollowing ? <StarFilled /> : <StarOutlined />} 
+              className={`follow-button ${isFollowing ? 'following' : ''}`}
+              onClick={handleToggleFollow}
+              size="small" 
+              style={{ 
+                height: "24px", 
+                padding: "0 8px",
+                transition: "all 0.3s",
+                backgroundColor: isFollowing ? "#fff7e6" : "transparent",
+                borderColor: isFollowing ? "#ffbd5c" : "#d9d9d9",
+                color: isFollowing ? "#fa8c16" : "inherit"
+              }}
+            >
+              {isFollowing ? '已关注' : '关注'}
             </Button>
-            <Button icon={<ShareAltOutlined />} className="share-button" size="small" style={{ height: "24px", padding: "0 8px" }}>
+            <Button 
+              icon={<ShareAltOutlined />} 
+              className="share-button" 
+              onClick={handleShare}
+              size="small" 
+              style={{ height: "24px", padding: "0 8px" }}
+            >
               分享
             </Button>
           </div>
@@ -1598,7 +1649,7 @@ const CardDetailPage = () => {
                     gap: '4px',
                     padding: '0 12px',
                     height: '32px',
-                    backgroundColor: '#006ffd',
+                    backgroundColor: 'var(--color-primary)',
                     fontWeight: 500,
                     fontSize: '12px',
                     flex: 1
@@ -1683,7 +1734,7 @@ const CardDetailPage = () => {
                       gap: '4px',
                       padding: '0 12px',
                       height: '32px',
-                      backgroundColor: '#006ffd',
+                      backgroundColor: 'var(--color-primary)',
                       fontWeight: 500,
                       fontSize: '12px',
                       flex: 2
@@ -1711,7 +1762,7 @@ const CardDetailPage = () => {
                       gap: '4px',
                       padding: '0 12px',
                       height: '32px',
-                      backgroundColor: '#006ffd',
+                      backgroundColor: 'var(--color-primary)',
                       fontWeight: 500,
                       fontSize: '12px',
                       flex: 2
@@ -1792,7 +1843,7 @@ const CardDetailPage = () => {
             gap: '4px',
             padding: '0 12px',
             height: '32px',
-            backgroundColor: '#006ffd',
+            backgroundColor: 'var(--color-primary)',
             fontWeight: 500,
             fontSize: '12px'
           }}
@@ -1869,6 +1920,15 @@ const CardDetailPage = () => {
         onSave={handleSaveAnnotation}
         selectedText={selectedModalText}
         initialContent={selectedModalText}
+      />
+      
+      {/* 分享模态框 */}
+      <ShareModal
+        visible={isShareModalVisible}
+        onCancel={handleCloseShareModal}
+        taskId={id}
+        taskTitle={card?.title}
+        availableModels={getFormattedModels()}
       />
     </div>
   )

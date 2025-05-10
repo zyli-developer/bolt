@@ -49,7 +49,7 @@ const ContextMenu = ({ x, y, onAction, showEditDelete = false }) => {
             type="text"
             icon={<DeleteOutlined />}
             onClick={() => onAction('delete')}
-            style={{ textAlign: 'left', color: '#ff4d4f' }}
+            style={{ textAlign: 'left', color: 'var(--color-error)' }}
           >
             删除
           </Button>

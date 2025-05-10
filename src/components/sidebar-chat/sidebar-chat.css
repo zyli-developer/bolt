@@ -785,20 +785,13 @@ body.multi-select-temp {
   transform: translateY(-1px);
 }
 
-.session-divider.session-start {
-  border-top: 1px solid #e9e9e9;
-  padding-top: 10px;
-}
 
 .session-divider.session-start .session-divider-content {
   background-color: #f0f7ff;
   border: 1px solid #d0e3ff;
 }
 
-.session-divider.session-end {
-  border-bottom: 1px solid #e9e9e9;
-  padding-bottom: 10px;
-}
+
 
 .session-divider.session-end .session-divider-content {
   background-color: #f9f9f9;

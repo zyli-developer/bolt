@@ -265,7 +265,7 @@ const TestConfirmation = ({
               fontWeight: '500',
               borderRadius: '24px',
               width: '280px',
-              boxShadow: '0 2px 10px rgba(0, 111, 253, 0.2)'
+              boxShadow: '0 2px 10px rgba(88, 189, 109, 0.2)'
             }}
             icon={<CheckCircleOutlined />}
           >

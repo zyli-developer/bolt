@@ -627,7 +627,7 @@ export const ChatProvider = ({ children }) => {
       };
     }
   }, [activeUser?.id]);
-
+      
   // 处理接收到的消息
   const handleReceivedMessages = (messages) => {
     if (!Array.isArray(messages)) return;
@@ -652,7 +652,7 @@ export const ChatProvider = ({ children }) => {
           // 更新当前会话状态
           if (!currentSession || currentSession.id !== sessionData.sessionId) {
             setCurrentSession(newSession);
-            
+      
             // 添加到会话历史
             setSessionHistory(prev => {
               // 检查是否存在同ID会话，避免重复添加
@@ -759,7 +759,7 @@ export const ChatProvider = ({ children }) => {
         const msgTime = msg.time * 1000;
         if (msgTime >= currentSession.startTime && (!currentSession.endTime || msgTime <= currentSession.endTime)) {
           sessionId = currentSession.id;
-        }
+      }
       }
       
       // 3. 如果还没找到sessionId，检查历史会话

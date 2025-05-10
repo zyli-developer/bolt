@@ -113,7 +113,7 @@
   justify-content: center;
   width: 32px;
   height: 32px;
-  background-color: #f0f0f0;
+  background-color: var(--color-primary);
   border-radius: 6px;
   margin-right: 12px;
 }
@@ -362,7 +362,7 @@
 }
 
 .workspace-avatar {
-  background-color: #006ffd;
+  background-color: var(--color-primary);
   color: #fff;
 }
 
@@ -395,11 +395,11 @@
 .workspace-add-new .ant-btn {
   border-style: dashed;
   border-color: #d9d9d9;
-  color: #8f9098;
+  color: var(--color-text-tertiary);
   transition: all 0.3s;
 }
 
 .workspace-add-new .ant-btn:hover {
-  color: #006ffd;
-  border-color: #006ffd;
+  color: var(--color-primary);
+  border-color: var(--color-primary);
 }

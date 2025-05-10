@@ -18,10 +18,16 @@ const useStyles = createStyles(({ css, token }) => {
       background-color: ${token.colorPrimary};
       color: white;
       font-weight: 500;
+      border-color: ${token.colorPrimary};
       
       &:hover, &:focus {
         background-color: ${token.colorPrimaryHover} !important;
         border-color: ${token.colorPrimaryHover} !important;
+      }
+      
+      &:active {
+        background-color: ${token.colorPrimaryActive} !important;
+        border-color: ${token.colorPrimaryActive} !important;
       }
     `,
     flex1: css`
@@ -49,20 +55,32 @@ const useStyles = createStyles(({ css, token }) => {
       background-color: ${token.colorError};
       color: white;
       font-weight: 500;
+      border-color: ${token.colorError};
       
       &:hover, &:focus {
-        background-color: ${token.colorErrorHover} !important;
-        border-color: ${token.colorErrorHover} !important;
+        background-color: ${token.colorErrorHover || token.colorError} !important;
+        border-color: ${token.colorErrorHover || token.colorError} !important;
+        opacity: 0.85;
+      }
+      
+      &:active {
+        opacity: 0.7;
       }
     `,
     success: css`
       background-color: ${token.colorSuccess};
       color: white;
       font-weight: 500;
+      border-color: ${token.colorSuccess};
       
       &:hover, &:focus {
-        background-color: ${token.colorSuccessHover} !important;
-        border-color: ${token.colorSuccessHover} !important;
+        background-color: ${token.colorSuccessHover || token.colorSuccess} !important;
+        border-color: ${token.colorSuccessHover || token.colorSuccess} !important;
+        opacity: 0.85;
+      }
+      
+      &:active {
+        opacity: 0.7;
       }
     `,
   };

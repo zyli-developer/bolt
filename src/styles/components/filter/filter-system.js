@@ -70,7 +70,7 @@ const useStyles = createStyles(({ token, css }) => {
       align-items: center;
       gap: 4px;
       height: 32px;
-      border-radius: 4px;
+      border-radius: 20px;
       
       .filter-count {
         display: inline-flex;
@@ -91,7 +91,7 @@ const useStyles = createStyles(({ token, css }) => {
       align-items: center;
       gap: 4px;
       height: 32px;
-      border-radius: 4px;
+      border-radius: 20px;
       
       .group-count {
         display: inline-flex;
@@ -112,7 +112,7 @@ const useStyles = createStyles(({ token, css }) => {
       align-items: center;
       gap: 4px;
       height: 32px;
-      border-radius: 4px;
+      border-radius: 20px;
       
       .filter-count {
         display: inline-flex;

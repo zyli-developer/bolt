@@ -1,6 +1,6 @@
 import { createStyles } from 'antd-style';
 
-const useStyles = createStyles(({ css }) => {
+const useTaskDetailStyles = createStyles(({ css }) => {
   return {
     taskDetailPage: css`
       padding: 16px;
@@ -85,6 +85,8 @@ const useStyles = createStyles(({ css }) => {
     // Task Bottom Section
     taskDetailBottomSection: css`
       margin-top: 16px;
+      background: #fff;
+      border-radius: 20px;
     `,
     // Steps Navigation
     stepsNavigation: css`
@@ -93,8 +95,7 @@ const useStyles = createStyles(({ css }) => {
       padding: 0 24px;
       height: 62px;
       align-items: center;
-      background: #FAFAFA;
-      border-radius: 12px 12px 0 0;
+      border-radius: 20px 20px 0 0;
     `,
     step: css`
       display: flex;
@@ -219,6 +220,39 @@ const useStyles = createStyles(({ css }) => {
       display: flex;
       gap: 12px;
       justify-content: center;
+    `,
+    // 添加开始任务按钮样式
+    startTaskButton: css`
+      background-color: var(--color-primary) !important;
+      border: none !important;
+      color: #fff !important;
+      font-size: 16px !important;
+      font-weight: 500 !important;
+      height: 36px !important;
+      display: flex !important;
+      align-items: center !important;
+      gap: 10px !important;
+      width: 100% !important;
+      justify-content: center !important;
+    `,
+    // 添加测试按钮样式
+    primaryButton: css`
+      background-color: var(--color-primary) !important;
+      border-color: var(--color-primary) !important;
+      color: #fff !important;
+    `,
+    // 添加弹性布局按钮样式
+    flexButton: css`
+      flex: 1;
+    `,
+    flexButton2: css`
+      flex: 2;
+    `,
+    // 优化模式容器
+    optimizeModeContainer: css`
+      display: flex;
+      align-items: center;
+      gap: 8px;
     `,
     // Progress container for test
     progressContainer: css`
@@ -364,7 +398,13 @@ const useStyles = createStyles(({ css }) => {
         border: none;
       }
     `,
+    // 添加主内容区域样式
+    mainContent: css`
+      display: flex;
+      min-height: calc(100vh - 300px);
+      border-radius: 0 0 20px 20px;
+    `,
   };
 });
 
-export default useStyles; 
+export default useTaskDetailStyles; 

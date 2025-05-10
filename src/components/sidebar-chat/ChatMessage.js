@@ -441,7 +441,7 @@ const ChatMessage = ({ message }) => {
     // 确保设置内容后再显示模态框
     setInitialContentForModal(contentForModal);
     setTimeout(() => {
-      setIsAnnotationModalVisible(true);
+    setIsAnnotationModalVisible(true);
     }, 10);
     
     // 添加观点后关闭连续选择模式和临时多选模式
