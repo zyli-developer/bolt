@@ -2,8 +2,9 @@
  * 腾讯云即时通讯IM消息模块
  */
 import { getTIMInstance } from './core';
-import { CONVERSATION_TYPE, MESSAGE_TYPE } from './constants';
+import { CONVERSATION_TYPE, MESSAGE_TYPE, CUSTOM_MESSAGE_TYPE } from './constants';
 import TencentCloudChat from '@tencentcloud/chat';
+import { createSessionStartMessage, createSessionEndMessage, extractSessionData as extractSessionDataUtil } from './customMessage';
 
 // 消息发送防重复缓存 - SDK层面
 const messageDeduplicationCache = new Map();
@@ -66,6 +67,95 @@ export async function sendTextMessage(text, to, isGroup = false) {
     return imResponse.data.message;
   } catch (error) {
     console.error('发送文本消息失败', error);
+    throw error;
+  }
+}
+
+/**
+ * 发送自定义Session开始消息
+ * @param {string} quoteContent 引用的内容
+ * @param {string} to 接收方ID
+ * @param {boolean} isGroup 是否群聊
+ * @param {string} sessionId 自定义的会话ID，如果不传则自动生成
+ * @param {number} timestamp 时间戳，如果不传则使用当前时间
+ * @returns {Promise<Object>} 消息对象
+ */
+export async function sendSessionStartMessage(quoteContent, to, isGroup = false, sessionId = null, timestamp = null) {
+  const tim = getTIMInstance();
+  if (!tim) {
+    console.error('TIM SDK未初始化，无法发送消息');
+    throw new Error('TIM SDK未初始化');
+  }
+
+  try {
+    // 使用TencentCloudChat.TYPES而不是tim.TYPES
+    const convType = isGroup ? TencentCloudChat.TYPES.CONV_GROUP : TencentCloudChat.TYPES.CONV_C2C;
+    
+    // 使用customMessage模块创建会话开始消息
+    const message = createSessionStartMessage({
+      to,
+      conversationType: convType,
+      sessionId,
+      quoteContent,
+      timestamp
+    });
+    
+    // 打印日志
+    const actualSessionId = sessionId || (message.payload?.data ? JSON.parse(message.payload.data).sessionId : `session_${Date.now()}`);
+    const actualTimestamp = timestamp || Date.now();
+    
+    console.log(`创建会话开始消息: ID=${actualSessionId}, 时间=${new Date(actualTimestamp).toLocaleString()}, 引用内容=${quoteContent?.substring(0, 50)}...`);
+    console.log('创建Session开始消息成功，开始发送');
+    
+    // 发送消息
+    const imResponse = await tim.sendMessage(message);
+    console.log('发送Session开始消息成功', imResponse.data.message);
+    
+    return imResponse.data.message;
+  } catch (error) {
+    console.error('发送Session开始消息失败', error);
+    throw error;
+  }
+}
+
+/**
+ * 发送自定义Session结束消息
+ * @param {string} sessionId 会话ID
+ * @param {string} quoteContent 引用内容 
+ * @param {string} to 接收方ID
+ * @param {boolean} isGroup 是否群聊
+ * @returns {Promise<Object>} 消息对象
+ */
+export async function sendSessionEndMessage(sessionId, quoteContent, to, isGroup = false) {
+  const tim = getTIMInstance();
+  if (!tim) {
+    console.error('TIM SDK未初始化，无法发送消息');
+    throw new Error('TIM SDK未初始化');
+  }
+
+  try {
+    // 使用TencentCloudChat.TYPES而不是tim.TYPES
+    const convType = isGroup ? TencentCloudChat.TYPES.CONV_GROUP : TencentCloudChat.TYPES.CONV_C2C;
+    
+    // 使用customMessage模块创建会话结束消息
+    const message = createSessionEndMessage({
+      to,
+      conversationType: convType,
+      sessionId,
+      quoteContent
+    });
+    
+    const endTimestamp = Date.now();
+    console.log(`创建会话结束消息: ID=${sessionId}, 时间=${new Date(endTimestamp).toLocaleString()}`);
+    console.log('创建Session结束消息成功，开始发送');
+    
+    // 发送消息
+    const imResponse = await tim.sendMessage(message);
+    console.log('发送Session结束消息成功', imResponse.data.message);
+    
+    return imResponse.data.message;
+  } catch (error) {
+    console.error('发送Session结束消息失败', error);
     throw error;
   }
 }
@@ -143,4 +233,13 @@ export async function setMessageRead(conversationID) {
     console.error('设置消息已读失败', error);
     throw error;
   }
+}
+
+/**
+ * 从自定义消息中提取Session数据
+ * @param {Object} message 消息对象
+ * @returns {Object|null} Session数据或null
+ */
+export function extractSessionData(message) {
+  return extractSessionDataUtil(message);
 } 

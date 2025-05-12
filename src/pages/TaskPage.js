@@ -1,15 +1,16 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Typography, Space, Spin, Empty, Button } from "antd"
-import { FileOutlined, FilterOutlined, GroupOutlined } from "@ant-design/icons"
+import { Spin, Empty, Button } from "antd"
+import { FilterOutlined, GroupOutlined } from "@ant-design/icons"
 import { useLocation } from "react-router-dom"
 import TaskCard from "../components/card/TaskCard"
 import taskService from "../services/taskService"
+import FilterSystem from "../components/filter/FilterSystem"
 import SortIcon from "../components/icons/SortIcon"
 import { useChatContext } from "../contexts/ChatContext"
+import { useNavContext } from "../contexts/NavContext"
 
-const { Title } = Typography
 
 const TaskPage = () => {
   const location = useLocation()
@@ -18,6 +19,8 @@ const TaskPage = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const { isChatOpen } = useChatContext()
+  // Add the NavContext to the component
+  const { selectedNav } = useNavContext()
 
   // 获取当前活动的标签页
   const getActiveTab = () => {
@@ -28,9 +31,9 @@ const TaskPage = () => {
 
   // 获取页面标题
   const getPageTitle = () => {
-    if (location.pathname === "/tasks/my") return "我的任务"
-    if (location.pathname === "/tasks/team") return "团队任务"
-    return "所有任务"
+    if (selectedNav === "personal") return "我的任务"
+    if (selectedNav === "workspace") return "工作区任务"
+    return "社区任务"
   }
 
   // 加载任务数据
@@ -38,9 +41,9 @@ const TaskPage = () => {
     const fetchTasks = async () => {
       try {
         setLoading(true)
-        const activeTab = getActiveTab()
-        const data = await taskService.getTasks({ type: activeTab })
-        // 确保data是数组
+        // Use selectedNav instead of getActiveTab()
+        const scope = selectedNav || "community"
+        const data = await taskService.getTasks({ scope })
         setTasks(Array.isArray(data) ? data : [])
         setError(null)
       } catch (err) {
@@ -53,18 +56,10 @@ const TaskPage = () => {
     }
 
     fetchTasks()
-  }, [location.pathname])
+  }, [selectedNav, location.pathname])
 
   return (
     <div className={`task-page ${isChatOpen ? "chat-open" : "chat-closed"}`}>
-      <div className="task-page-header">
-        <Title level={2} className="task-page-title">
-          <Space>
-            <FileOutlined />
-            {getPageTitle()}
-          </Space>
-        </Title>
-      </div>
 
       {loading ? (
         <div className="loading-container">
@@ -74,22 +69,12 @@ const TaskPage = () => {
         <div className="error-message">{error}</div>
       ) : (
         <div className="task-content">
-          {/* 筛选工具栏 */}
-          <div className="task-toolbar">
-            <div className="toolbar-left">
-              <Button icon={<FilterOutlined />} className="filter-button">
-                Filter <span className="filter-count">2</span>
-              </Button>
-            </div>
-            <div className="toolbar-right">
-              <Button icon={<GroupOutlined />} className="group-button">
-                Group <span className="group-count">2</span>
-              </Button>
-              <Button icon={<SortIcon />} className="sort-button">
-                Sort
-              </Button>
-            </div>
-          </div>
+       {/* 筛选工具栏 */}
+ 
+       <div className="explore-toolbar">
+        <FilterSystem />
+      </div>
+
 
           {tasks && Array.isArray(tasks) && tasks.length === 0 && !loading ? (
             <Empty description={`暂无${getPageTitle()}`} />

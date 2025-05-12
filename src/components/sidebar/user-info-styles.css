@@ -27,7 +27,7 @@
 }
 
 .user-avatar {
-  background-color: #006ffd;
+  background-color: var(--color-primary);
 }
 
 .user-details {
@@ -192,7 +192,7 @@
 }
 
 .workspace-avatar {
-  background-color: #006ffd;
+  background-color: var(--color-primary);
   color: #fff;
 }
 

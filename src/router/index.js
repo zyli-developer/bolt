@@ -5,17 +5,12 @@ import TaskDetailPage from "../pages/TaskDetailPage"
 import CardDetailPage from "../pages/CardDetailPage"
 import EvaluationPage from "../pages/EvaluationPage"
 import AssetsPage from "../pages/AssetsPage"
-
-// 确保评估页面的路由路径与TaskDetailPage中的导航路径匹配
+import ScenesPage from "../pages/ScenesPage"
 
 // 子路由配置
 const taskRoutes = [
   {
-    path: "/tasks/my",
-    element: <TaskPage />,
-  },
-  {
-    path: "/tasks/team",
+    path: "/tasks",
     element: <TaskPage />,
   },
   {
@@ -32,6 +27,10 @@ const taskRoutes = [
 const cardRoutes = [
   {
     path: "/cards/detail/:id",
+    element: <CardDetailPage />,
+  },
+  {
+    path: "/explore/detail/:id",
     element: <CardDetailPage />,
   },
 ]
@@ -51,7 +50,6 @@ const assetsRoutes = [
   },
 ]
 
-// 主路由配置
 const mainRoutes = [
   {
     path: "/",
@@ -68,6 +66,10 @@ const mainRoutes = [
   {
     path: "/assets",
     element: <AssetsPage />,
+  },
+  {
+    path: "/scenes",
+    element: <ScenesPage />,
   },
 ]
 

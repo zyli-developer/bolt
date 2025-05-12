@@ -1,23 +1,35 @@
 "use client"
 
 import { useState } from "react"
-import { Button, Popover, message } from "antd"
-import { FilterOutlined, GroupOutlined } from "@ant-design/icons"
+import { Button, Popover, message, Input } from "antd"
+import { FilterOutlined, GroupOutlined, SearchOutlined, PlusOutlined } from "@ant-design/icons"
 import FilterCard from "./FilterCard"
 import GroupCard from "./GroupCard"
 import SortCard from "./SortCard"
 import SortIcon from "../icons/SortIcon"
 import filterService from "../../services/filterService"
 import { initialFilterState } from "../../mocks/filterData"
+import { useLocation } from "react-router-dom"
+import { useRef } from "react"
+import CreateTaskModal from "../modals/CreateTaskModal"
+import useStyles from "../../styles/components/filter/filter-system"
 import "./filter-system.css"
 
 const FilterSystem = () => {
+  const { styles } = useStyles()
   // 状态管理
   const [state, setState] = useState({
     ...initialFilterState,
     activePopover: null, // 'filter', 'group', 'sort' 或 null
+    searchValue: '', // 添加搜索值状态
   })
   const [loading, setLoading] = useState(false)
+  const [isCreateTaskModalVisible, setIsCreateTaskModalVisible] = useState(false)
+  const location = useLocation()
+  const buttonContainerRef = useRef(null)
+
+  // 检查是否在任务页面
+  const isTaskPage = location.pathname.startsWith('/tasks')
 
   // 显示指定的弹窗
   const showPopover = (popoverType) => {
@@ -80,6 +92,30 @@ const FilterSystem = () => {
       ...prevState,
       sortConfig: config,
     }))
+  }
+
+  // 处理搜索值变化
+  const handleSearchChange = (e) => {
+    setState((prevState) => ({
+      ...prevState,
+      searchValue: e.target.value,
+    }))
+  }
+
+  // 处理搜索提交
+  const handleSearch = (value) => {
+    // 这里可以添加搜索逻辑
+    console.log('搜索:', value || state.searchValue);
+  }
+
+  // 处理显示创建任务模态框
+  const showCreateTaskModal = () => {
+    setIsCreateTaskModalVisible(true)
+  }
+
+  // 处理关闭创建任务模态框
+  const handleModalCancel = () => {
+    setIsCreateTaskModalVisible(false)
   }
 
   // 保存视图配置
@@ -157,8 +193,8 @@ const FilterSystem = () => {
   )
 
   return (
-    <>
-      <div className="toolbar-left">
+    <div className={styles.filterSystemContainer}>
+      <div className={styles.toolbarLeft}>
         <Popover
           content={filterCardContent}
           visible={state.activePopover === "filter"}
@@ -171,12 +207,15 @@ const FilterSystem = () => {
           overlayClassName="filter-popover"
           destroyTooltipOnHide
         >
-          <Button icon={<FilterOutlined />} className="filter-button" onClick={() => showPopover("filter")}>
+          <Button 
+            icon={<FilterOutlined />} 
+            className={styles.filterButton} 
+            onClick={() => showPopover("filter")}
+          >
             Filter <span className="filter-count">{getFilterCount()}</span>
           </Button>
         </Popover>
-      </div>
-      <div className="toolbar-right">
+        
         <Popover
           content={groupCardContent}
           visible={state.activePopover === "group"}
@@ -189,10 +228,15 @@ const FilterSystem = () => {
           overlayClassName="filter-popover"
           destroyTooltipOnHide
         >
-          <Button icon={<GroupOutlined />} className="group-button" onClick={() => showPopover("group")}>
+          <Button 
+            icon={<GroupOutlined />} 
+            className={styles.groupButton} 
+            onClick={() => showPopover("group")}
+          >
             Group <span className="group-count">{getGroupCount()}</span>
           </Button>
         </Popover>
+        
         <Popover
           content={sortCardContent}
           visible={state.activePopover === "sort"}
@@ -205,12 +249,47 @@ const FilterSystem = () => {
           overlayClassName="filter-popover"
           destroyTooltipOnHide
         >
-          <Button icon={<SortIcon />} className="sort-button" onClick={() => showPopover("sort")}>
+          <Button 
+            icon={<SortIcon />} 
+            className={styles.sortButton} 
+            onClick={() => showPopover("sort")}
+          >
             Sort {getSortCount() > 0 && <span className="filter-count">{getSortCount()}</span>}
           </Button>
         </Popover>
       </div>
-    </>
+      
+      <div className={styles.toolbarRight} ref={buttonContainerRef}>
+        <Input
+          placeholder="搜索感兴趣的任务"
+          suffix={<SearchOutlined style={{ color: '#8c8c8c', fontSize: '16px' }} />}
+          value={state.searchValue}
+          onChange={handleSearchChange}
+          onPressEnter={() => handleSearch()}
+          className={styles.searchInput}
+          allowClear={false}
+        />
+        
+        {isTaskPage && (
+          <Button 
+            className={styles.createTaskButton}
+            type="primary" 
+            icon={<PlusOutlined />} 
+            onClick={showCreateTaskModal}
+          >
+            新建任务
+          </Button>
+        )}
+      </div>
+      
+      {/* 创建任务模态框 */}
+      {isCreateTaskModalVisible && (
+        <CreateTaskModal 
+          visible={isCreateTaskModalVisible} 
+          onCancel={handleModalCancel} 
+        />
+      )}
+    </div>
   )
 }
 

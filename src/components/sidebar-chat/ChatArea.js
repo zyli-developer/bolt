@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState, useContext } from "react"
 import {
   PlusOutlined,
   CloseOutlined,
@@ -11,9 +11,24 @@ import {
   AudioOutlined,
   MoreOutlined,
 } from "@ant-design/icons"
+import { Sender } from "@ant-design/x"
 import { useChatContext } from "../../contexts/ChatContext"
 import CreateChatModal from "./CreateChatModal"
+import ChatMessage from "./ChatMessage"
+import { OptimizationContext } from "../../contexts/OptimizationContext"
 import "./sidebar-chat.css"
+
+// 引用类型定义
+const QUOTE_TYPES = {
+  TEXT: 'text',
+  VIEWPOINT: 'viewpoint',
+}
+
+// 引用操作类型
+const QUOTE_ACTIONS = {
+  WHAT_DOES_IT_MEAN: 'what_does_it_mean',
+  HOW_TO_OPTIMIZE: 'how_to_optimize',
+}
 
 const ChatArea = () => {
   const { 
@@ -25,40 +40,70 @@ const ChatArea = () => {
     createNewChat, 
     chatUsers,
     switchActiveUser,
+    currentSession,
+    endCurrentSession,
+    refreshMessages
   } = useChatContext()
 
   const [inputValue, setInputValue] = useState("")
+  const [quotes, setQuotes] = useState([]) // 使用数组保存多个引用
+  const [isQuoteEnabled, setIsQuoteEnabled] = useState(false)
   const messagesEndRef = useRef(null)
   const messagesContainerRef = useRef(null)
-  const textareaRef = useRef(null)
   const [showScrollTop, setShowScrollTop] = useState(false)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  
+  // 从全局上下文获取优化模式状态
+  const { isOptimizationMode, currentOptimizationStep, setComments } = useContext(OptimizationContext);
 
-  // 滚动到底部
-  const scrollToBottom = () => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" })
+  // 监听quotes数组变化，实时更新引用功能状态
+  useEffect(() => {
+    // 当quotes数组有内容时，表示引用功能已开启
+    setIsQuoteEnabled(quotes.length > 0);
+    
+    // 当当前已经有引用会话时，不重复开启
+    if (quotes.length > 0 && !currentSession) {
+      console.log('引用功能已开启，随时可以开始新的会话');
     }
+  }, [quotes, currentSession]);
+
+  // 自动滚动到底部
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }
 
-  // 当消息更新时滚动到底部
+  // 消息变更时滚动到底部
   useEffect(() => {
-    if (messages && messages.length > 0) {
-      scrollToBottom()
-    }
+    scrollToBottom()
   }, [messages])
 
-  // 自动调整textarea高度
+  // 监听引用内容事件
   useEffect(() => {
-    const textarea = textareaRef.current;
-    if (textarea) {
-      textarea.style.height = 'auto';
-      const newHeight = Math.min(150, Math.max(70, textarea.scrollHeight));
-      textarea.style.height = `${newHeight}px`;
-    }
-  }, [inputValue]);
+    const handleQuoteContent = (event) => {
+      const { quoteContent, quoteType, quoteId } = event.detail;
+      if (quoteContent) {
+        // 添加新的引用到数组
+        setQuotes(prevQuotes => [
+          ...prevQuotes, 
+          { 
+            id: quoteId || `quote-${Date.now()}`, 
+            content: quoteContent, 
+            type: quoteType || QUOTE_TYPES.TEXT
+          }
+        ]);
+      }
+    };
 
-  // 设置滚动监听器
+    // 注册事件监听
+    document.addEventListener('chat-set-quote-content', handleQuoteContent);
+
+    // 清理函数
+    return () => {
+      document.removeEventListener('chat-set-quote-content', handleQuoteContent);
+    };
+  }, []);
+
+  // 监听滚动显示回到顶部按钮
   useEffect(() => {
     const container = messagesContainerRef.current
 
@@ -85,18 +130,69 @@ const ChatArea = () => {
   // 发送消息
   const handleSendMessage = () => {
     if (inputValue.trim()) {
-      sendMessage(inputValue)
-      setInputValue("")
+      if (isQuoteEnabled) {
+        const quotesFormatted = quotes.map(quote => 
+          `【引用:${quote.type}】${quote.content}【/引用】`
+        ).join('\n');
+        
+        const formattedMessage = `${quotesFormatted}\n${inputValue}`;
+        sendMessage(formattedMessage);
+      } else {
+        sendMessage(inputValue);
+      }
+      
+      setInputValue("");
+      setQuotes([]);
     }
   }
 
-  // 处理按键事件
-  const handleKeyPress = (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault(); // 阻止默认的换行行为
-      handleSendMessage();
+  // 处理Sender组件提交事件
+  const handleSubmit = (value) => {
+    if (value.trim()) {
+      // 根据是否有引用内容，使用不同的格式发送消息
+      if (isQuoteEnabled) {
+        // 有引用内容时，使用自定义格式
+        const quotesFormatted = quotes.map(quote => 
+          `【引用:${quote.type}】${quote.content}【/引用】`
+        ).join('\n');
+        
+        const formattedMessage = `${quotesFormatted}\n${value}`;
+        sendMessage(formattedMessage);
+      } else {
+        // 没有引用内容，正常发送
+        sendMessage(value);
+      }
+      
+      setInputValue("");
+      // 清空引用内容
+      setQuotes([]);
     }
-    // 允许Shift+Enter进行换行
+  }
+
+  // 处理Sender组件输入变化
+  const handleInputChange = (value) => {
+    setInputValue(value)
+    
+    // 可以在这里添加额外的逻辑，比如检测输入中是否包含引用标记等
+    // 如果需要更复杂的实时分析，可以在这里添加
+  }
+
+  // 清除指定引用内容
+  const handleClearQuote = (quoteId) => {
+    setQuotes(prevQuotes => {
+      const newQuotes = prevQuotes.filter(quote => quote.id !== quoteId);
+      // 如果清除后没有引用内容，更新引用状态
+      if (newQuotes.length === 0) {
+        console.log('所有引用已清除，引用功能已关闭');
+      }
+      return newQuotes;
+    });
+  }
+
+  // 清除所有引用
+  const clearAllQuotes = () => {
+    setQuotes([]);
+    console.log('所有引用已清除，引用功能已关闭');
   }
 
   // 处理创建新会话
@@ -156,6 +252,67 @@ const ChatArea = () => {
     console.log('ChatArea渲染，消息数量:', validMessages.length, '活跃用户:', activeUser);
   }, [validMessages.length, activeUser]);
 
+  // 处理引用操作
+  const handleQuoteAction = (actionType, quoteContent) => {
+    // 根据操作类型生成不同的文本
+    let actionText = '';
+    
+    switch (actionType) {
+      case QUOTE_ACTIONS.WHAT_DOES_IT_MEAN:
+        actionText = `这是什么意思？`;
+        break;
+      case QUOTE_ACTIONS.HOW_TO_OPTIMIZE:
+        actionText = `如何优化这里？`;
+        break;
+      default:
+        actionText = '';
+    }
+    
+    // 如果有操作文本，填入到输入框而不是直接发送
+    if (actionText) {
+      // 保留引用内容，不清空quotes
+      // 只更新输入框内容
+      setInputValue(actionText);
+      
+      // 聚焦到输入框（可选）
+      const inputElement = document.querySelector('.antdx-sender-input');
+      if (inputElement) {
+        setTimeout(() => {
+          inputElement.focus();
+        }, 0);
+      }
+    }
+  };
+
+  // 组件挂载时和活跃用户变化时主动刷新消息
+  useEffect(() => {
+    if (activeUser && activeUser.id) {
+      console.log('ChatArea组件主动刷新消息，activeUser:', activeUser.id);
+      refreshMessages().catch(err => {
+        console.error('刷新消息失败:', err);
+      });
+    }
+  }, [activeUser?.id]);
+
+  // 页面可见性变化时刷新消息，确保切换回页面时能看到最新消息
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && activeUser) {
+        console.log('页面变为可见，刷新消息');
+        refreshMessages().catch(err => {
+          console.error('可见性变化刷新消息失败:', err);
+        });
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [activeUser?.id]);
+
+
   return (
     <div className="chat-container">
       {/* 聊天头部 */}
@@ -180,6 +337,23 @@ const ChatArea = () => {
           <CloseOutlined />
         </button>
       </div>
+      
+      {/* 当前会话引用栏 - 独立显示在消息列表顶部 */}
+      {currentSession && (
+        <div className="active-session-bar">
+          <div className="active-session-content">
+            <div className="active-session-quote">
+              {currentSession.quoteContent}
+            </div>
+            <button 
+              className="close-session-btn" 
+              onClick={endCurrentSession}
+            >
+              关闭引用
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* 聊天消息区域 */}
       <div className="chat-messages" ref={messagesContainerRef}>
@@ -190,21 +364,13 @@ const ChatArea = () => {
         ) : (
           <div className="messages-wrapper">
             {validMessages.map((message, index) => (
-              <div
-                key={getMessageKey(message, index)}
-                className={`message-container ${message.sender === "user" ? "message-right" : "message-left"}`}
-              >
-                <div className={`message-bubble ${message.sender === "user" ? "message-user" : "message-other"} ${message.pending ? 'pending' : ''} ${message.error ? 'error' : ''}`}>
-                  {message.text}
-                  {message.pending && <span className="message-status">发送中...</span>}
-                  {message.error && (
-                    <span className="message-status error" title={message.errorMessage || "发送失败"}>
-                      发送失败 {message.errorMessage ? `(${message.errorMessage.substring(0, 20)}${message.errorMessage.length > 20 ? '...' : ''})` : ''}
-                    </span>
-                  )}
-                </div>
-                <div className="message-time">{message.timestamp}</div>
-              </div>
+              <ChatMessage 
+                key={getMessageKey(message, index)} 
+                message={{
+                  ...message,
+                  isFirstMessage: index === 0 // 标记第一条消息
+                }} 
+              />
             ))}
             <div ref={messagesEndRef} />
           </div>
@@ -239,32 +405,54 @@ const ChatArea = () => {
         </div>
       </div>
 
-      {/* 聊天输入区域 */}
+      {/* 聊天输入区域 - 使用Sender组件 */}
       <div className="chat-input-wrapper">
-        <div className="chat-input-container">
-          <textarea
-            className="chat-input-field"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyDown={handleKeyPress}
-            placeholder="请输入文字"
-            rows={3}
-            ref={textareaRef}
-          />
-          <div className="chat-input-actions">
-            <button className="chat-input-action" type="button" onClick={() => setIsCreateModalOpen(true)}>
-              <PlusOutlined />
-            </button>
-            <button 
-              className="chat-input-send-btn" 
-              type="button" 
-              onClick={handleSendMessage}
-              disabled={!inputValue.trim()}
-            >
-              <ArrowUpOutlined />
-            </button>
+        {isQuoteEnabled && (
+          <div className="chat-quotes-wrapper">
+            {/* 提示按钮区域 - 移到quotes外部，只显示一次 */}
+            <div className="chat-quote-actions">
+              <button 
+                className="chat-quote-action-btn"
+                onClick={() => handleQuoteAction(QUOTE_ACTIONS.WHAT_DOES_IT_MEAN, quotes[0]?.content || '')}
+              >
+                这是什么意思
+              </button>
+              <button 
+                className="chat-quote-action-btn"
+                onClick={() => handleQuoteAction(QUOTE_ACTIONS.HOW_TO_OPTIMIZE, quotes[0]?.content || '')}
+              >
+                如何优化这里
+              </button>
+            </div>
+            
+            {/* 引用内容容器 */}
+          <div className="chat-quotes-container">
+            {quotes.map((quote) => (
+                <div key={quote.id}>
+                  <div className="chat-quote-header">
+                <div className="chat-quote-icon">
+                  <CloseOutlined onClick={() => handleClearQuote(quote.id)} />
+                </div>
+                <div className="chat-quote-content-text">{quote.content}</div>
+                <div className="chat-quote-label">
+                  {quote.type === 'viewpoint' ? '观点' : '文本'}
+                    </div>
+                </div>
+              </div>
+            ))}
+            </div>
           </div>
-        </div>
+        )}
+        <Sender
+          value={inputValue}
+          onChange={handleInputChange}
+          onSubmit={handleSubmit}
+          placeholder={isQuoteEnabled ? "请输入对引用内容的回复..." : "请输入文字"}
+          autoSize={{ minRows: 1, maxRows: 4 }}
+          className={`chat-sender ${isQuoteEnabled ? 'has-quotes' : ''}`}
+          submitType="enter"
+          disabled={!activeUser}
+        />
       </div>
 
       {/* 创建新会话模态窗口 */}

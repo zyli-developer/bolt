@@ -6,12 +6,17 @@ import ChatArea from "../sidebar-chat/ChatArea"
 import { useChatContext } from "../../contexts/ChatContext"
 import { useState, useEffect } from "react"
 import ContentNav from "./ContentNav"
+import { useLocation } from 'react-router-dom'
 
 const { Content } = Layout
 
 const AppLayout = ({ children }) => {
   const { isChatOpen, toggleChat } = useChatContext()
   const [screenSize, setScreenSize] = useState("large")
+  const location = useLocation()
+  
+  // 判断是否为详情页面
+  const isDetailPage = location.pathname.includes('/detail/')
 
   // 监听窗口大小变化，设置屏幕尺寸档位
   useEffect(() => {
@@ -54,7 +59,7 @@ const AppLayout = ({ children }) => {
               style={{ width: isChatOpen ? "calc(100% - 380px)" : "100%" }}
             >
               {/* 内容导航 */}
-              <ContentNav />
+              {!isDetailPage && <ContentNav />}
 
               {/* 主内容区域 */}
               <Content className="main-content">{children}</Content>

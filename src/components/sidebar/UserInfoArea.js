@@ -19,26 +19,16 @@ import userService from "../../services/userService"
 import DiamondIcon from "../icons/DiamondIcon"
 import CommandIcon from "../icons/CommandIcon"
 import ShiftIcon from "../icons/ShiftIcon"
-// 导入工作区服务
 import workspaceService from "../../services/workspaceService"
 
-const UserInfoArea = () => {
+const UserInfoArea = ({ isCollapsed }) => {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
   const [userPopoverVisible, setUserPopoverVisible] = useState(false)
   const [workspacePopoverVisible, setWorkspacePopoverVisible] = useState(false)
   const [darkMode, setDarkMode] = useState(false)
-
-  // 替换硬编码的工作区数据
   const [workspaces, setWorkspaces] = useState([])
   const [workspacesLoading, setWorkspacesLoading] = useState(true)
-
-  // Mock workspaces data
-  // const workspaces = [
-  //   { id: 1, name: "Alibaba", icon: "A", role: "Owner", current: true },
-  //   { id: 2, name: "Tencent", icon: "T", role: "Member", current: false },
-  //   { id: 3, name: "Baidu", icon: "B", role: "Admin", current: false },
-  // ]
 
   useEffect(() => {
     const fetchCurrentUser = async () => {
@@ -67,7 +57,6 @@ const UserInfoArea = () => {
     return () => window.removeEventListener("keydown", handleKeyDown)
   }, [])
 
-  // 在 useEffect 中添加获取工作区列表的逻辑
   useEffect(() => {
     const fetchWorkspaces = async () => {
       try {
@@ -94,7 +83,6 @@ const UserInfoArea = () => {
     // Implement dark mode toggle functionality
   }
 
-  // 修改切换工作区的处理函数
   const handleWorkspaceChange = async (workspaceId) => {
     try {
       await workspaceService.switchWorkspace(workspaceId)
@@ -209,7 +197,6 @@ const UserInfoArea = () => {
     </div>
   )
 
-  // 修改工作区弹窗内容
   // Workspace popover content
   const workspacePopoverContent = (
     <div className="workspace-popover-content">
@@ -250,7 +237,7 @@ const UserInfoArea = () => {
 
   if (loading) {
     return (
-      <div className="user-info-container">
+      <div className={`user-info-container ${isCollapsed ? "collapsed" : ""}`}>
         <div className="user-info">
           <div>加载中...</div>
         </div>
@@ -260,7 +247,7 @@ const UserInfoArea = () => {
 
   if (!user) {
     return (
-      <div className="user-info-container">
+      <div className={`user-info-container ${isCollapsed ? "collapsed" : ""}`}>
         <div className="user-info">
           <div>未登录</div>
         </div>
@@ -269,8 +256,8 @@ const UserInfoArea = () => {
   }
 
   return (
-    <div className="user-info-container">
-      <div className="user-info">
+    <div className={`user-info-container ${isCollapsed ? "collapsed" : ""}`}>
+      <div className={`user-info ${isCollapsed ? "collapsed" : ""}`}>
         <Popover
           content={userPopoverContent}
           trigger="click"
@@ -282,38 +269,42 @@ const UserInfoArea = () => {
           autoAdjustOverflow={true}
         >
           <div className="user-profile-trigger" onClick={() => setUserPopoverVisible(true)}>
-            <div className="user-avatar-container">
+            <div className={`user-avatar-container ${isCollapsed ? "collapsed" : ""}`}>
               <Avatar className="user-avatar" size={36}>
                 {user.name.charAt(0)}
               </Avatar>
             </div>
-            <div className="user-details">
-              <div className="user-name">{user.name}</div>
-              <div className="user-email">{user.email}</div>
-            </div>
+            {!isCollapsed && (
+              <div className="user-details">
+                <div className="user-name">{user.name}</div>
+                <div className="user-email">{user.email}</div>
+              </div>
+            )}
           </div>
         </Popover>
 
-        <Popover
-          content={workspacePopoverContent}
-          trigger="click"
-          open={workspacePopoverVisible}
-          onOpenChange={setWorkspacePopoverVisible}
-          placement="topRight"
-          overlayClassName="workspace-popover"
-          getPopupContainer={() => document.body}
-          autoAdjustOverflow={true}
-        >
-          <Button
-            type="text"
-            icon={<MoreOutlined />}
-            className="user-more-btn"
-            onClick={(e) => {
-              e.stopPropagation()
-              setWorkspacePopoverVisible(true)
-            }}
-          />
-        </Popover>
+        {!isCollapsed && (
+          <Popover
+            content={workspacePopoverContent}
+            trigger="click"
+            open={workspacePopoverVisible}
+            onOpenChange={setWorkspacePopoverVisible}
+            placement="topRight"
+            overlayClassName="workspace-popover"
+            getPopupContainer={() => document.body}
+            autoAdjustOverflow={true}
+          >
+            <Button
+              type="text"
+              icon={<MoreOutlined />}
+              className="user-more-btn"
+              onClick={(e) => {
+                e.stopPropagation()
+                setWorkspacePopoverVisible(true)
+              }}
+            />
+          </Popover>
+        )}
       </div>
     </div>
   )

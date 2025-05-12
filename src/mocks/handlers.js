@@ -8,6 +8,10 @@ import {
   evaluationsData,
   workspacesData,
   currentWorkspace,
+  taskDetailData,
+  taskAnnotationData,
+  cardDetailData,
+  modelEvaluationData,
 } from "./data"
 
 const mockChatMessages = [
@@ -89,13 +93,13 @@ export const handlers = [
   // 获取卡片详情
   rest.get("/api/cards/:id", (req, res, ctx) => {
     const { id } = req.params
-    const card = cardsData.find((card) => card.id === Number.parseInt(id))
-
-    if (!card) {
-      return res(ctx.status(404), ctx.json({ message: "卡片不存在" }))
-    }
-
-    return res(ctx.status(200), ctx.json(card))
+    return res(
+      ctx.status(200),
+      ctx.json({
+        ...cardDetailData,
+        id
+      })
+    )
   }),
 
   // 获取当前用户
@@ -110,17 +114,20 @@ export const handlers = [
 
   // 修改任务列表API处理程序，确保始终返回数组
   rest.get("/api/tasks", (req, res, ctx) => {
-    const type = req.url.searchParams.get("type")
+    const scope = req.url.searchParams.get("scope") || "community"
 
-    // 根据类型筛选任务
+    // Get all tasks
     let filteredTasks = [...tasksData]
-    if (type === "my") {
-      filteredTasks = tasksData.filter((task) => task.author.id === currentUser.id)
-    } else if (type === "team") {
+
+    // Filter based on scope
+    if (scope === "personal") {
+      filteredTasks = tasksData.filter((task) => task.type === "my")
+    } else if (scope === "workspace") {
       filteredTasks = tasksData.filter((task) => task.permission === "workspace")
     }
+    // For community, return all tasks
 
-    // 确保返回的是数组
+    // Ensure returning an array
     return res(ctx.status(200), ctx.json(filteredTasks || []))
   }),
 
@@ -156,13 +163,21 @@ export const handlers = [
   // 获取任务详情
   rest.get("/api/tasks/:id", (req, res, ctx) => {
     const { id } = req.params
-    const task = tasksData.find((task) => task.id === Number.parseInt(id))
+    return res(
+      ctx.status(200),
+      ctx.json({
+        ...taskDetailData,
+        id
+      })
+    )
+  }),
 
-    if (!task) {
-      return res(ctx.status(404), ctx.json({ message: "任务不存在" }))
-    }
-
-    return res(ctx.status(200), ctx.json(task))
+  // 获取任务注释
+  rest.get("/api/tasks/:id/annotations", (req, res, ctx) => {
+    return res(
+      ctx.status(200),
+      ctx.json(taskAnnotationData)
+    )
   }),
 
   // 获取评估数据
@@ -319,4 +334,30 @@ export const handlers = [
   rest.delete("/api/filter/views/:id", (req, res, ctx) => {
     return res(ctx.status(200), ctx.json({ success: true }))
   }),
+
+  // 获取模型评估数据
+  rest.get("/api/evaluations/:modelId", (req, res, ctx) => {
+    const { modelId } = req.params
+    const evaluationData = modelEvaluationData[modelId] || null
+
+    if (!evaluationData) {
+      return res(
+        ctx.status(404),
+        ctx.json({ message: "模型评估数据不存在" })
+      )
+    }
+
+    return res(
+      ctx.status(200),
+      ctx.json(evaluationData)
+    )
+  }),
+
+  // 获取所有模型评估数据
+  rest.get("/api/evaluations", (req, res, ctx) => {
+    return res(
+      ctx.status(200),
+      ctx.json(modelEvaluationData)
+    )
+  })
 ]

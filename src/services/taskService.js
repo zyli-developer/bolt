@@ -5,6 +5,7 @@
 
 import api from "./api"
 import endpoints from "./endpoints"
+import { cardsData, modelEvaluationData, tasksData } from "../mocks/data"
 
 const taskService = {
   /**
@@ -14,9 +15,24 @@ const taskService = {
    */
   getTasks: async (params = {}) => {
     try {
-      const response = await api.get(endpoints.tasks.list, { params })
-      // 确保返回的是数组
-      return Array.isArray(response) ? response : []
+      // Extract scope from params
+      const { scope = "community" } = params
+
+      // Get all tasks
+      const response = await api.get(endpoints.tasks.list)
+      let tasks = Array.isArray(response) ? response : []
+
+      // Filter tasks based on scope
+      if (scope === "personal") {
+        // Filter for personal tasks (author.id === currentUser.id)
+        tasks = tasks.filter((task) => task.type === "my")
+      } else if (scope === "workspace") {
+        // Filter for workspace tasks
+        tasks = tasks.filter((task) => task.permission === "workspace")
+      }
+      // For community, return all tasks
+
+      return tasks
     } catch (error) {
       console.error("获取任务列表失败:", error)
       // 出错时返回空数组
@@ -30,12 +46,78 @@ const taskService = {
    * @returns {Promise} - 任务详情数据
    */
   getTaskDetail: async (id) => {
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        const task = tasksData.find(task => task.id === parseInt(id))
+        if (task) {
+          resolve(task)
+        } else {
+          reject(new Error("任务不存在"))
+        }
+      }, 500)
+    })
+  },
+
+  /**
+   * 检查任务名称是否唯一
+   * @param {string} name - 任务名称
+   * @returns {Promise<boolean>} - 是否唯一
+   */
+  checkTaskNameUnique: async (name) => {
     try {
-      return await api.get(endpoints.tasks.detail(id))
+      // 模拟API调用延迟
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          // 从模拟数据中检查是否有同名任务
+          const existingTask = tasksData.find(task => 
+            task.title && task.title.toLowerCase() === name.toLowerCase()
+          )
+          // 如果找不到同名任务，返回true（唯一）
+          resolve(!existingTask)
+        }, 800) // 添加延迟以模拟网络请求
+      })
     } catch (error) {
-      console.error(`获取任务详情失败 (ID: ${id}):`, error)
-      throw error
+      console.error("检查任务名称唯一性失败:", error)
+      return false
     }
+  },
+
+  /**
+   * 获取任务注释
+   * @param {string} id - 任务ID
+   * @returns {Promise} - 任务注释数据
+   */
+  getTaskAnnotations: async (id) => {
+    const response = await fetch(`/api/tasks/${id}/annotations`);
+    if (!response.ok) {
+      throw new Error('获取任务注释失败');
+    }
+    return response.json();
+  },
+
+  /**
+   * 获取模型评估数据
+   * @param {string} modelId - 模型ID
+   * @returns {Promise} - 模型评估数据
+   */
+  getModelEvaluation: async (modelId) => {
+    const response = await fetch(`/api/evaluations/${modelId}`);
+    if (!response.ok) {
+      throw new Error('获取模型评估数据失败');
+    }
+    return response.json();
+  },
+
+  /**
+   * 获取所有模型评估数据
+   * @returns {Promise} - 所有模型评估数据
+   */
+  getAllModelEvaluations: async () => {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve(modelEvaluationData)
+      }, 500)
+    })
   },
 
   /**
@@ -80,6 +162,20 @@ const taskService = {
       throw error
     }
   },
+
+  // 获取卡片详情
+  getCardDetail: async (id) => {
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        const card = cardsData.find(card => card.id === parseInt(id))
+        if (card) {
+          resolve(card)
+        } else {
+          reject(new Error("卡片不存在"))
+        }
+      }, 500)
+    })
+  }
 }
 
 export default taskService

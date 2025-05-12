@@ -12,55 +12,18 @@ export const menuData = [
     title: "任务",
     path: "/tasks",
     icon: "TaskIcon",
-    expanded: true,
-    children: [
-      {
-        id: 21,
-        title: "我的任务",
-        path: "/tasks/my",
-        icon: "TaskIcon",
-      },
-      {
-        id: 22,
-        title: "团队任务",
-        path: "/tasks/team",
-        icon: "TaskIcon",
-      },
-    ],
   },
   {
     id: 3,
     title: "资产",
     path: "/assets",
     icon: "AppstoreOutlined",
-    expanded: false,
-    children: [
-      {
-        id: 31,
-        title: "模板",
-        path: "/assets/templates",
-        icon: "AppstoreOutlined",
-      },
-      {
-        id: 32,
-        title: "我的模板",
-        path: "/assets/my-templates",
-        icon: "AppstoreOutlined",
-      },
-      {
-        id: 33,
-        title: "别人的模板",
-        path: "/assets/others-templates",
-        icon: "AppstoreOutlined",
-      },
-    ],
   },
   {
     id: 4,
     title: "场景",
     path: "/scenes",
     icon: "AppstoreOutlined",
-    expanded: false,
   },
 ]
 
@@ -120,38 +83,38 @@ export const mockChatMessages = [
   },
 ]
 
-// 卡片数据
+// 卡片数据 - 更新为每个卡片都有不同的数据
 export const cardsData = [
   {
     id: 1,
-    title: "一个很长的title一个很长的title一个很长的title一个很长的title一个很长的title一个很长的title...",
+    title: "AI玩具安全性评估：儿童语音交互系统的隐私保护与内容安全",
     author: {
       id: 2,
       name: "Jackson",
       avatar: null,
     },
     source: "Alibaba",
-    tags: ["标签1", "标签2", "标签3"],
+    tags: ["安全性", "儿童", "语音交互"],
     summary:
-      "问题概要\n客客概要客客概要概要客客概要客客概要客客概要客客概要客客概要客客概要客客概要客客概要客客概要客客概要客客概要客客概要",
-    credibility: 100.0,
+      "本评估针对面向3-8岁儿童的AI语音交互玩具进行全面安全性分析，重点关注隐私保护、内容过滤和数据安全。评估发现该产品在语音识别准确性和响应速度方面表现优秀，但在数据存储加密和家长控制功能方面存在不足。",
+    credibility: 92.5,
     credibilityChange: "+1.5%",
-    score: 10.0,
-    scoreChange: "-1.5%",
+    score: 9.2,
+    scoreChange: "+0.8%",
     chartData: {
       radar: [
-        { name: "维度1", value: 70 },
-        { name: "维度2", value: 80 },
-        { name: "维度3", value: 60 },
-        { name: "维度4", value: 90 },
-        { name: "维度5", value: 75 },
-        { name: "维度6", value: 85 },
+        { name: "语音识别", value: 85 },
+        { name: "内容安全", value: 78 },
+        { name: "隐私保护", value: 65 },
+        { name: "数据加密", value: 70 },
+        { name: "家长控制", value: 60 },
+        { name: "系统稳定", value: 88 },
       ],
       line: [
-        { month: "08", value: 40 },
-        { month: "09", value: 60 },
-        { month: "10", value: 45 },
-        { month: "11", value: 80 },
+        { month: "08", value: 65 },
+        { month: "09", value: 72 },
+        { month: "10", value: 80 },
+        { month: "11", value: 92 },
       ],
     },
     agents: {
@@ -159,7 +122,7 @@ export const cardsData = [
       agent1: true,
       agent2: false,
     },
-    changes: ["Changed to XXX template", "Changed to XXX template", "Changed to XXX template"],
+    changes: ["更新了隐私保护评估标准", "添加了COPPA合规性检查", "优化了内容过滤测试方法"],
     updatedAt: "21:32, 12/01/2025",
     updatedBy: {
       id: 3,
@@ -169,86 +132,86 @@ export const cardsData = [
   },
   {
     id: 2,
-    title: "一个很长的title一个很长的title一个很长的title一个很长的title一个很长的title一个很长的title...",
+    title: "大型语言模型在医疗诊断辅助中的可靠性与伦理评估",
     author: {
-      id: 2,
-      name: "Jackson",
+      id: 3,
+      name: "Rita",
       avatar: null,
     },
-    source: "Alibaba",
-    tags: ["标签1", "标签2", "标签3"],
+    source: "医疗AI研究中心",
+    tags: ["医疗", "伦理", "诊断"],
     summary:
-      "问题概要\n客客概要客客概要概要客客概要客客概要客客概要客客概要客客概要客客概要客客概要客客概要客客概要客客概要客客概要客客概要",
-    credibility: 100.0,
-    credibilityChange: "+1.5%",
-    score: 10.0,
-    scoreChange: "-1.5%",
+      "本研究评估了大型语言模型在医疗诊断辅助中的可靠性和伦理问题。研究表明，当前模型在常见疾病诊断建议方面准确率达到87%，但在罕见病识别和紧急情况处理方面存在明显不足。同时，模型在医疗隐私保护和知情同意等伦理方面需要进一步完善。",
+    credibility: 87.0,
+    credibilityChange: "+2.3%",
+    score: 8.7,
+    scoreChange: "+1.2%",
     chartData: {
       radar: [
-        { name: "维度1", value: 70 },
-        { name: "维度2", value: 80 },
-        { name: "维度3", value: 60 },
-        { name: "维度4", value: 90 },
-        { name: "维度5", value: 75 },
-        { name: "维度6", value: 85 },
+        { name: "诊断准确", value: 87 },
+        { name: "罕见病识别", value: 62 },
+        { name: "紧急处理", value: 58 },
+        { name: "隐私保护", value: 75 },
+        { name: "知情同意", value: 70 },
+        { name: "医患沟通", value: 82 },
       ],
       line: [
-        { month: "08", value: 40 },
-        { month: "09", value: 60 },
-        { month: "10", value: 45 },
-        { month: "11", value: 80 },
+        { month: "08", value: 70 },
+        { month: "09", value: 75 },
+        { month: "10", value: 82 },
+        { month: "11", value: 87 },
       ],
     },
-    changes: ["Changed to XXX template", "Changed to XXX template", "Changed to XXX template"],
-    updatedAt: "21:32, 12/01/2025",
+    changes: ["增加了罕见病诊断测试集", "完善了医疗伦理评估框架", "添加了医患沟通效果评估"],
+    updatedAt: "18:45, 12/02/2025",
     updatedBy: {
-      id: 3,
-      name: "Mike",
+      id: 4,
+      name: "Sarah",
       avatar: null,
     },
   },
   {
     id: 3,
-    title: "一个很长的title一个很长的title一个很长的title一个很长的title一个很长的title一个很长的title...",
+    title: "自动驾驶AI系统在极端天气条件下的安全性与决策能力评估",
     author: {
-      id: 2,
-      name: "Jackson",
+      id: 5,
+      name: "David",
       avatar: null,
     },
-    source: "Alibaba",
-    tags: ["标签1", "标签2", "标签3"],
+    source: "交通安全研究院",
+    tags: ["自动驾驶", "安全", "极端天气"],
     summary:
-      "问题概要\n客客概要客客概要概要客客概要客客概要客客概要客客概要客客概要客客概要客客概要客客概要客客概要客客概要客客概要客客概要",
-    credibility: 100.0,
-    credibilityChange: "+1.5%",
-    score: 10.0,
-    scoreChange: "-1.5%",
+      "本评估针对三款市场领先的自动驾驶AI系统在暴雨、大雾、暴雪等极端天气条件下的表现进行了系统测试。结果显示，所有系统在标准天气条件下表现良好，但在能见度低于50米的环境中，决策准确率显著下降，存在安全隐患。建议加强传感器融合和极端天气适应性训练。",
+    credibility: 94.0,
+    credibilityChange: "+3.5%",
+    score: 9.4,
+    scoreChange: "+1.8%",
     chartData: {
       radar: [
-        { name: "维度1", value: 70 },
-        { name: "维度2", value: 80 },
-        { name: "维度3", value: 60 },
-        { name: "维度4", value: 90 },
-        { name: "维度5", value: 75 },
-        { name: "维度6", value: 85 },
+        { name: "标准天气", value: 95 },
+        { name: "暴雨条件", value: 78 },
+        { name: "大雾条件", value: 65 },
+        { name: "暴雪条件", value: 62 },
+        { name: "夜间行驶", value: 85 },
+        { name: "紧急制动", value: 90 },
       ],
       line: [
-        { month: "08", value: 40 },
-        { month: "09", value: 60 },
-        { month: "10", value: 45 },
-        { month: "11", value: 80 },
+        { month: "08", value: 75 },
+        { month: "09", value: 82 },
+        { month: "10", value: 88 },
+        { month: "11", value: 94 },
       ],
     },
     agents: {
       overall: true,
-      agent1: true,
-      agent2: false,
+      agent1: false,
+      agent2: true,
     },
-    changes: ["Changed to XXX template", "Changed to XXX template", "Changed to XXX template"],
-    updatedAt: "21:32, 12/01/2025",
+    changes: ["扩展了极端天气测试场景", "优化了传感器数据分析方法", "增加了紧急制动测试项目"],
+    updatedAt: "09:15, 12/03/2025",
     updatedBy: {
-      id: 3,
-      name: "Mike",
+      id: 6,
+      name: "Alex",
       avatar: null,
     },
   },
@@ -262,38 +225,39 @@ export const currentUser = {
   avatar: null,
 }
 
-// 任务数据
+// 任务数据 - 更新为每个任务都有不同的数据
 export const tasksData = [
   {
     id: 101,
-    title: "一个很长的title一个很长的title一个很长的title一个很长的title一个很长的title一个很长的title...",
+    title: "开发儿童AI玩具安全评估框架",
     author: {
       id: 1,
       name: "Jackson",
       avatar: null,
     },
     source: "Alibaba",
-    tags: ["标签1", "标签2", "标签3"],
-    description: "目标目标目标目标目标目标目标目标目标目标目标目标目标目标目标目标目标目标目标目标",
-    status: "待启动",
+    tags: ["儿童安全", "AI玩具", "评估框架"],
+    description:
+      "建立一套针对3-12岁儿童AI玩具的安全评估框架，包括隐私保护、内容安全、物理安全和交互设计四个维度的评估标准和测试方法。",
+    status: "进行中",
     credibility: 95.0,
-    credibilityChange: "+0.5%",
+    credibilityChange: "+2.5%",
     score: 9.5,
-    scoreChange: "+0.5%",
+    scoreChange: "+0.8%",
     chartData: {
       radar: [
-        { name: "维度1", value: 75 },
-        { name: "维度2", value: 85 },
-        { name: "维度3", value: 65 },
-        { name: "维度4", value: 80 },
-        { name: "维度5", value: 70 },
-        { name: "维度6", value: 90 },
+        { name: "隐私保护", value: 85 },
+        { name: "内容安全", value: 90 },
+        { name: "物理安全", value: 95 },
+        { name: "交互设计", value: 80 },
+        { name: "数据处理", value: 75 },
+        { name: "合规性", value: 92 },
       ],
       line: [
-        { month: "08", value: 50 },
-        { month: "09", value: 65 },
-        { month: "10", value: 70 },
-        { month: "11", value: 85 },
+        { month: "08", value: 75 },
+        { month: "09", value: 82 },
+        { month: "10", value: 88 },
+        { month: "11", value: 95 },
       ],
     },
     permission: "workspace",
@@ -307,33 +271,34 @@ export const tasksData = [
   },
   {
     id: 102,
-    title: "一个很长的title一个很长的title一个很长的title一个很长的title一个很长的title一个很长的title...",
+    title: "医疗AI系统伦理评估工具开发",
     author: {
-      id: 1,
-      name: "Jackson",
+      id: 3,
+      name: "Rita",
       avatar: null,
     },
-    source: "Alibaba",
-    tags: ["UI", "优化"],
-    description: "优化现有用户界面，提升用户体验和交互效果，完善功能细节",
-    status: "进行中",
+    source: "医疗AI研究中心",
+    tags: ["医疗AI", "伦理", "评估工具"],
+    description:
+      "开发一套针对医疗AI系统的伦理评估工具，重点关注患者隐私保护、知情同意、诊断透明度和医患关系等伦理问题，为医疗AI系统的伦理审查提供标准化工具。",
+    status: "待启动",
     credibility: 85.0,
-    credibilityChange: "+2.5%",
+    credibilityChange: "+3.5%",
     score: 8.5,
     scoreChange: "+1.5%",
     chartData: {
       radar: [
-        { name: "维度1", value: 65 },
-        { name: "维度2", value: 75 },
-        { name: "维度3", value: 85 },
-        { name: "维度4", value: 70 },
-        { name: "维度5", value: 80 },
-        { name: "维度6", value: 75 },
+        { name: "隐私保护", value: 80 },
+        { name: "知情同意", value: 75 },
+        { name: "诊断透明", value: 85 },
+        { name: "医患关系", value: 90 },
+        { name: "数据安全", value: 82 },
+        { name: "算法公平", value: 78 },
       ],
       line: [
-        { month: "08", value: 30 },
-        { month: "09", value: 45 },
-        { month: "10", value: 65 },
+        { month: "08", value: 65 },
+        { month: "09", value: 72 },
+        { month: "10", value: 78 },
         { month: "11", value: 85 },
       ],
     },
@@ -341,40 +306,41 @@ export const tasksData = [
     type: "my",
     updatedAt: "18:45, 12/01/2025",
     updatedBy: {
-      id: 1,
-      name: "Jackson",
+      id: 3,
+      name: "Rita",
       avatar: null,
     },
   },
   {
     id: 103,
-    title: "一个很长的title一个很长的title一个很长的title一个很长的title一个很长的title一个很长的title...",
+    title: "自动驾驶AI系统安全评估标准研究",
     author: {
-      id: 2,
-      name: "Rita",
+      id: 5,
+      name: "David",
       avatar: null,
     },
-    source: "Alibaba",
-    tags: ["数据", "分析"],
-    description: "分析用户行为数据，提供优化建议和改进方案，提升产品转化率",
+    source: "交通安全研究院",
+    tags: ["自动驾驶", "安全标准", "AI评估"],
+    description:
+      "研究制定自动驾驶AI系统的安全评估标准，包括感知能力、决策逻辑、极端情况处理和系统鲁棒性等方面，为自动驾驶技术的安全监管提供科学依据。",
     status: "已完成",
     credibility: 92.0,
-    credibilityChange: "+3.0%",
+    credibilityChange: "+4.0%",
     score: 9.2,
-    scoreChange: "+0.8%",
+    scoreChange: "+1.2%",
     chartData: {
       radar: [
-        { name: "维度1", value: 80 },
-        { name: "维度2", value: 90 },
-        { name: "维度3", value: 75 },
-        { name: "维度4", value: 85 },
-        { name: "维度5", value: 95 },
-        { name: "维度6", value: 70 },
+        { name: "感知能力", value: 88 },
+        { name: "决策逻辑", value: 92 },
+        { name: "极端处理", value: 85 },
+        { name: "系统鲁棒", value: 90 },
+        { name: "安全冗余", value: 95 },
+        { name: "人机交互", value: 87 },
       ],
       line: [
-        { month: "08", value: 40 },
-        { month: "09", value: 55 },
-        { month: "10", value: 75 },
+        { month: "08", value: 75 },
+        { month: "09", value: 82 },
+        { month: "10", value: 88 },
         { month: "11", value: 92 },
       ],
     },
@@ -382,14 +348,12 @@ export const tasksData = [
     type: "team",
     updatedAt: "09:30, 12/02/2025",
     updatedBy: {
-      id: 2,
-      name: "Rita",
+      id: 5,
+      name: "David",
       avatar: null,
     },
   },
 ]
-
-// 检查evaluationsData中的taskId是否与tasksData中的id匹配
 
 // 评估数据
 export const evaluationsData = [
@@ -490,3 +454,207 @@ export const currentWorkspace = {
     defaultPermission: "private",
   },
 }
+
+// 任务详情数据
+export const taskDetailData = {
+  title: "示例任务",
+  author: {
+    name: "Mike",
+    avatar: "M"
+  },
+  source: "内部项目",
+  tags: ["AI", "评估", "编程"],
+  description: "这是一个示例任务描述",
+  chartData: {
+    radar: [
+      { name: "准确性", value: 85 },
+      { name: "效率", value: 90 },
+      { name: "质量", value: 88 },
+      { name: "速度", value: 92 }
+    ],
+    line: [
+      { month: "1月", value: 85 },
+      { month: "2月", value: 88 },
+      { month: "3月", value: 92 },
+      { month: "4月", value: 90 }
+    ]
+  }
+};
+
+// 任务注释数据
+export const taskAnnotationData = [
+  {
+    key: '1',
+    no: '1',
+    title: '评估标准',
+    content: 'GB xxxx 生成式人工智能评估标准v1.0',
+    attachments: [
+      { name: '评估标准.pdf', url: '#' },
+      { name: '评估细则.docx', url: '#' }
+    ],
+    lastModifiedBy: {
+      name: 'Mike',
+      avatar: 'M'
+    },
+    modifiedTime: {
+      hour: '13:28',
+      date: '14/4/2025'
+    }
+  },
+  {
+    key: '2',
+    no: '2',
+    title: '评估方法',
+    content: '基于 ISO/IEC 25010 的AI系统质量评估方法',
+    attachments: [
+      { name: '评估方法.pdf', url: '#' }
+    ],
+    lastModifiedBy: {
+      name: 'Sarah',
+      avatar: 'S'
+    },
+    modifiedTime: {
+      hour: '15:45',
+      date: '14/4/2025'
+    }
+  },
+  {
+    key: '3',
+    no: '3',
+    title: '测试用例',
+    content: '包含安全性、可靠性、性能效率等维度的测试用例集',
+    attachments: [
+      { name: '测试用例.xlsx', url: '#' },
+      { name: '测试数据.zip', url: '#' }
+    ],
+    lastModifiedBy: {
+      name: 'David',
+      avatar: 'D'
+    },
+    modifiedTime: {
+      hour: '09:15',
+      date: '15/4/2025'
+    }
+  }
+];
+
+// 卡片详情数据
+export const cardDetailData = {
+  title: "示例卡片",
+  author: {
+    name: "David",
+    avatar: "D"
+  },
+  source: "研发部门",
+  tags: ["开发", "测试", "部署"],
+  chartData: {
+    radar: [
+      { name: "性能", value: 88 },
+      { name: "可靠性", value: 92 },
+      { name: "安全性", value: 85 },
+      { name: "可维护性", value: 90 }
+    ],
+    line: [
+      { month: "1月", value: 82 },
+      { month: "2月", value: 85 },
+      { month: "3月", value: 90 },
+      { month: "4月", value: 88 }
+    ]
+  }
+};
+
+// 模型评估数据
+export const modelEvaluationData = {
+  "claude": {
+    name: "Claude 3.5 Sonnet",
+    tags: ["Programming", "Programming"],
+    description:
+      "该AI玩具在语音识别方面表现优秀，能够准确识别儿童的语音指令。安全性设计符合国际标准，无小零件脱落风险。交互体验流该AI玩具在语音识别方面表现优秀，能够准确识别儿童的语音指令。安全性设计符合国际标准，无小零件脱落风险。",
+    score: 10.0,
+    scoreChange: "-1.5%",
+    credibility: 100.0,
+    credibilityChange: "+1.5%",
+    updatedAt: "21:32, 12/01/2025",
+    updatedBy: "Mike",
+    history:
+      "修改了模板修改了模板修改了模板修改了模板修改了模板修改了模板修改了模板修改了模板修改了模板修改了模板修改了模板修改了模板",
+    strengths: ["语音识别准确", "安全性高", "交互体验好"],
+    weaknesses: ["语音识别准确", "安全性高", "交互体验好"],
+  },
+  "claude3.5": {
+    name: "Claude 3.5",
+    tags: ["Programming", "Programming"],
+    description:
+      "该AI玩具在语音识别方面表现优秀，能够准确识别儿童的语音指令。安全性设计符合国际标准，无小零件脱落风险。交互体验流该AI玩具在语音识别方面表现优秀，能够准确识别儿童的语音指令。安全性设计符合国际标准，无小零件脱落风险。",
+    score: 10.0,
+    scoreChange: "-1.5%",
+    credibility: 100.0,
+    credibilityChange: "+1.5%",
+    updatedAt: "21:32, 12/01/2025",
+    updatedBy: "Mike",
+    history:
+      "修改了模板修改了模板修改了模板修改了模板修改了模板修改了模板修改了模板修改了模板修改了模板修改了模板修改了模板修改了模板",
+    strengths: ["语音识别准确", "安全性高", "交互体验好"],
+    weaknesses: ["语音识别准确", "安全性高", "交互体验好"],
+  },
+  "claude3.6": {
+    name: "Claude 3.6",
+    tags: ["Programming", "Programming"],
+    description:
+      "该AI玩具在语音识别方面表现优秀，能够准确识别儿童的语音指令。安全性设计符合国际标准，无小零件脱落风险。交互体验流该AI玩具在语音识别方面表现优秀，能够准确识别儿童的语音指令。安全性设计符合国际标准，无小零件脱落风险。",
+    score: 9.5,
+    scoreChange: "+0.5%",
+    credibility: 95.0,
+    credibilityChange: "+1.0%",
+    updatedAt: "20:15, 12/01/2025",
+    updatedBy: "David",
+    history: "完成了全面的性能评估和用户体验测试",
+    strengths: ["响应速度快", "准确率高", "多语言支持"],
+    weaknesses: ["资源消耗大", "冷启动时间长"],
+  },
+  "claude3.7": {
+    name: "Claude 3.7",
+    tags: ["Programming", "Programming"],
+    description:
+      "Claude 3.7在复杂任务处理和推理方面表现出色，能够处理多步骤指令并保持上下文连贯性。在代码生成和编程辅助方面尤为突出，支持多种编程语言并能提供详细的解释。",
+    score: 9.8,
+    scoreChange: "+1.2%",
+    credibility: 98.0,
+    credibilityChange: "+2.5%",
+    updatedAt: "19:45, 12/01/2025",
+    updatedBy: "Emma",
+    history: "根据最新的基准测试更新了评估结果",
+    strengths: ["代码生成能力强", "推理深度好", "上下文理解准确"],
+    weaknesses: ["处理速度可提升", "特定领域知识有限"],
+  },
+  "agent2": {
+    name: "Agent 2",
+    tags: ["Testing", "Evaluation"],
+    description:
+      "这款AI玩具的语音交互系统反应灵敏，能够理解大部分儿童指令。安全材料使用符合标准，但某些边缘部分可能需要进一步圆润处理。教育内容丰富多样，适合目标年龄段儿童。建议改进：增强防水性能，优化充电接口设计。",
+    score: 8.7,
+    scoreChange: "+0.5%",
+    credibility: 87.0,
+    credibilityChange: "+2.0%",
+    updatedAt: "18:45, 12/02/2025",
+    updatedBy: "Jackson",
+    history: "添加了产品的详细材质信息和安全认证文档",
+    strengths: ["语音交互灵敏", "教育内容丰富", "目标人群匹配度高"],
+    weaknesses: ["边缘安全性需改进", "防水性能不足"],
+  },
+  "deepseek": {
+    name: "DeepSeek",
+    tags: ["AI", "Large Model"],
+    description:
+      "DeepSeek在此任务中展现出优秀的理解能力和分析深度。模型能够准确把握问题核心，提供详实的解决方案。特别在代码生成和技术文档理解方面表现突出。建议在边缘场景的处理上进行优化。",
+    score: 9.2,
+    scoreChange: "+1.8%",
+    credibility: 92.0,
+    credibilityChange: "+3.0%",
+    updatedAt: "20:15, 12/02/2025",
+    updatedBy: "Sarah",
+    history: "完成了全部测试用例的验证",
+    strengths: ["理解准确", "分析深入", "解决方案可行"],
+    weaknesses: ["边缘场景处理", "响应时间优化"],
+  }
+};
