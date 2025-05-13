@@ -176,7 +176,7 @@ const SubmitResultSection = ({ task }) => {
       case 'claude3.7':
         return '#722ed1';
       case 'agent2':
-        return '#ff7a45';
+        return '#FFB140';
       case 'deepseek':
         return '#722ed1';
       default:
@@ -339,7 +339,7 @@ const SubmitResultSection = ({ task }) => {
 
           {/* 评分和雷达图区域 */}
           <div className="score-radar-section" style={{ gap: "8px", padding: "8px" }}>
-            <div className="metrics-section" style={{ gap: "8px", minWidth: "150px" }}>
+            <div className="metrics-section" style={{ gap: "8px", minWidth: "70px" }}>
               <div className="metric-item" style={{ padding: "8px" }}>
                 <div className="metric-label" style={{ fontSize: "12px", marginBottom: "4px" }}>综合得分</div>
                 <div className="metric-value" style={{ fontSize: "20px" }}>{currentEvaluation.score}</div>

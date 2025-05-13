@@ -3,10 +3,12 @@ const colorToken = {
   colorPrimary: '#58BD6D',
   colorPrimaryHover: '#4CA75E',
   colorPrimaryActive: '#3E8C4C',
+  colorPrimaryRgb: '88, 189, 109', // RGB值，用于rgba函数
   // 重色
   colorHeavy: '#00474A',
   // 辅助色
   colorAssist1: '#FFB140',
+  colorAssist1Alpha20: '#FFB14033', // 添加20%透明度的辅助色1
   colorAssist2: '#E76F51',
   colorAssist3: '#CACFD6',
   // 背景色
@@ -40,8 +42,10 @@ export const cssColorVariables = `
   --color-primary: ${colorToken.colorPrimary};
   --color-primary-hover: ${colorToken.colorPrimaryHover};
   --color-primary-active: ${colorToken.colorPrimaryActive};
+  --color-primary-rgb: ${colorToken.colorPrimaryRgb};
   --color-heavy: ${colorToken.colorHeavy};
   --color-assist-1: ${colorToken.colorAssist1};
+  --color-assist-1-alpha-20: ${colorToken.colorAssist1Alpha20};
   --color-assist-2: ${colorToken.colorAssist2};
   --color-assist-3: ${colorToken.colorAssist3};
   --color-bg-base: ${colorToken.colorBgBase};

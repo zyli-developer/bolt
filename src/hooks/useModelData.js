@@ -21,7 +21,7 @@ const useModelData = () => {
       case 'claude3.7':
         return '#722ed1'; // 紫色
       case 'agent2':
-        return '#ff7a45'; // 橙色
+        return '#FFB140'; // 辅助色1
       case 'deepseek':
         return '#722ed1'; // 紫色
       default:

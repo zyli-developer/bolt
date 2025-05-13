@@ -115,9 +115,9 @@
 
 .task-dimension-tag {
   border-radius: 16px;
-  background-color: #e6f7ff;
-  border-color: #1890ff;
-  color: #1890ff;
+  background-color: var(--color-primary-bg);
+  border-color: var(--color-primary-border);
+  color: var(--color-primary);
   padding: 0 12px;
 }
 

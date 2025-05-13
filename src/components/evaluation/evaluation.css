@@ -817,9 +817,9 @@
 }
 
 .model-tag {
-  background: #f0f7ff;
+  background: var(--color-primary-bg);
   border: none;
-  color: #006ffd;
+  color: var(--color-primary);
   font-size: 12px;
   padding: 2px 8px;
   border-radius: 4px;
@@ -909,9 +909,9 @@
 
 /* 多选下拉框样式优化 */
 .ant-select-multiple .ant-select-selection-item {
-  background: #f0f7ff;
+  background: var(--color-primary-bg);
   border: none;
-  color: #006ffd;
+  color: var(--color-primary);
   font-size: 12px;
   padding: 2px 8px;
   border-radius: 4px;
@@ -919,13 +919,13 @@
 }
 
 .ant-select-multiple .ant-select-selection-item-remove {
-  color: #006ffd;
+  color: var(--color-primary);
   font-size: 12px;
 }
 
 .ant-select-dropdown .ant-select-item-option-selected {
-  background-color: #f0f7ff;
-  color: #006ffd;
+  background-color: var(--color-primary-bg);
+  color: var(--color-primary);
 }
 
 .ant-select-dropdown .ant-select-item-option {

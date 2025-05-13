@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package syntrust.base;
+
+import "google/protobuf/timestamp.proto";
+
+// Common user message that can be used across different services
+message User {
+  string id = 1;
+  string email = 2;
+  string name = 3;
+  google.protobuf.Timestamp created_at = 4;
+  google.protobuf.Timestamp updated_at = 5;
+}
+
+// Common task message that can be used across different services
+message Task {
+  string id = 1;
+  string title = 2;
+  string description = 3;
+  string status = 4;
+  string priority = 5;
+  google.protobuf.Timestamp due_date = 6;
+  User assigned_to = 7;
+}
+
+// Common annotation message
+message Annotation {
+  string id = 1;
+  string content = 2;
+  google.protobuf.Timestamp created_at = 3;
+  User created_by = 4;
+}
+
+// Common response status
+message Status {
+  string code = 1;
+  string message = 2;
+} 

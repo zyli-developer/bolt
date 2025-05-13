@@ -11,14 +11,14 @@ const useStyles = createStyles(({ css }) => {
     mainContent: css`
       display: flex;
       min-height: calc(100vh - 300px);
-      background: #FAFAFA;
+      background: var(--color-bg-base);
       border-radius: 0 0 12px 12px;
       flex: 1;
       width: 100%;
     `,
     leftMenu: css`
       width: 110px;
-      border-right: 1px solid #f0f0f0;
+      border-right: 1px solid var(--color-border-secondary);
       padding: 16px 0;
       display: flex;
       flex-direction: column;
@@ -29,7 +29,7 @@ const useStyles = createStyles(({ css }) => {
       padding: 0 0 40px;
       font-size: 14px;
       font-weight: 600;
-      color: #000;
+      color: var(--color-text-base);
       text-align: center;
     `,
     timelineDot: css`
@@ -42,10 +42,10 @@ const useStyles = createStyles(({ css }) => {
       cursor: pointer;
     `,
     timelineDotActive: css`
-      background: #f0f7ff;
+      background: var(--color-primary-bg);
     `,
     timelineDotInactive: css`
-      background: #f9f9f9;
+      background: var(--color-bg-base);
     `,
     timelineItem: css`
       padding: 0 0 32px;
@@ -56,10 +56,10 @@ const useStyles = createStyles(({ css }) => {
       margin-left: 8px;
     `,
     timelineTextActive: css`
-      color: #006ffd;
+      color: var(--color-primary);
     `,
     timelineTextInactive: css`
-      color: #8f9098;
+      color: var(--color-text-tertiary);
     `,
     rightContent: css`
       flex: 1;
@@ -77,7 +77,7 @@ const useStyles = createStyles(({ css }) => {
       height: 100%;
       width: 100%;
       text-align: center;
-      background: #FAFAFA;
+      background: var(--color-bg-base);
       border-radius: 12px;
       padding: 40px 20px;
     `,
@@ -86,7 +86,7 @@ const useStyles = createStyles(({ css }) => {
       margin-bottom: 8px;
     `,
     progressCard: css`
-      background: #f9f9f9;
+      background: var(--color-bg-base);
       border-radius: 8px;
       overflow: hidden;
     `,
@@ -98,13 +98,13 @@ const useStyles = createStyles(({ css }) => {
       margin-top: 16px;
     `,
     section: css`
-      background: #FAFAFA;
+      background: var(--color-bg-base);
       border-radius: 12px;
       margin: -24px;
       width: 100%;
     `,
     scoreSection: css`
-      background: #EAF2FF;
+      background: var(--color-primary-bg);
       padding: 16px;
       border-radius: 12px;
       margin-bottom: 24px;
@@ -124,17 +124,17 @@ const useStyles = createStyles(({ css }) => {
     `,
     scoreIcon: css`
       margin-left: 4px; 
-      color: #8f9098;
+      color: var(--color-text-tertiary);
     `,
     scoreContent: css`
       font-size: 14px; 
-      color: #8f9098;
+      color: var(--color-text-tertiary);
     `,
     scoreContentRow: css`
       margin-top: 4px;
     `,
     scoreLink: css`
-      color: #006FFD;
+      color: var(--color-primary);
     `,
     infoSection: css`
       margin-bottom: 24px;
@@ -146,7 +146,7 @@ const useStyles = createStyles(({ css }) => {
     `,
     infoLabel: css`
       width: 80px; 
-      color: #8f9098;
+      color: var(--color-text-tertiary);
     `,
     infoContent: css`
       flex: 1;
@@ -177,14 +177,14 @@ const useStyles = createStyles(({ css }) => {
     `,
     annotationIcon: css`
       margin-left: 4px; 
-      color: #8f9098;
+      color: var(--color-text-tertiary);
     `,
     annotationTable: css`
       margin-top: 8px;
       width: 100%;
     `,
     summaryIcon: css`
-      color: #52c41a;
+      color: var(--color-success);
     `,
     header: css`
       margin-bottom: 24px;
@@ -200,12 +200,8 @@ const useStyles = createStyles(({ css }) => {
     summaryText: css`
       margin-left: 8px;
     `,
-    section: css`
-      border-radius: 8px;
-      width: 100%;
-    `,
     testSummary: css`
-      background: #f9f9f9;
+      background: var(--color-bg-base);
       border-radius: 8px;
       padding: 16px;
       width: 100%;
@@ -217,13 +213,13 @@ const useStyles = createStyles(({ css }) => {
       margin-top: 16px;
     `,
     parameterCard: css`
-      background: #fff;
+      background: var(--color-bg-container);
       border-radius: 8px;
       padding: 12px;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
     `,
     parameterName: css`
-      color: #8c8c8c;
+      color: var(--color-text-tertiary);
       font-size: 13px;
       margin-bottom: 4px;
     `,
@@ -246,8 +242,14 @@ const useStyles = createStyles(({ css }) => {
     buttonLarge: css`
       min-width: 200px;
       height: 44px;
+      background-color: var(--color-primary) !important;
+      border-color: var(--color-primary) !important;
+      &:hover {
+        background-color: var(--color-primary-hover) !important;
+        border-color: var(--color-primary-hover) !important;
+      }
     `,
   };
 });
 
-export default useStyles; 
+export default useStyles;

@@ -10,11 +10,14 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
+  Tooltip as RechartsTooltip,
   Radar,
   RadarChart,
   PolarGrid,
   PolarAngleAxis,
   PolarRadiusAxis,
+  Area,
+  AreaChart
 } from "recharts"
 import { FileTextOutlined, PlusOutlined } from "@ant-design/icons"
 import CreateTaskModal from "../modals/CreateTaskModal"
@@ -42,8 +45,10 @@ const TaskCard = ({ task }) => {
 
   // Update the handleTitleClick function in TaskCard.js
   const handleTitleClick = () => {
+    // 提取任务ID的数字部分，如果ID是"task101"格式，则提取"101"
+    const numericId = task.id.toString().replace(/^task/i, "");
     // Navigate to the task detail page with state to track where we came from
-    navigate(`/tasks/detail/${task.id}`, { state: { from: "tasks" } })
+    navigate(`/tasks/detail/${numericId}`, { state: { from: "tasks" } })
   }
 
   // Filter radar data based on selected agents
@@ -96,8 +101,6 @@ const TaskCard = ({ task }) => {
         {/* Left section - task details */}
         <div className="task-card-left">
           <div className="task-details">
-            <h3 className="task-section-title">任务详情</h3>
-
             <div className="task-detail-item">
               <span className="task-detail-label">状态：</span>
               <span className="task-detail-value">待启动</span>
@@ -126,14 +129,14 @@ const TaskCard = ({ task }) => {
                 <div className="task-action-icon">
                   <PlusOutlined />
                 </div>
-                <div className="task-action-text">点击添加QA</div>
+                <div className="task-action-text">添加QA</div>
               </div>
 
               <div className="task-action-item add-item">
                 <div className="task-action-icon">
                   <PlusOutlined />
                 </div>
-                <div className="task-action-text">点击添加模板</div>
+                <div className="task-action-text">添模板</div>
               </div>
             </div>
             
@@ -145,7 +148,7 @@ const TaskCard = ({ task }) => {
                   toggleRadarChart()
                 }}
               >
-                {showRadarChart ? "收起模板维度" : "查看模板维度"} {showRadarChart ? "←" : "→"}
+                {showRadarChart ? "收起" : "查看维度"} {showRadarChart ? "←" : "→"}
               </a>
             </div>
           </div>
@@ -157,13 +160,13 @@ const TaskCard = ({ task }) => {
             <div className="task-radar-chart-container">
               <div className="task-chart-title">各维度得分</div>
               <div className="task-radar-chart">
-                <ResponsiveContainer width="100%" height={180}>
-                  <RadarChart data={filteredRadarData} outerRadius={60}>
+                <ResponsiveContainer width="100%" height={130}>
+                  <RadarChart data={filteredRadarData} outerRadius={45}>
                     <PolarGrid stroke="#e0e0e0" />
-                    <PolarAngleAxis dataKey="name" tick={{ fontSize: 10, fill: "#8f9098" }} />
-                    <PolarRadiusAxis domain={[0, 100]} tick={{ fontSize: 10, fill: "#8f9098" }} axisLine={false} />
+                    <PolarAngleAxis dataKey="name" tick={{ fontSize: 8, fill: "#8f9098" }} />
+                    <PolarRadiusAxis domain={[0, 100]} tick={{ fontSize: 8, fill: "#8f9098" }} axisLine={false} />
                     {selectedAgents.overall && (
-                      <Radar name="Overall" dataKey="value" stroke="#006ffd" fill="#006ffd" fillOpacity={0.2} />
+                      <Radar name="Overall" dataKey="value" stroke="var(--color-primary)" fill="var(--color-primary)" fillOpacity={0.2} />
                     )}
                     {selectedAgents.agent1 && (
                       <Radar name="Agent 1" dataKey="agent1" stroke="#3ac0a0" fill="#3ac0a0" fillOpacity={0.2} />
@@ -199,30 +202,39 @@ const TaskCard = ({ task }) => {
           <div className="task-chart-container">
             <div className="task-chart-title">置信度爬升曲线</div>
             <div className="task-chart">
-              <ResponsiveContainer width="100%" height={180}>
-                <LineChart data={task.chartData?.line || []} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
+              <ResponsiveContainer width="100%" height={130}>
+                <AreaChart data={task.chartData?.line || []} margin={{ top: 3, right: 3, left: 0, bottom: 3 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
                   <XAxis
                     dataKey="month"
-                    tick={{ fontSize: 10, fill: "#8f9098" }}
+                    tick={{ fontSize: 8, fill: "#8f9098" }}
                     axisLine={{ stroke: "#e0e0e0" }}
                     tickLine={false}
                   />
                   <YAxis
                     domain={[0, 100]}
-                    tick={{ fontSize: 10, fill: "#8f9098" }}
+                    tick={{ fontSize: 8, fill: "#8f9098" }}
                     axisLine={false}
                     tickLine={false}
                   />
-                  <Line
+                  <RechartsTooltip />
+                  <defs>
+                    <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="var(--color-assist-1)" stopOpacity={0.6}/>
+                      <stop offset="95%" stopColor="var(--color-assist-1)" stopOpacity={0.1}/>
+                    </linearGradient>
+                  </defs>
+                  <Area
                     type="monotone"
                     dataKey="value"
-                    stroke="#006ffd"
-                    strokeWidth={2}
-                    dot={{ r: 3, fill: "#006ffd" }}
-                    activeDot={{ r: 5 }}
+                    stroke="var(--color-assist-1)"
+                    strokeWidth={1.5}
+                    fillOpacity={1}
+                    fill="url(#colorValue)"
+                    dot={{ r: 2.5, fill: "var(--color-assist-1)" }}
+                    activeDot={{ r: 4 }}
                   />
-                </LineChart>
+                </AreaChart>
               </ResponsiveContainer>
             </div>
             
@@ -231,12 +243,10 @@ const TaskCard = ({ task }) => {
                 <div className="task-chart-time-author">
                   <span className="task-chart-time">{task.updatedAt}</span>
                   <span className="task-by-text">by</span>
-                  <Avatar size={16} src={task.updatedBy?.avatar} className="task-updater-avatar">
+                  <Avatar size={14} src={task.updatedBy?.avatar} className="task-updater-avatar">
                     {task.updatedBy?.name.charAt(0)}
                   </Avatar>
                   <span className="task-updater-name">{task.updatedBy?.name}</span>
-                  <span className="task-from-text">from</span>
-                  <span className="task-source-name">{task.source}</span>
                 </div>
               </div>
             </div>

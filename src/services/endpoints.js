@@ -4,7 +4,7 @@
  */
 
 const endpoints = {
-  // 卡片相关
+  // 卡片相关（旧API，保留向后兼容）
   cards: {
     list: "/cards",
     detail: (id) => `/cards/${id}`,
@@ -13,11 +13,45 @@ const endpoints = {
     delete: (id) => `/cards/${id}`,
   },
 
+  // 探索相关 (API规范: /v1/syntrust/explorations)
+  explorations: {
+    list: "/v1/syntrust/explorations",
+    detail: (id) => `/v1/syntrust/exploration/${id}`,
+    search: "/v1/syntrust/explorations/search",
+  },
+
+  // 任务相关 (API规范: /v1/syntrust/tasks)
+  tasks: {
+    list: "/v1/syntrust/tasks",
+    detail: (id) => `/v1/syntrust/task/${id}`,
+    search: "/v1/syntrust/tasks/search",
+    create: "/v1/syntrust/task",
+    update: (id) => `/v1/syntrust/task/${id}`,
+    delete: (id) => `/v1/syntrust/task/${id}`,
+    qna: (id) => `/v1/syntrust/task/${id}/qna`,
+    scenario: (id) => `/v1/syntrust/task/${id}/scenario`,
+    flow: (id) => `/v1/syntrust/task/${id}/flow`,
+  },
+
+  // 资产相关 (API规范: /v1/syntrust/assets)
+  assets: {
+    list: "/v1/syntrust/assets",
+    detail: (id) => `/v1/syntrust/asset/${id}`,
+    search: "/v1/syntrust/assets/search",
+  },
+
   // 用户相关
   users: {
     current: "/users/current",
     list: "/users",
     detail: (id) => `/users/${id}`,
+  },
+
+  // 认证相关
+  auth: {
+    login: "/v1/syntrust/auth/login",
+    logout: "/v1/syntrust/auth/logout",
+    refresh: "/v1/syntrust/auth/refresh",
   },
 
   // 聊天相关
@@ -37,16 +71,19 @@ const endpoints = {
     list: "/workspaces",
     current: "/workspaces/current",
     detail: (id) => `/workspaces/${id}`,
-    switch: (id) => `/workspaces/switch/${id}`,
+    switch: (id) => `/workspaces/${id}/switch`,
   },
 
-  // 任务相关
-  tasks: {
-    list: "/tasks",
-    detail: (id) => `/tasks/${id}`,
-    create: "/tasks",
-    update: (id) => `/tasks/${id}`,
-    delete: (id) => `/tasks/${id}`,
+  // 仪表盘相关
+  dashboard: {
+    overview: "/dashboard/overview",
+    stats: "/dashboard/stats",
+  },
+
+  // 设置相关
+  settings: {
+    get: "/settings",
+    update: "/settings",
   },
 
   // 评估相关
@@ -62,6 +99,16 @@ const endpoints = {
     savedViews: "/filter/views",
     viewDetail: (id) => `/filter/views/${id}`,
     deleteView: (id) => `/filter/views/${id}`,
+  },
+
+  // 文件上传相关 (API规范: /v1/syntrust/attachments)
+  attachments: {
+    upload: "/v1/syntrust/attachments",
+  },
+
+  // 机器人对话相关 (API规范: /v1/rbt/chats)
+  robotChat: {
+    messages: (chatId) => `/v1/rbt/chats/${chatId}/messages`,
   },
 }
 

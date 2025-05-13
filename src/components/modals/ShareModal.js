@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Input, Button, message, Checkbox, Space, Select, Radio, Divider, Tooltip } from 'antd';
-import { CopyOutlined, LinkOutlined, QuestionCircleOutlined, LockOutlined, EyeOutlined, EditOutlined, SettingOutlined } from '@ant-design/icons';
+import { Modal, Input, Button, message, Radio, Space, Divider, Tooltip, Select } from 'antd';
+import { CopyOutlined, LinkOutlined, QuestionCircleOutlined, LockOutlined, EyeOutlined, EditOutlined, SettingOutlined, GlobalOutlined, TeamOutlined } from '@ant-design/icons';
 
 const { Option } = Select;
 
@@ -11,59 +11,41 @@ const PERMISSION_LEVELS = {
   FULL: 'full'
 };
 
-const ShareModal = ({ visible, onCancel, taskId, taskTitle, availableModels = [] }) => {
-  // 默认选择前两个模型（如果有）
-  const [shareScope, setShareScope] = useState([]);
+// 分享区域常量
+const SHARE_SCOPES = {
+  COMMUNITY: 'community',
+  WORKSPACE: 'workspace'
+};
+
+const ShareModal = ({ visible, onCancel, taskId, taskTitle }) => {
   const [copied, setCopied] = useState(false);
   const [shareUrl, setShareUrl] = useState('');
   // 添加权限设置，默认为"可查看"
   const [permission, setPermission] = useState(PERMISSION_LEVELS.VIEW);
+  // 添加分享区域，默认为"工作区"
+  const [shareScope, setShareScope] = useState(SHARE_SCOPES.WORKSPACE);
   
-  // 默认模型列表（如果未提供可用模型）
-  const defaultModels = [
-    { label: 'Claude 3.5', value: 'claude3.5' },
-    { label: 'Claude 3.6', value: 'claude3.6' },
-    { label: 'Claude 3.7', value: 'claude3.7' },
-    { label: 'Agent 2', value: 'agent2' },
-    { label: 'DeepSeek', value: 'deepseek' },
-  ];
-  
-  // 使用传入的可用模型或默认模型
-  const scopeOptions = availableModels.length > 0 
-    ? availableModels 
-    : defaultModels;
-  
-  // 当模态框打开时，默认选择前两个模型
+  // 当模态框打开时重置状态
   useEffect(() => {
-    if (visible && scopeOptions.length > 0) {
-      // 默认选择前两个模型
-      setShareScope(scopeOptions.slice(0, 2).map(option => option.value));
+    if (visible) {
       setCopied(false);
+      setShareUrl('');
     }
-  }, [visible, scopeOptions]);
-  
-  // 全选功能
-  const handleSelectAll = (checked) => {
-    if (checked) {
-      setShareScope(scopeOptions.map(option => option.value));
-    } else {
-      setShareScope([]);
-    }
-  };
+  }, [visible]);
   
   // 生成分享链接
   const generateShareLink = () => {
     const baseUrl = window.location.origin;
     const sharePath = `/tasks/${taskId}`;
-    // 增加权限参数
+    // 增加权限和分享区域参数
     const shareParams = [];
-    
-    if (shareScope.length > 0) {
-      shareParams.push(`models=${shareScope.join(',')}`);
-    }
     
     if (permission) {
       shareParams.push(`perm=${permission}`);
+    }
+    
+    if (shareScope) {
+      shareParams.push(`scope=${shareScope}`);
     }
     
     const queryString = shareParams.length > 0 ? `?${shareParams.join('&')}` : '';
@@ -74,7 +56,7 @@ const ShareModal = ({ visible, onCancel, taskId, taskTitle, availableModels = []
   
   // 复制链接到剪贴板
   const copyShareLink = () => {
-    // 生成分享链接，包含所选模型范围
+    // 生成分享链接
     const url = generateShareLink();
     
     // 复制到剪贴板
@@ -106,6 +88,18 @@ const ShareModal = ({ visible, onCancel, taskId, taskTitle, availableModels = []
     [PERMISSION_LEVELS.FULL]: <SettingOutlined />
   };
 
+  // 分享区域描述
+  const scopeDescriptions = {
+    [SHARE_SCOPES.COMMUNITY]: '分享到社区，所有用户都可以访问',
+    [SHARE_SCOPES.WORKSPACE]: '仅在当前工作区内分享，只有工作区成员可以访问'
+  };
+
+  // 分享区域图标
+  const scopeIcons = {
+    [SHARE_SCOPES.COMMUNITY]: <GlobalOutlined />,
+    [SHARE_SCOPES.WORKSPACE]: <TeamOutlined />
+  };
+
   return (
     <Modal
       title="分享任务"
@@ -119,7 +113,6 @@ const ShareModal = ({ visible, onCancel, taskId, taskTitle, availableModels = []
           key="submit" 
           type="primary" 
           onClick={copyShareLink}
-          disabled={shareScope.length === 0}
         >
           {copied ? '已复制' : '生成并复制链接'}
         </Button>,
@@ -128,6 +121,39 @@ const ShareModal = ({ visible, onCancel, taskId, taskTitle, availableModels = []
       <div style={{ marginBottom: 16 }}>
         <h3 style={{ margin: '0 0 8px 0' }}>{taskTitle || '当前任务'}</h3>
       </div>
+      
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ fontWeight: 500, marginBottom: 8, display: 'flex', alignItems: 'center' }}>
+          <GlobalOutlined style={{ marginRight: 8 }} />
+          分享区域
+        </div>
+        <Radio.Group 
+          value={shareScope} 
+          onChange={(e) => setShareScope(e.target.value)}
+          style={{ width: '100%' }}
+        >
+          <Space direction="vertical" style={{ width: '100%' }}>
+            <Radio value={SHARE_SCOPES.WORKSPACE}>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <span style={{ fontWeight: 500 }}>{scopeIcons[SHARE_SCOPES.WORKSPACE]} 工作区</span>
+                <Tooltip title={scopeDescriptions[SHARE_SCOPES.WORKSPACE]}>
+                  <QuestionCircleOutlined style={{ marginLeft: 8, color: '#999' }} />
+                </Tooltip>
+              </div>
+            </Radio>
+            <Radio value={SHARE_SCOPES.COMMUNITY}>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <span style={{ fontWeight: 500 }}>{scopeIcons[SHARE_SCOPES.COMMUNITY]} 社区</span>
+                <Tooltip title={scopeDescriptions[SHARE_SCOPES.COMMUNITY]}>
+                  <QuestionCircleOutlined style={{ marginLeft: 8, color: '#999' }} />
+                </Tooltip>
+              </div>
+            </Radio>
+          </Space>
+        </Radio.Group>
+      </div>
+      
+      <Divider style={{ margin: '16px 0' }} />
       
       <div style={{ marginBottom: 16 }}>
         <div style={{ fontWeight: 500, marginBottom: 8, display: 'flex', alignItems: 'center' }}>
@@ -167,51 +193,20 @@ const ShareModal = ({ visible, onCancel, taskId, taskTitle, availableModels = []
           </Space>
         </Radio.Group>
       </div>
-
-      <Divider style={{ margin: '16px 0' }} />
-      
-      <div style={{ marginBottom: 16 }}>
-        <div style={{ fontWeight: 500, marginBottom: 8 }}>选择要分享的模型评估结果：</div>
-        <Space direction="vertical" style={{ width: '100%' }}>
-          <Checkbox 
-            onChange={(e) => handleSelectAll(e.target.checked)}
-            checked={shareScope.length === scopeOptions.length && scopeOptions.length > 0}
-            disabled={scopeOptions.length === 0}
-          >
-            全选
-          </Checkbox>
-          
-          <Select
-            mode="multiple"
-            style={{ width: '100%' }}
-            placeholder={scopeOptions.length > 0 ? "请选择要分享的模型" : "暂无可分享的模型"}
-            value={shareScope}
-            onChange={setShareScope}
-            optionLabelProp="label"
-            disabled={scopeOptions.length === 0}
-          >
-            {scopeOptions.map(option => (
-              <Option key={option.value} value={option.value} label={option.label}>
-                {option.label}
-              </Option>
-            ))}
-          </Select>
-        </Space>
-      </div>
       
       <div style={{ marginTop: 24 }}>
         <Input
           prefix={<LinkOutlined style={{ color: '#bfbfbf' }} />}
           addonAfter={
             <CopyOutlined 
-              onClick={shareScope.length > 0 ? copyShareLink : undefined} 
+              onClick={copyShareLink} 
               style={{ 
-                cursor: shareScope.length > 0 ? 'pointer' : 'not-allowed',
-                color: shareScope.length > 0 ? '#1890ff' : '#bfbfbf'
+                cursor: 'pointer',
+                color: '#1890ff'
               }} 
             />
           }
-          value={shareScope.length > 0 ? (shareUrl || "链接将在确认后生成并复制") : "请先选择要分享的模型"}
+          value={shareUrl || "链接将在确认后生成并复制"}
           readOnly
         />
         <div style={{ fontSize: 12, color: '#999', marginTop: 8 }}>

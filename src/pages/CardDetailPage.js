@@ -33,6 +33,7 @@ import {
   PolarRadiusAxis,
 } from "recharts"
 import taskService from "../services/taskService"
+import cardService from "../services/cardService"
 import { useChatContext } from "../contexts/ChatContext"
 import CreateTaskModal from "../components/modals/CreateTaskModal"
 import TimelineIcon from "../components/icons/TimelineIcon"
@@ -84,8 +85,8 @@ const OptimizationSteps = ({ currentStep, onStepChange }) => {
     <div className="optimization-steps" style={{ 
       padding: "12px", 
       marginBottom: "12px", 
-      backgroundColor: "#f8f9fa", 
-      border: "1px solid #e9ecef", 
+      backgroundColor: "var(--color-bg-layout)", 
+      border: "1px solid var(--color-border-secondary)", 
       borderRadius: "8px" 
     }}>
       <Steps 
@@ -106,7 +107,7 @@ const QAOptimizationSection = ({ comments = [] }) => {
     fontSize: "16px",
     fontWeight: "500",
     margin: "0 0 8px 0",
-    color: "rgba(0, 0, 0, 0.88)"
+    color: "var(--color-text-base)"
   };
 
   return (
@@ -145,7 +146,7 @@ const CustomQASection = (props) => {
       fontSize: "16px", 
       fontWeight: "500", 
       margin: "0 0 8px 0", 
-      color: "rgba(0, 0, 0, 0.88)" 
+      color: "var(--color-text-base)" 
     }}>
       {title}
     </div>
@@ -339,10 +340,23 @@ const CardDetailPage = () => {
     const fetchData = async () => {
       try {
         setLoading(true)
-        const [cardData, evaluationData] = await Promise.all([
-          taskService.getCardDetail(id),
-          taskService.getAllModelEvaluations()
-        ])
+        let cardData;
+        
+        // 检查ID格式，确定使用哪个API获取数据
+        // 如果ID是数字格式（如"1001"），则使用getExplorationDetail
+        // 否则使用getCardDetail
+        if (/^\d+$/.test(id)) {
+          // 获取探索详情
+          const response = await cardService.getExplorationDetail(id);
+          cardData = response.exploration || response;
+        } else {
+          // 获取普通卡片详情
+          cardData = await cardService.getCardDetail(id);
+        }
+        
+        // 获取模型评估数据
+        const evaluationData = await taskService.getAllModelEvaluations();
+        
         setCard(cardData)
         setEvaluationData(evaluationData)
         
@@ -440,23 +454,21 @@ const CardDetailPage = () => {
   const enhancedChartData = getEnhancedChartData()
 
   const getModelColor = (modelKey) => {
-    // Implement your logic to determine the color based on the model
-    // For example, you can use a switch statement or a mapping function
     switch (modelKey) {
       case 'claude3.5':
-        return '#3ac0a0';
+        return 'var(--color-primary)';
       case 'claude3.6':
-        return '#006ffd';
+        return 'var(--color-assist-1)';
       case 'claude3.7':
-        return '#722ed1';
+        return 'var(--color-assist-2)';
       case 'agent2':
-        return '#ff7a45';
+        return 'var(--color-assist-1)';
       case 'deepseek':
-        return '#722ed1';
+        return 'var(--color-heavy)';
       default:
-        return '#8f9098';
+        return 'var(--color-primary)';
     }
-  }
+  };
 
   // 处理分支为新任务按钮点击
   const handleForkTask = () => {
@@ -515,7 +527,7 @@ const CardDetailPage = () => {
       width: 50,
       render: (text) => (
         <div style={{ display: 'flex', justifyContent: 'center' }}>
-          <Avatar size={24} style={{ background: '#006ffd', fontSize: '12px' }}>{text}</Avatar>
+          <Avatar size={24} style={{ background: 'var(--color-primary)', fontSize: '12px' }}>{text}</Avatar>
         </div>
       ),
     },
@@ -534,7 +546,7 @@ const CardDetailPage = () => {
       ellipsis: true,
       render: (text) => (
         <Tooltip title={text}>
-          <a href="#" style={{ color: '#006ffd' }}>{text}</a>
+          <a href="#" style={{ color: 'var(--color-primary)' }}>{text}</a>
         </Tooltip>
       ),
     },
@@ -548,7 +560,7 @@ const CardDetailPage = () => {
         <div style={{ display: 'flex', gap: '8px', overflow: 'hidden' }}>
           {attachments.map((file, index) => (
             <Tag key={index} style={{ cursor: 'pointer', whiteSpace: 'nowrap' }}>
-              <a href={file.url} style={{ color: '#006ffd' }}>{file.name}</a>
+              <a href={file.url} style={{ color: 'var(--color-primary)' }}>{file.name}</a>
             </Tag>
           ))}
         </div>
@@ -1069,7 +1081,7 @@ const CardDetailPage = () => {
           </div>
           <div className="task-tags" style={{ gap: "4px" }}>
             {card.tags.map((tag, index) => (
-              <Tag key={index} className="task-dimension-tag" style={{ fontSize: "10px", padding: "0 4px", margin: "0" }}>
+              <Tag key={index} className="task-dimension-tag">
                 {tag}
               </Tag>
             ))}
@@ -1084,9 +1096,9 @@ const CardDetailPage = () => {
                 height: "24px", 
                 padding: "0 8px",
                 transition: "all 0.3s",
-                backgroundColor: isFollowing ? "#fff7e6" : "transparent",
-                borderColor: isFollowing ? "#ffbd5c" : "#d9d9d9",
-                color: isFollowing ? "#fa8c16" : "inherit"
+                backgroundColor: isFollowing ? "var(--color-primary-bg)" : "transparent",
+                borderColor: isFollowing ? "var(--color-primary-border)" : "var(--color-border-secondary)",
+                color: isFollowing ? "var(--color-primary-text)" : "inherit"
               }}
             >
               {isFollowing ? '已关注' : '关注'}
@@ -1307,24 +1319,13 @@ const CardDetailPage = () => {
                           </ResponsiveContainer>
                         </div>
                       </div>
-
-                      {/* 历史记录区域 */}
-                      <div className="history-section-wrapper" style={{ padding: "8px" }}>
-                        <div className="history-section" style={{ gap: "4px" }}>
-                          <div className="history-time" style={{ fontSize: "12px" }}>{currentEvaluation.updatedAt}</div>
-                          <div className="history-author" style={{ fontSize: "12px" }}>
-                            by <span>{currentEvaluation.updatedBy}</span>
-                          </div>
-                          <div className="history-content" style={{ fontSize: "12px", lineHeight: "1.4", marginTop: "4px" }}>{currentEvaluation.history}</div>
-                        </div>
-                      </div>
                     </div>
                   </div>
                   
                   {/* 右侧注释列表 - 始终显示 */}
                   <div className="comments-section" style={{ 
                     flex: 1, 
-                    backgroundColor: '#fff',
+                    backgroundColor: 'var(--color-bg-container)',
                     borderRadius: '8px',
                     maxHeight: 'calc(100vh - 320px)',
                     overflow: 'hidden'
@@ -1573,17 +1574,6 @@ const CardDetailPage = () => {
               </ResponsiveContainer>
             </div>
           </div>
-
-          {/* 历史记录区域 */}
-          <div className="history-section-wrapper" style={{ padding: "8px" }}>
-            <div className="history-section" style={{ gap: "4px" }}>
-              <div className="history-time" style={{ fontSize: "12px" }}>{currentEvaluation.updatedAt}</div>
-              <div className="history-author" style={{ fontSize: "12px" }}>
-                by <span>{currentEvaluation.updatedBy}</span>
-              </div>
-              <div className="history-content" style={{ fontSize: "12px", lineHeight: "1.4", marginTop: "4px" }}>{currentEvaluation.history}</div>
-              </div>
-          </div>
         </div>
           </>
         )}
@@ -1668,8 +1658,8 @@ const CardDetailPage = () => {
                     padding: '0 12px',
                     height: '32px',
                     fontSize: '12px',
-                    border: '1px solid #d9d9d9',
-                    background: isOptimizationMode ? '#e6f7ff' : 'white',
+                    border: '1px solid var(--color-border-secondary)',
+                    background: isOptimizationMode ? 'var(--color-primary-bg)' : 'var(--color-bg-container)',
                     flex: 1
                   }}
                 >
@@ -1781,9 +1771,8 @@ const CardDetailPage = () => {
                     padding: '0 12px',
                     height: '32px',
                     fontSize: '12px',
-                    border: '1px solid #d9d9d9',
-                    background: isOptimizationMode ? '#e6f7ff' : 'white',
-                    flex: 1
+                    border: '1px solid var(--color-border-secondary)',
+                    background: isOptimizationMode ? 'var(--color-primary-bg)' : 'var(--color-bg-container)'
                   }}
                 >
                   <SettingOutlined style={{ fontSize: '14px' }} />
@@ -1792,7 +1781,6 @@ const CardDetailPage = () => {
                     size="small" 
                     checked={isOptimizationMode}
                     onChange={toggleOptimizationMode}
-                    style={{ marginLeft: '4px' }}
                   />
                 </div>
               </>
@@ -1860,8 +1848,8 @@ const CardDetailPage = () => {
             padding: '0 12px',
             height: '32px',
                 fontSize: '12px',
-                border: '1px solid #d9d9d9',
-                background: isOptimizationMode ? '#e6f7ff' : 'white'
+                border: '1px solid var(--color-border-secondary)',
+                background: isOptimizationMode ? 'var(--color-primary-bg)' : 'var(--color-bg-container)'
               }}
             >
               <SettingOutlined style={{ fontSize: '14px' }} />
@@ -1870,7 +1858,6 @@ const CardDetailPage = () => {
                 size="small" 
                 checked={isOptimizationMode}
                 onChange={toggleOptimizationMode}
-                style={{ marginLeft: '4px' }}
               />
             </div>
           </>

@@ -1,4 +1,12 @@
 /* 筛选系统样式 */
+.filter-system {
+  width: 832px;
+  max-width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 16px;
+}
+
 .filter-popover {
   width: 480px;
   border-radius: 16px;
@@ -14,7 +22,7 @@
 }
 
 .filter-popover .ant-popover-arrow {
-  display: none;  
+  display: none;
 }
 
 .filter-card {

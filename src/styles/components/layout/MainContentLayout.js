@@ -29,7 +29,7 @@ const useStyles = createStyles(({ css }) => {
       cursor: pointer;
     `,
     timelineActiveDot: css`
-      background: #f0f7ff;
+      background: var(--color-primary-bg);
     `,
     timelineInactiveDot: css`
       background: #f9f9f9;
@@ -43,10 +43,10 @@ const useStyles = createStyles(({ css }) => {
       margin-left: 8px;
     `,
     timelineLabelActive: css`
-      color: #006ffd;
+      color: var(--color-primary);
     `,
     timelineLabelInactive: css`
-      color: #8f9098;
+      color: var(--color-text-tertiary);
     `,
     rightContent: css`
       flex: 1;
