@@ -119,7 +119,13 @@ const AssetList = ({
         name: report.name || report.title || `报告 ${index + 1}`,
         creator: report.created_by || '系统',
         createdFrom: report.created_from || '报告生成器',
-        createdAt: report.created_at ? new Date(report.created_at).toLocaleDateString() : '未知日期',
+        createdAt: report.created_at ? 
+                  (typeof report.created_at === 'object' && report.created_at.seconds ? 
+                   new Date(report.created_at.seconds * 1000).toLocaleString() : 
+                   typeof report.created_at === 'string' ? 
+                   new Date(report.created_at).toLocaleString() : 
+                   '未知日期') : 
+                  '未知日期',
         summary: report.response_summary || report.summary || '无报告内容',
       };
     });
