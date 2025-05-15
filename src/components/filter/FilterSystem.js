@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Button, Popover, message, Input, Modal, Table, Checkbox, Space, Progress } from "antd"
+import { Button, Popover, message, Input, Modal, Table, Checkbox, Space, Progress, Tooltip } from "antd"
 import { FilterOutlined, GroupOutlined, SearchOutlined, PlusOutlined, ImportOutlined, FileTextOutlined } from "@ant-design/icons"
 import FilterCard from "./FilterCard"
 import GroupCard from "./GroupCard"
@@ -831,35 +831,40 @@ const FilterSystem = ({ onFilterChange, onSortChange, onViewChange, onImportSucc
         />
         
         {isTaskPage && (
-          <>
-            {/* 添加生成报告按钮 */}
-            <Button 
-              className={styles.generateReportButton}
-              type="default" 
-              icon={<FileTextOutlined />} 
-              onClick={showReportModal}
-            >
-              生成报告
-            </Button>
+          <div className={styles.circleButtonGroup}>
+            {/* 生成报告按钮 */}
+            <Tooltip title="生成报告">
+              <Button 
+                className={styles.circleButton}
+                type="primary" 
+                icon={<FileTextOutlined />} 
+                onClick={showReportModal}
+                shape="circle"
+              />
+            </Tooltip>
             
-            <Button 
-              className={styles.importTaskButton}
-              type="default" 
-              icon={<ImportOutlined />} 
-              onClick={showImportTaskModal}
-            >
-              导入数据
-            </Button>
+            {/* 导入数据按钮 */}
+            <Tooltip title="导入数据">
+              <Button 
+                className={styles.circleButton}
+                type="primary" 
+                icon={<ImportOutlined />} 
+                onClick={showImportTaskModal}
+                shape="circle"
+              />
+            </Tooltip>
             
-            <Button 
-              className={styles.createTaskButton}
-              type="primary" 
-              icon={<PlusOutlined />} 
-              onClick={showCreateTaskModal}
-            >
-              新建任务
-            </Button>
-          </>
+            {/* 新建任务按钮 */}
+            <Tooltip title="新建任务">
+              <Button 
+                className={styles.circleButton}
+                type="primary" 
+                icon={<PlusOutlined />} 
+                onClick={showCreateTaskModal}
+                shape="circle"
+              />
+            </Tooltip>
+          </div>
         )}
       </div>
       

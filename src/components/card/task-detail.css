@@ -247,23 +247,9 @@
   color: #999;
 }
 
-.history-section {
-  background-color: #EAF2FF;
-  padding: 12px;
-  border-radius: 4px;
-}
 
-.history-time,
-.history-author {
-  font-size: 12px;
-  color: #666;
-  margin-bottom: 4px;
-}
 
-.history-content {
-  font-size: 14px;
-  line-height: 1.5;
-}
+
 
 .evaluation-details {
   display: flex;

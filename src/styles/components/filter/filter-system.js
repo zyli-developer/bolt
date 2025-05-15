@@ -158,6 +158,21 @@ const useStyles = createStyles(({ token, css }) => {
         color: white;
       }
     `,
+    circleButtonGroup: css`
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-left: 8px;
+    `,
+    circleButton: css`
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s;
+    `,
   };
 });
 

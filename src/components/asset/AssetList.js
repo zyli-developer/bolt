@@ -1,10 +1,11 @@
 "use client"
 
 import { useState, useEffect } from 'react'
-import { Empty, Pagination, Spin, Typography, Button } from 'antd'
-import { DownOutlined, UpOutlined } from '@ant-design/icons'
+import { Empty, Pagination, Spin, Typography, Button, message } from 'antd'
+import { DownOutlined, UpOutlined, DownloadOutlined } from '@ant-design/icons'
 import AssetCard from './AssetCard'
 import { useAssetStyles } from '../../styles/components/assets'
+import DownloadReportModal from '../modals/DownloadReportModal'
 
 const { Title } = Typography
 
@@ -39,6 +40,12 @@ const AssetList = ({
   
   // 本地报告数据
   const [localReports, setLocalReports] = useState([])
+  
+  // 下载报告模态框状态
+  const [downloadModalVisible, setDownloadModalVisible] = useState(false)
+  const [reportDataForDownload, setReportDataForDownload] = useState([])
+  // 存储原始报告数据的Map，用于下载
+  const [reportDataMap, setReportDataMap] = useState({})
   
   // 按类型分组资产
   const groupAssetsByType = (assets) => {
@@ -90,6 +97,36 @@ const AssetList = ({
       ...prev,
       [sectionType]: !prev[sectionType]
     }))
+  }
+  
+  // 处理打开下载报告模态框
+  const handleDownloadReport = (type) => {
+    // 准备报告数据用于下载
+    const groupedAssets = groupAssetsByType(assets);
+    const reportsForDownload = groupedAssets[type] || [];
+    
+    // 创建报告数据映射
+    const dataMap = {};
+    
+    // 格式化报告数据用于表格展示
+    const formattedReports = reportsForDownload.map((report, index) => {
+      const key = report.id || `report-${index}`;
+      // 存储原始报告数据
+      dataMap[key] = report;
+      
+      return {
+        key,
+        name: report.name || report.title || `报告 ${index + 1}`,
+        creator: report.created_by || '系统',
+        createdFrom: report.created_from || '报告生成器',
+        createdAt: report.created_at ? new Date(report.created_at).toLocaleDateString() : '未知日期',
+        summary: report.response_summary || report.summary || '无报告内容',
+      };
+    });
+    
+    setReportDataMap(dataMap);
+    setReportDataForDownload(formattedReports);
+    setDownloadModalVisible(true);
   }
   
   // 加载本地报告数据的函数
@@ -225,14 +262,30 @@ const AssetList = ({
     return (
       <div className={styles.sectionHeader}>
         <Title level={4} className={styles.sectionTitle}>{title} ({count})</Title>
-        <Button 
-          type="link" 
-          className={styles.expandButton}
-          onClick={() => toggleSection(type)}
-          icon={isExpanded ? <UpOutlined /> : <DownOutlined />}
-        >
-          {isExpanded ? '收起' : '展开'}
-        </Button>
+        <div className={styles.sectionHeaderButtons}>
+          {/* 只在报告分组中显示下载按钮 */}
+          {type === 'report' && count > 0 && (
+            <Button 
+              type="link" 
+              className={styles.downloadButton}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDownloadReport(type);
+              }}
+              icon={<DownloadOutlined />}
+            >
+              下载报告
+            </Button>
+          )}
+          <Button 
+            type="link" 
+            className={styles.expandButton}
+            onClick={() => toggleSection(type)}
+            icon={isExpanded ? <UpOutlined /> : <DownOutlined />}
+          >
+            {isExpanded ? '收起' : '展开'}
+          </Button>
+        </div>
       </div>
     )
   }
@@ -303,14 +356,15 @@ const AssetList = ({
     
     return (
       <div className={styles.assetSections}>
+        {renderSection('报告', 'report', groupedAssets.report)}
         {renderSection('场景', 'scene', groupedAssets.scene)}
         {renderSection('问答', 'qa', groupedAssets.qa)}
         {renderSection('模板', 'template', groupedAssets.template)}
-        {renderSection('报告', 'report', groupedAssets.report)}
+     
       </div>
     )
   }
-  
+
   return (
     <div>
       {renderAssetList()}
@@ -328,6 +382,14 @@ const AssetList = ({
           />
         </div>
       )} */}
+      
+      {/* 使用新的下载报告模态框组件 */}
+      <DownloadReportModal
+        visible={downloadModalVisible}
+        onClose={() => setDownloadModalVisible(false)}
+        reports={reportDataForDownload}
+        reportDataMap={reportDataMap}
+      />
     </div>
   )
 }
