@@ -10,11 +10,24 @@
   top: auto;
 }
 
+/* 移除控制面板的白色边框 */
+.react-flow__panel.react-flow__controls {
+  border: none !important;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.1);
+  width: fit-content;
+}
+
 /* 确保ReactFlow组件适应容器 */
 .template-optimization-content .react-flow {
   height: 100%;
   border-radius: 8px;
   background-color: var(--color-bg-layout);
+  position: relative;
+}
+
+/* 确保右键菜单功能正常 */
+.template-optimization-content .react-flow__renderer {
+  position: relative;
 }
 
 /* 模板组件内注释列表样式优化 */

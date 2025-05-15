@@ -73,7 +73,7 @@
 }
 
 .breadcrumb-parent:hover {
-  color: #006ffd;
+  color: var(--color-primary);
 }
 
 .breadcrumb-current {
@@ -86,9 +86,9 @@
 
 /* Update title section styles */
 .task-title {
-  font-size: 24px;
-  font-weight: bold;
-  margin-bottom: 16px;
+  font-size: 18px;
+  font-weight: 400;
+  margin-bottom: 8px;
   line-height: 1.4;
   color: #000;
 }
@@ -97,7 +97,6 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-
 }
 
 .task-creator-info {
@@ -107,20 +106,20 @@
 }
 
 .creator-text {
-  font-size: 16px;
+  font-size: 12px;
   color: #333;
 }
 
 .creator-name,
 .creator-source {
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .task-dimension-tag {
   border-radius: 16px;
-  background-color: #e6f7ff;
-  border-color: #1890ff;
-  color: #1890ff;
+  background-color: var(--color-primary-bg);
+  border-color: var(--color-primary-border);
+  color: var(--color-primary);
   padding: 0 12px;
 }
 
@@ -135,7 +134,7 @@
 
 /* Update evaluation section styles */
 .evaluation-section {
-  margin-bottom: 24px;
+  /* margin-bottom: 24px; */
   border: 1px solid #f0f0f0;
   border-radius: 8px;
   padding: 20px;
@@ -181,7 +180,7 @@
 .metric-value {
   font-size: 28px;
   font-weight: bold;
-  color: #1890ff;
+  color: var(--color-primary);
 }
 
 .metric-change {
@@ -193,7 +192,7 @@
 }
 
 .metric-change.negative {
-  color: #f5222d;
+  color: #ff4d4f;
 }
 
 .metric-name {
@@ -219,7 +218,6 @@
   display: flex;
   gap: 12px;
   padding: 16px 0;
-
 }
 
 .action-button {
@@ -238,14 +236,14 @@
 
 .branch-button {
   flex: 1;
-  background-color: #1890ff;
+  background-color: var(--color-primary);
   color: white;
-  border-color: #1890ff;
+  border-color: var(--color-primary);
 }
 
 .branch-button:hover {
-  background-color: #40a9ff;
-  border-color: #40a9ff;
+  background-color: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
   color: white;
 }
 
@@ -269,7 +267,7 @@
 }
 
 .model-avatar {
-  background-color: #f0f0f0;
+  background-color: var(--color-primary);
 }
 
 .model-details {
@@ -289,6 +287,8 @@
 .model-tag {
   border-radius: 12px;
   font-size: 12px;
+  background-color: var(--color-primary-bg);
+  color: var(--color-primary);
 }
 
 .evaluation-content {
@@ -340,45 +340,21 @@
 
 .chart-content {
   height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-
-
-/* 底部按钮区域样式 */
-.like-button,
-.comment-button {
-  min-width: 100px;
-}
-
-.branch-button {
-  flex: 1;
-  background-color: #1890ff;
-  color: white;
-  border-color: #1890ff;
-}
-
-.branch-button:hover {
-  background-color: #40a9ff;
-  border-color: #40a9ff;
-  color: white;
-}
-
-.optimize-button {
-  background-color: #f5f5f5;
-  border-color: #d9d9d9;
-}
-
-/* 加载和错误状态 */
 .loading-container {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
-  height: 400px;
+  justify-content: center;
+  height: 200px;
 }
 
 .error-message {
   color: #ff4d4f;
   text-align: center;
-  font-size: 16px;
-  margin: 24px 0;
-}
+  margin: 20px 0;
+} 

@@ -5,176 +5,505 @@
 
 import api from "./api"
 import endpoints from "./endpoints"
-import { cardsData, modelEvaluationData, tasksData } from "../mocks/data"
+import { getCurrentUser } from "./authService"
+import { processTaskCard, processTasksResponse } from "../utils/dataTransformer"
+import { modelEvaluationData } from "../mocks/data"
 
 const taskService = {
   /**
-   * 获取任务列表
-   * @param {Object} params - 查询参数，包括type（my/team）
-   * @returns {Promise} - 任务列表数据
+   * 获取任务列表 (API规范: GET /v1/syntrust/tasks)
+   * @param {Object} params - 查询参数，包括tab, pagination, filter, sort
+   * @returns {Promise} - 任务列表数据，包含card和pagination
    */
   getTasks: async (params = {}) => {
     try {
-      // Extract scope from params
-      const { scope = "community" } = params
+      console.log("获取任务列表，参数:", params);
+      
+      // 获取当前用户
+      const currentUser = getCurrentUser();
+      
+      // 构建符合API规范的请求参数
+      const requestParams = {
+        tab: params.tab || "community", // 默认为community
+        user_id: currentUser?.id || "",
+        pagination: params.pagination || {
+          page: 1,
+          per_page: 10
+        }
+      };
 
-      // Get all tasks
-      const response = await api.get(endpoints.tasks.list)
-      let tasks = Array.isArray(response) ? response : []
-
-      // Filter tasks based on scope
-      if (scope === "personal") {
-        // Filter for personal tasks (author.id === currentUser.id)
-        tasks = tasks.filter((task) => task.type === "my")
-      } else if (scope === "workspace") {
-        // Filter for workspace tasks
-        tasks = tasks.filter((task) => task.permission === "workspace")
+      // 如果有筛选条件，添加到搜索请求中
+      if (params.filter || params.sort) {
+        // 使用搜索接口
+        const searchParams = {
+          tab: requestParams.tab,
+          filter: params.filter,
+          sort: params.sort,
+          pagination: requestParams.pagination
+        };
+        
+        console.log("使用搜索接口获取数据:", searchParams);
+        
+        // 调用搜索接口
+        const response = await api.post(
+          endpoints.tasks.search, 
+          searchParams,
+          'TaskSearchRequest',
+          'TaskSearchResponse'
+        );
+        
+        // 处理响应数据
+        const processedResponse = processTasksResponse(response);
+        console.log("搜索接口返回数据，处理后:", processedResponse);
+        return processedResponse;
       }
-      // For community, return all tasks
-
-      return tasks
+      
+      console.log("使用列表接口获取数据:", requestParams);
+      
+      // 调用列表接口
+      const response = await api.get(
+        endpoints.tasks.list, 
+        { params: requestParams },
+        'GetTasksPageResponse'
+      );
+      
+      // 处理响应数据
+      const processedResponse = processTasksResponse(response);
+      console.log("列表接口返回数据，处理后:", processedResponse);
+      return processedResponse;
     } catch (error) {
-      console.error("获取任务列表失败:", error)
-      // 出错时返回空数组
-      return []
+      console.error("获取任务列表失败:", error);
+      // 从mock数据中获取任务列表
+      console.log("尝试从mock数据中获取任务列表");
+      const { taskCardsData } = require("../mocks/data");
+      
+      // 模拟分页
+      const page = params.pagination?.page || 1;
+      const perPage = params.pagination?.per_page || 10;
+      const startIndex = (page - 1) * perPage;
+      const endIndex = startIndex + perPage;
+      
+      // 返回处理后的模拟数据
+      const mockResponse = {
+        card: taskCardsData.slice(startIndex, endIndex),
+        pagination: {
+          total: taskCardsData.length,
+          page: page,
+          per_page: perPage
+        }
+      };
+      
+      console.log("返回mock数据:", mockResponse);
+      return mockResponse;
     }
   },
 
   /**
-   * 获取任务详情
+   * 获取任务详情 (API规范: GET /v1/syntrust/task/{task_id})
    * @param {string} id - 任务ID
    * @returns {Promise} - 任务详情数据
    */
   getTaskDetail: async (id) => {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const task = tasksData.find(task => task.id === parseInt(id))
-        if (task) {
-          resolve(task)
-        } else {
-          reject(new Error("任务不存在"))
-        }
-      }, 500)
-    })
-  },
-
-  /**
-   * 检查任务名称是否唯一
-   * @param {string} name - 任务名称
-   * @returns {Promise<boolean>} - 是否唯一
-   */
-  checkTaskNameUnique: async (name) => {
     try {
-      // 模拟API调用延迟
-      return new Promise((resolve) => {
-        setTimeout(() => {
-          // 从模拟数据中检查是否有同名任务
-          const existingTask = tasksData.find(task => 
-            task.title && task.title.toLowerCase() === name.toLowerCase()
-          )
-          // 如果找不到同名任务，返回true（唯一）
-          resolve(!existingTask)
-        }, 800) // 添加延迟以模拟网络请求
-      })
+      // 获取当前用户
+      const currentUser = getCurrentUser();
+      
+      // 构建请求参数
+      const requestParams = {
+        user_id: currentUser?.id || ""
+      };
+      
+      // 调用API
+      const response = await api.get(
+        endpoints.tasks.detail(id),
+        { params: requestParams },
+        'GetTaskResponse'
+      );
+      
+      // 如果有task字段，处理数据
+      if (response.task) {
+        response.task = processTaskCard(response.task);
+      }
+      
+      return response;
     } catch (error) {
-      console.error("检查任务名称唯一性失败:", error)
-      return false
+      console.error(`获取任务详情失败 (ID: ${id}):`, error);
+      
+      // 返回mock数据，防止前端崩溃
+      // 从taskCardsData中查找对应ID的任务
+      const { taskCardsData } = require("../mocks/data");
+      
+      // 尝试查找匹配ID的任务，同时支持字符串和数字格式的ID比较
+      const mockTask = taskCardsData.find(task => 
+        task.id === id || task.id === id.toString() || task.id.toString() === id
+      );
+      
+      if (mockTask) {
+        console.log("使用mock数据:", mockTask);
+        return { task: mockTask };
+      }
+      
+      // 如果没有找到对应ID的任务，返回一个基本的任务结构
+      return {
+        task: {
+          id: id,
+          title: `任务 ${id}`,
+          author: {
+            name: "系统",
+            avatar: null
+          },
+          source: "本地测试",
+          tags: ["测试", "示例"],
+          description: "这是一个示例任务，用于在API调用失败时显示",
+          chartData: {
+            radar: [
+              { name: "维度1", value: 80 },
+              { name: "维度2", value: 75 },
+              { name: "维度3", value: 85 }
+            ],
+            line: [
+              { month: "08", value: 70 },
+              { month: "09", value: 75 },
+              { month: "10", value: 80 }
+            ]
+          }
+        }
+      };
     }
   },
 
   /**
-   * 获取任务注释
+   * 获取任务QnA数据 (API规范: GET /v1/syntrust/task/{task_id}/qna)
    * @param {string} id - 任务ID
-   * @returns {Promise} - 任务注释数据
+   * @returns {Promise} - 任务QnA数据
    */
-  getTaskAnnotations: async (id) => {
-    const response = await fetch(`/api/tasks/${id}/annotations`);
-    if (!response.ok) {
-      throw new Error('获取任务注释失败');
+  getTaskQna: async (id) => {
+    try {
+      // 获取当前用户
+      const currentUser = getCurrentUser();
+      
+      // 构建请求参数
+      const requestParams = {
+        user_id: currentUser?.id || ""
+      };
+      
+      // 调用API
+      return await api.get(
+        endpoints.tasks.qna(id),
+        { params: requestParams },
+        'GetTaskQnaResponse'
+      );
+    } catch (error) {
+      console.error(`获取任务QnA数据失败 (ID: ${id}):`, error);
+      throw error;
     }
-    return response.json();
   },
 
   /**
-   * 获取模型评估数据
-   * @param {string} modelId - 模型ID
-   * @returns {Promise} - 模型评估数据
+   * 获取任务场景数据 (API规范: GET /v1/syntrust/task/{task_id}/scenario)
+   * @param {string} id - 任务ID
+   * @returns {Promise} - 任务场景数据
    */
-  getModelEvaluation: async (modelId) => {
-    const response = await fetch(`/api/evaluations/${modelId}`);
-    if (!response.ok) {
-      throw new Error('获取模型评估数据失败');
+  getTaskScenario: async (id) => {
+    try {
+      // 获取当前用户
+      const currentUser = getCurrentUser();
+      
+      // 构建请求参数
+      const requestParams = {
+        user_id: currentUser?.id || ""
+      };
+      
+      // 调用API
+      return await api.get(
+        endpoints.tasks.scenario(id),
+        { params: requestParams },
+        'GetTaskScenarioResponse'
+      );
+    } catch (error) {
+      console.error(`获取任务场景数据失败 (ID: ${id}):`, error);
+      throw error;
     }
-    return response.json();
   },
 
   /**
-   * 获取所有模型评估数据
-   * @returns {Promise} - 所有模型评估数据
+   * 获取任务流程数据 (API规范: GET /v1/syntrust/task/{task_id}/flow)
+   * @param {string} id - 任务ID
+   * @returns {Promise} - 任务流程数据
    */
-  getAllModelEvaluations: async () => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve(modelEvaluationData)
-      }, 500)
-    })
+  getTaskFlow: async (id) => {
+    try {
+      // 获取当前用户
+      const currentUser = getCurrentUser();
+      
+      // 构建请求参数
+      const requestParams = {
+        user_id: currentUser?.id || ""
+      };
+      
+      // 调用API
+      return await api.get(
+        endpoints.tasks.flow(id),
+        { params: requestParams },
+        'GetTaskFlowResponse'
+      );
+    } catch (error) {
+      console.error(`获取任务流程数据失败 (ID: ${id}):`, error);
+      throw error;
+    }
   },
 
   /**
-   * 创建新任务
+   * 创建任务 (API规范: POST /v1/syntrust/task)
    * @param {Object} taskData - 任务数据
-   * @returns {Promise} - 创建的任务数据
+   * @returns {Promise} - 创建结果
    */
   createTask: async (taskData) => {
     try {
-      return await api.post(endpoints.tasks.create, taskData)
+      // 获取当前用户
+      const currentUser = getCurrentUser();
+      
+      // 添加用户信息
+      const requestData = {
+        ...taskData,
+        user_id: currentUser?.id || ""
+      };
+      
+      // ---- 使用mock数据，不调用真实API ----
+      console.log("创建任务(模拟):", requestData);
+      
+      // 模拟API延迟
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      // 返回模拟的成功响应
+      return {
+        task_id: `task_${Date.now()}`,
+        status: "success",
+        message: "任务创建成功(模拟)"
+      };
+      
+      /* 实际API调用代码（暂时注释掉）
+      return await api.post(
+        endpoints.tasks.create,
+        requestData,
+        'CreateTaskRequest',
+        'CreateTaskResponse'
+      );
+      */
     } catch (error) {
-      console.error("创建任务失败:", error)
-      throw error
+      console.error("创建任务失败:", error);
+      throw error;
     }
   },
 
   /**
-   * 更新任务
+   * 更新任务 (API规范: PUT /v1/syntrust/task/{task_id})
    * @param {string} id - 任务ID
-   * @param {Object} taskData - 更新的任务数据
-   * @returns {Promise} - 更新后的任务数据
+   * @param {Object} taskData - 更新数据
+   * @returns {Promise} - 更新结果
    */
   updateTask: async (id, taskData) => {
     try {
-      return await api.put(endpoints.tasks.update(id), taskData)
+      // 获取当前用户
+      const currentUser = getCurrentUser();
+      
+      // 添加用户信息
+      const requestData = {
+        ...taskData,
+        user_id: currentUser?.id || ""
+      };
+      
+      // ---- 使用mock数据，不调用真实API ----
+      console.log(`更新任务(模拟), ID: ${id}:`, requestData);
+      
+      // 更新taskCardsData中的任务
+      try {
+        const { taskCardsData } = require("../mocks/data");
+        const taskIndex = taskCardsData.findIndex(task => 
+          task.id === id || task.id === id.toString() || task.id.toString() === id
+        );
+        
+        if (taskIndex !== -1) {
+          // 更新status字段
+          if (requestData.status) {
+            taskCardsData[taskIndex].status = requestData.status;
+          }
+          
+          // 更新evaluations字段
+          if (requestData.evaluations) {
+            taskCardsData[taskIndex].evaluations = requestData.evaluations;
+          }
+          
+          console.log("任务已更新:", taskCardsData[taskIndex]);
+        }
+      } catch (error) {
+        console.error("更新mock数据失败:", error);
+      }
+      
+      // 模拟API延迟
+      await new Promise(resolve => setTimeout(resolve, 600));
+      
+      // 返回模拟的成功响应
+      return {
+        status: "success",
+        message: "任务更新成功(模拟)"
+      };
+      
+      /* 实际API调用代码（暂时注释掉）
+      return await api.put(
+        endpoints.tasks.update(id),
+        requestData,
+        'UpdateTaskRequest',
+        'UpdateTaskResponse'
+      );
+      */
     } catch (error) {
-      console.error(`更新任务失败 (ID: ${id}):`, error)
-      throw error
+      console.error(`更新任务失败 (ID: ${id}):`, error);
+      throw error;
     }
   },
 
   /**
-   * 删除任务
+   * 删除任务 (API规范: DELETE /v1/syntrust/task/{task_id})
    * @param {string} id - 任务ID
    * @returns {Promise} - 删除结果
    */
   deleteTask: async (id) => {
     try {
-      return await api.delete(endpoints.tasks.delete(id))
+      // 获取当前用户
+      const currentUser = getCurrentUser();
+      
+      // 构建请求参数
+      const requestData = {
+        user_id: currentUser?.id || ""
+      };
+      
+      // 调用API
+      return await api.delete(
+        endpoints.tasks.delete(id),
+        requestData,
+        'DeleteTaskRequest',
+        'DeleteTaskResponse'
+      );
     } catch (error) {
-      console.error(`删除任务失败 (ID: ${id}):`, error)
-      throw error
+      console.error(`删除任务失败 (ID: ${id}):`, error);
+      throw error;
     }
   },
 
-  // 获取卡片详情
-  getCardDetail: async (id) => {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const card = cardsData.find(card => card.id === parseInt(id))
-        if (card) {
-          resolve(card)
-        } else {
-          reject(new Error("卡片不存在"))
-        }
-      }, 500)
-    })
+  /**
+   * 提交优化结果，创建新任务 (API规范: POST /v1/syntrust/task/optimization)
+   * @param {Object} optimizationData - 优化结果数据
+   * @returns {Promise} - 创建结果
+   */
+  submitOptimizationResult: async (optimizationData) => {
+    try {
+      // 获取当前用户
+      const currentUser = getCurrentUser();
+      
+      // 生成新任务ID（确保是纯数字格式）
+      const timestamp = Date.now();
+      const newTaskId = Math.floor(Math.random() * 900) + 100; // 生成100-999之间的随机ID
+      
+      // 创建新任务对象
+      const newTask = {
+        ...optimizationData,
+        id: newTaskId.toString(), // 确保ID是字符串格式
+        user_id: currentUser?.id || "",
+        created_at: { seconds: Math.floor(timestamp / 1000) },
+        status: "completed",
+        type: "optimization",
+        // 添加创建时间
+        updatedAt: new Date().toLocaleString(),
+        updatedBy: { name: currentUser?.name || "当前用户", avatar: null }
+      };
+      
+      console.log("提交优化结果(模拟):", newTask);
+      
+      // 将新任务添加到mock数据
+      try {
+        const { taskCardsData } = require("../mocks/data");
+        
+        // 构建符合taskCardsData结构的新任务对象
+        const newMockTask = {
+          id: newTaskId.toString(),
+          prompt: optimizationData.title || `优化任务 ${newTaskId}`,
+          response_summary: optimizationData.result?.models?.[0]?.description || "优化结果",
+          created_by: currentUser?.name || "当前用户",
+          created_from: "优化测试",
+          created_at: { seconds: Math.floor(timestamp / 1000) },
+          status: "completed",
+          type: "optimization",
+          title: optimizationData.title || `优化任务 ${newTaskId}`,
+          author: {
+            id: currentUser?.id || "1",
+            name: currentUser?.name || "当前用户",
+            avatar: null
+          },
+          source: "优化测试",
+          tags: ["优化任务"],
+          evaluations: [optimizationData.result],
+          step: [
+            {
+              agent: "优化助手",
+              score: [
+                {
+                  version: "1.0",
+                  confidence: "0.9",
+                  score: "0.9",
+                  consumed_points: 60,
+                  description: "优化后的任务评估",
+                  dimension: optimizationData.result?.models?.[0]?.strengths?.map((strength, index) => ({
+                    latitude: `维度${index + 1}`,
+                    weight: (0.8 + index * 0.02).toFixed(2)
+                  })) || []
+                }
+              ],
+              reason: "通过优化模式改进"
+            }
+          ]
+        };
+        
+        // 将新任务添加到taskCardsData数组的开头
+        taskCardsData.unshift(newMockTask);
+        
+        console.log("新的优化任务已添加:", newMockTask);
+      } catch (error) {
+        console.error("添加优化任务到mock数据失败:", error);
+      }
+      
+      // 模拟API延迟
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      // 返回模拟的成功响应，包含完整的新任务数据
+      return {
+        task_id: newTaskId.toString(),
+        task: newTask, // 返回完整的新任务数据
+        status: "success",
+        message: "优化结果提交成功，已创建新任务"
+      };
+      
+      /* 实际API调用代码（暂时注释掉）
+      return await api.post(
+        endpoints.tasks.submitOptimization,
+        newTask,
+        'OptimizationSubmitRequest',
+        'OptimizationSubmitResponse'
+      );
+      */
+    } catch (error) {
+      console.error("提交优化结果失败:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * 获取所有模型评估数据
+   * @returns {Object} - 所有模型的评估数据
+   */
+  getAllModelEvaluations: () => {
+    // 直接返回mock数据
+    return modelEvaluationData;
   }
 }
 

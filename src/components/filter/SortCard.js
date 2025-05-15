@@ -20,7 +20,7 @@ const SortCard = ({ config, onConfigChange, onPrev, onSave, loading }) => {
 
     onConfigChange({
       ...config,
-      fields: [...config.fields, { field: "创建时间", direction: "desc", id: Date.now().toString() }],
+      fields: [...config.fields, { field: "created_at", direction: "desc", id: Date.now().toString() }],
     })
   }
 
@@ -64,8 +64,8 @@ const SortCard = ({ config, onConfigChange, onPrev, onSave, loading }) => {
                   style={{ width: "100%" }}
                 >
                   {sortFieldOptions.map((option) => (
-                    <Option key={option} value={option}>
-                      {option}
+                    <Option key={option.value} value={option.value}>
+                      {option.label}
                     </Option>
                   ))}
                 </Select>

@@ -101,11 +101,11 @@ const UserInfoArea = ({ isCollapsed }) => {
       <div className="user-popover-header">
         <div className="user-popover-profile">
           <Avatar size={48} className="user-popover-avatar">
-            {user?.name?.charAt(0)}
+            {user && user.name ? user.name.charAt(0) : 'U'}
           </Avatar>
           <div className="user-popover-info">
-            <div className="user-popover-name">{user?.name}</div>
-            <div className="user-popover-email">{user?.email}</div>
+            <div className="user-popover-name">{user ? user.name : '未知用户'}</div>
+            <div className="user-popover-email">{user ? user.email : ''}</div>
           </div>
         </div>
         <div className="user-popover-badge">
@@ -215,11 +215,11 @@ const UserInfoArea = ({ isCollapsed }) => {
             >
               <div className="workspace-item-info">
                 <Avatar size={32} className="workspace-avatar">
-                  {workspace.icon || workspace.name.charAt(0)}
+                  {workspace.icon || (workspace.name ? workspace.name.charAt(0) : 'W')}
                 </Avatar>
                 <div className="workspace-details">
-                  <div className="workspace-name">{workspace.name}</div>
-                  <div className="workspace-role">{workspace.role}</div>
+                  <div className="workspace-name">{workspace.name || '未命名工作区'}</div>
+                  <div className="workspace-role">{workspace.role || '成员'}</div>
                 </div>
               </div>
               {workspace.current && <CheckOutlined className="workspace-current-icon" />}
@@ -271,13 +271,13 @@ const UserInfoArea = ({ isCollapsed }) => {
           <div className="user-profile-trigger" onClick={() => setUserPopoverVisible(true)}>
             <div className={`user-avatar-container ${isCollapsed ? "collapsed" : ""}`}>
               <Avatar className="user-avatar" size={36}>
-                {user.name.charAt(0)}
+                {user && user.name ? user.name.charAt(0) : 'U'}
               </Avatar>
             </div>
             {!isCollapsed && (
               <div className="user-details">
-                <div className="user-name">{user.name}</div>
-                <div className="user-email">{user.email}</div>
+                <div className="user-name">{user ? user.name : '未知用户'}</div>
+                <div className="user-email">{user ? user.email : ''}</div>
               </div>
             )}
           </div>

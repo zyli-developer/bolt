@@ -6,6 +6,7 @@ import zhCN from "antd/lib/locale/zh_CN"
 
 // 引入主题设置函数
 import applyColorTheme from "./styles/dynamic-theme"
+import colorToken from "./styles/utils/colorToken";
 
 // 先引入全局样式和主题变量
 import "./styles/globals.css"  // 确保全局CSS变量先加载
@@ -19,16 +20,17 @@ import "./components/card/card-detail.css" // 导入卡片详情页样式
 import "./components/evaluation/evaluation.css" // 导入评估页面样式
 import "./components/sidebar/user-info-styles.css" // 导入用户信息区域样式
 import "./components/sidebar-chat/sidebar-chat.css" // 导入聊天区域样式
-import colorToken from "./styles/utils/colorToken";
+import "./styles/overrides/antd-components.css" // 导入Ant Design组件样式覆盖
 
 // 启用MSW进行API模拟
 import { worker } from "./mocks/browser"
+
+// 应用动态主题色 - 在引入样式之后调用
+applyColorTheme();
+
 if (process.env.NODE_ENV === "development") {
   worker.start()
 }
-
-// 应用动态主题色
-applyColorTheme();
 
 const root = ReactDOM.createRoot(document.getElementById("root"))
 root.render(

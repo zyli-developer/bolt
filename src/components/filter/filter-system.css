@@ -1,4 +1,12 @@
 /* 筛选系统样式 */
+.filter-system {
+  width: 832px;
+  max-width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 16px;
+}
+
 .filter-popover {
   width: 480px;
   border-radius: 16px;
@@ -14,7 +22,7 @@
 }
 
 .filter-popover .ant-popover-arrow {
-  display: none;  
+  display: none;
 }
 
 .filter-card {
@@ -141,4 +149,25 @@
   opacity: 0;
   transform: translateX(-20px);
   transition: opacity 300ms, transform 300ms;
+}
+
+/* 生成报告按钮样式 */
+.generateReportButton {
+  margin-right: 8px;
+  font-size: 14px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+}
+
+/* 为生成报告按钮添加悬停效果 */
+.generateReportButton:hover {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+/* 设置模态框中表格的最大高度 */
+.report-modal-table {
+  max-height: 400px;
+  overflow-y: auto;
 }

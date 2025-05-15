@@ -54,8 +54,9 @@ code {
 
 /* Add these styles to ensure the collapsed sidebar works correctly */
 .app-sidebar.collapsed {
-  width: 48px !important;
-  min-width: 48px !important;
+  /* width: 48px !important;
+  min-width: 48px !important; */
+  flex: 0 0 48px !important;
 }
 
 .app-sidebar.collapsed .ant-layout-sider-children {
@@ -139,7 +140,7 @@ code {
 
 /* 主内容区域 */
 .main-content {
-  padding: 12px 16px;
+  /* padding: 12px 16px; */
   overflow-y: auto;
   flex: 1;
   scrollbar-width: none; /* Firefox */
@@ -203,7 +204,7 @@ code {
 .content-nav-container {
   display: flex;
   justify-content: center;
-  padding: 12px 0;
+  padding: 12px 0 0;
   background-color: var(--color-bg-container);
 }
 
@@ -383,17 +384,23 @@ code {
 /* 聊天浮动按钮 */
 .chat-floating-button {
   position: fixed;
-  bottom: 32px;
+  bottom: 6px;
   right: 32px;
-  width: 96px;
-  height: 96px;
-  border-radius: 32px;
-  background-color: var(--color-primary);
+  width: 128px;
+  height: 141px;
+  /* border-radius: 22px 0 22px 22px; */
+  /* background-color: var(--color-primary); */
+  /* background-color: transparent; */
+  background-image: url('./styles/images/IM.png');
+  background-size: 72%;
+  background-position: center;
+  background-repeat: no-repeat;
   color: white;
-  display: flex;
+  display: flex
+;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(88, 189, 109, 0.4);
+  /* box-shadow: 0 2px 8px rgba(88, 189, 109, 0.4); */
   border: none;
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
@@ -403,7 +410,7 @@ code {
 
 .chat-floating-button:hover {
   transform: scale(1.05);
-  box-shadow: 0 6px 16px rgba(88, 189, 109, 0.5);
+  /* box-shadow: 0 6px 16px rgba(88, 189, 109, 0.5); */
 }
 
 .chat-floating-button:active {
@@ -556,12 +563,12 @@ code {
 
 /* 探索页面样式 */
 .explore-page {
+  padding: 12px 16px;
+  flex: 1;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  height: 100%;
-  
-  transition: padding 0.3s ease;
+  align-items: center; /* 居中显示 */
 }
 
 /* When chat is closed, apply 190px margin */
@@ -721,6 +728,8 @@ code {
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* IE and Edge */
   padding-bottom: 24px;
+  align-items: center; /* 居中显示卡片 */
+  max-width: 100%;
 }
 
 .cards-container::-webkit-scrollbar {
@@ -729,16 +738,23 @@ code {
 
 .card-wrapper {
   margin-bottom: 0;
+  width: 832px; /* 固定卡片宽度为832px */
+  max-width: 100%;
 }
 
 /* Card styles - updated to match reference design */
 .card-item {
   border-radius: 16px;
-  padding: 20px;
+  padding: 16px; /* 减小内边距 */
   background-color: #E7F0EC;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
   position: relative;
   border: 1px solid var(--color-border-secondary);
+  height: 304px; /* 固定卡片高度为304px */
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* 防止内容溢出 */
 }
 
 /* Card header with title and button */
@@ -746,7 +762,7 @@ code {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 12px;
+  margin-bottom: 6px; /* 进一步减小下边距 */
 }
 
 .card-title-text {
@@ -787,7 +803,7 @@ code {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 6px; /* 进一步减小下边距 */
 }
 
 .author-info {
@@ -832,57 +848,67 @@ code {
 .card-divider {
   height: 1px;
   background-color: #eaedf3;
-  margin: 0 -20px 16px;
+  margin: 0 -16px 8px; /* 进一步减小下边距 */
 }
 
 /* Card content horizontal layout */
 .card-content-horizontal {
   display: flex;
-  gap: 20px;
-  min-height: 202px;
+  gap: 10px; /* 进一步减小间距 */
+  flex: 1;
   overflow: hidden;
+  min-height: 0; /* 解决Flex布局下的溢出问题 */
 }
 
 /* Left section - problem summary */
 .card-left-section {
-  flex: 1;
+  flex: 1.2; /* 调整左侧宽度比例 */
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  min-width: 228px;
-  max-width: 496px;
+  min-width: 200px; /* 减少最小宽度 */
+  max-width: 460px; /* 调整最大宽度 */
   transition: max-width 0.3s ease;
   background-color: var(--color-bg-chat);
   border-radius: 20px;
-  padding: 5px;
+  padding: 12px; /* 增加内边距 */
+  overflow: hidden; /* 防止内容溢出 */
 }
 
 /* When radar chart is visible, reduce summary width */
 .card-left-section.with-radar {
-  max-width: 320px;
+  max-width: 300px; /* 减少最大宽度 */
+  flex: 1; /* 调整宽度比例 */
 }
 
 .card-summary {
   flex: 1;
   overflow: hidden;
+  display: flex; /* 使用flex布局 */
+  flex-direction: column; /* 垂直排列子元素 */
+  min-height: 0; /* 解决Flex布局下的溢出问题 */
 }
 
 .summary-title {
-  font-size: 14px;
-  font-weight: 600;
-  margin: 0 0 8px 0;
-  color: #000;
+  display: none; /* 隐藏标题 */
 }
 
 .summary-text {
   font-size: 14px;
-  line-height: 1.6;
-  color: #71727a;
-  margin: 0;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 6;
-  -webkit-box-orient: vertical;
+  line-height: 1.4;
+  color: var(--color-text-secondary);
+
+  max-height: 190px; /* 进一步增加最大高度 */
+  flex: 1; /* 占用剩余空间 */
+  min-height: 0; /* 解决Flex布局下的溢出问题 */
+  padding-right: 4px; /* 保留右侧内边距 */
+  margin-bottom: 0; /* 移除下边距 */
+   overflow: hidden;
+			    text-overflow: ellipsis;
+			    display: -webkit-box;
+			    -webkit-line-clamp: 3;
+			    -webkit-box-orient: vertical;
+
 }
 
 /* Metrics section */
@@ -890,48 +916,50 @@ code {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  margin-top: 16px;
+  margin-top: 12px; /* 减少上边距 */
 }
 
 .metrics-container {
   display: flex;
-  gap: 24px;
+  gap: 16px; /* 减少间距 */
 }
 
 .metric-item {
   display: flex;
   align-items: flex-end;
-  gap: 8px;
+  gap: 6px; /* 减少间距 */
 }
 
 .metric-value {
-  font-size: 36px;
+  font-size: 20px; /* 进一步减小字体大小 */
   font-weight: 700;
   color: var(--color-primary);
-  line-height: 1;
+  line-height: 0.9; /* 减少行高 */
 }
 
 .metric-info {
   display: flex;
   flex-direction: column;
-  padding-bottom: 4px;
+  padding-bottom: 0; /* 移除内边距 */
 }
 
 .metric-label {
-  font-size: 12px;
+  font-size: 9px; /* 进一步减小字体大小 */
   color: #8f9098;
 }
 
 .metric-change {
-  font-size: 12px;
+  font-size: 9px; /* 进一步减小字体大小 */
 }
 
 .metric-change.positive {
   color: #3ac0a0;
+  font-size: 9px; /* 进一步减小字体大小 */
 }
 
 .metric-change.negative {
   color: #ff4d4f;
+  font-size: 9px; /* 进一步减小字体大小 */
 }
 
 /* Dimension score link */
@@ -951,23 +979,23 @@ code {
 
 /* Right section - charts */
 .card-right-section {
-  flex: 1;
+  flex: 0.8; /* 调整右侧宽度比例 */
   display: flex;
   flex-direction: row;
-  gap: 20px;
+  gap: 10px; /* 减少间距 */
   overflow: hidden;
   background-color: var(--color-bg-chat);
   border-radius: 20px;
-  padding: 5px;
+  padding: 10px; /* 减少内边距 */
 }
 
 /* Chart titles */
 .line-chart-title,
 .radar-chart-title {
-  font-size: 14px;
+  font-size: 10px; /* 减小字体大小 */
   font-weight: 500;
   color: #1f2024;
-  margin-bottom: 8px;
+  margin-bottom: 2px; /* 减少下边距 */
   text-align: center;
 }
 
@@ -977,31 +1005,34 @@ code {
   display: flex;
   flex-direction: column;
   transition: width 0.3s ease;
+
 }
 
-.line-chart-container.with-radar {
-  width: 50%;
-}
+
 
 .line-chart {
   flex: 1;
+  max-height: 130px; /* 增加最大高度 */
+  min-height: 0; /* 解决Flex布局下的溢出问题 */
 }
 
 /* Radar chart container */
 .radar-chart-container {
-  width: 50%;
   display: flex;
   flex-direction: column;
+
 }
 
 .radar-chart {
   flex: 1;
+  max-height: 130px; /* 增加最大高度 */
+  min-height: 0; /* 解决Flex布局下的溢出问题 */
 }
 
 /* Chart info */
 .chart-info {
-  margin-top: 8px;
-  font-size: 12px;
+  margin-top: 4px; /* 减少上边距 */
+  font-size: 10px; /* 减小字体大小 */
   color: #8f9098;
 }
 
@@ -1026,18 +1057,18 @@ code {
 
 /* Agent checkboxes */
 .card-agents {
-  margin-top: 8px;
+  margin-top: 2px; /* 减小上边距 */
 }
 
 .agents-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 6px; /* 减少间距 */
   justify-content: center;
 }
 
 .agent-item .ant-checkbox-wrapper {
-  font-size: 12px;
+  font-size: 10px; /* 减小字体大小 */
 }
 
 /* 空数据状态 */
@@ -1053,6 +1084,56 @@ code {
 .empty-message {
   color: #8f9098;
   font-size: 16px;
+}
+
+/* 优化任务卡片样式 */
+.task-card.optimization-task {
+  background-color: #E7F0F5; /* 优化任务背景色略带蓝色 */
+  border-left: 3px solid var(--color-primary);
+}
+
+.task-optimization-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 0 6px;
+  font-size: 12px;
+  line-height: 20px;
+  height: 20px;
+  background-color: var(--color-primary-bg);
+  color: var(--color-primary);
+  border-radius: 10px;
+  font-weight: normal;
+  vertical-align: text-top;
+}
+
+.task-tag.optimization-tag {
+  background-color: var(--color-success-bg);
+  color: var(--color-success);
+  font-weight: 500;
+}
+
+/* 优化结果显示 */
+.optimization-results {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed #e0e0e0;
+}
+
+.optimization-score {
+  font-size: 11px;
+  line-height: 1.4;
+  color: #666;
+}
+
+.optimization-score strong {
+  color: var(--color-success);
+  font-weight: 600;
+}
+
+.score-improvement {
+  color: var(--color-success);
+  margin-left: 4px;
+  font-weight: 500;
 }
 
 /* Responsive styles */
@@ -1143,7 +1224,7 @@ code {
 }
 
 .creator-text {
-  font-size: 15px;
+  font-size: 12px;
   color: #71727a;
 }
 
@@ -1154,7 +1235,7 @@ code {
 
 .creator-source {
   font-weight: 600;
-  color: #006ffd;
+  color: var(--color-primary);
 }
 
 .task-tags {
@@ -1166,9 +1247,9 @@ code {
   font-size: 13px;
   padding: 4px 10px;
   border-radius: 12px;
-  background-color: #f3f5ff;
+  background-color: var(--color-primary-bg);
   border: none;
-  color: #006ffd;
+  color: var(--color-primary);
 }
 
 .task-actions-top {
@@ -1181,7 +1262,7 @@ code {
 .evaluation-section {
   background-color: #fff;
   border-radius: 12px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+  /* box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06); */
   padding: 24px;
   border: 1px solid #e8e9f1;
   flex: 3;
@@ -1222,7 +1303,7 @@ code {
 }
 
 .model-avatar {
-  background-color: #006ffd;
+  background-color: var(--color-primary);
   font-size: 24px;
   font-weight: 600;
 }
@@ -1243,9 +1324,9 @@ code {
   font-size: 12px;
   padding: 2px 8px;
   border-radius: 12px;
-  background-color: #f3f5ff;
+  background-color: var(--color-primary-bg);
   border: none;
-  color: #006ffd;
+  color: var(--color-primary);
 }
 
 .evaluation-content {
@@ -1299,36 +1380,6 @@ code {
 .metric-name {
   font-size: 13px;
   color: #8f9098;
-}
-
-.history-section {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  background-color: #f8f9fe;
-  padding: 16px;
-  border-radius: 8px;
-}
-
-.history-time {
-  font-size: 14px;
-  color: #71727a;
-}
-
-.history-author {
-  font-size: 14px;
-  color: #71727a;
-}
-
-.history-author span {
-  font-weight: 600;
-  color: #1f2024;
-}
-
-.history-content {
-  font-size: 14px;
-  color: #1f2024;
-  line-height: 1.5;
 }
 
 /* 优势与不足区域 */
@@ -1426,24 +1477,6 @@ code {
 .radar-chart-content {
   flex: 1;
   height: 300px;
-}
-
-/* 历史记录区域 - 移至雷达图左侧 */
-.history-section-wrapper {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-.history-section {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  background-color: #f8f9fe;
-  padding: 16px;
-  border-radius: 8px;
-  height: 100%;
 }
 
 .chart-title {
@@ -1637,4 +1670,10 @@ body.multi-select-temp .text-highlight-selection {
   white-space: pre-wrap;
   word-break: break-word;
   line-height: 1.5;
+}
+
+.filter-container {
+  width: 100%;
+  max-width: 832px;
+  margin-bottom: 24px;
 }

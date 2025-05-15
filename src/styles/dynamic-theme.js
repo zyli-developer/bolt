@@ -12,6 +12,7 @@ export function injectColorVariables() {
   // 将样式添加到head
   document.head.appendChild(styleElement);
   
+
   // 返回一个用于清理的函数
   return () => {
     const element = document.getElementById('syntrust-color-variables');
@@ -26,6 +27,9 @@ export function applyColorTheme() {
   // 检查是否已存在相同ID的style元素
   if (!document.getElementById('syntrust-color-variables')) {
     injectColorVariables();
+    console.log('CSS变量主题已应用');
+  } else {
+    console.log('CSS变量主题已存在，未重新应用');
   }
 }
 

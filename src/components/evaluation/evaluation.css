@@ -590,7 +590,7 @@
   background: #fff;
   padding: 24px;
   border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  /* box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08); */
 }
 
 /* 评估标题区域 */
@@ -652,7 +652,7 @@
 /* 折线图区域 */
 .line-chart-section {
   background: #fff;
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 24px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
 }
@@ -669,7 +669,7 @@
   gap: 24px;
   background: #fff;
   padding: 24px;
-  border-radius: 8px;
+  border-radius: 12px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
@@ -759,7 +759,6 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 12px;
 }
 
 /* 模型信息折叠面板样式 */
@@ -817,9 +816,9 @@
 }
 
 .model-tag {
-  background: #f0f7ff;
+  background: var(--color-primary-bg);
   border: none;
-  color: #006ffd;
+  color: var(--color-primary);
   font-size: 12px;
   padding: 2px 8px;
   border-radius: 4px;
@@ -909,9 +908,9 @@
 
 /* 多选下拉框样式优化 */
 .ant-select-multiple .ant-select-selection-item {
-  background: #f0f7ff;
+  background: var(--color-primary-bg);
   border: none;
-  color: #006ffd;
+  color: var(--color-primary);
   font-size: 12px;
   padding: 2px 8px;
   border-radius: 4px;
@@ -919,13 +918,13 @@
 }
 
 .ant-select-multiple .ant-select-selection-item-remove {
-  color: #006ffd;
+  color: var(--color-primary);
   font-size: 12px;
 }
 
 .ant-select-dropdown .ant-select-item-option-selected {
-  background-color: #f0f7ff;
-  color: #006ffd;
+  background-color: var(--color-primary-bg);
+  color: var(--color-primary);
 }
 
 .ant-select-dropdown .ant-select-item-option {

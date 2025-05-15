@@ -12,36 +12,37 @@ const { Content } = Layout
 
 const AppLayout = ({ children }) => {
   const { isChatOpen, toggleChat } = useChatContext()
-  const [screenSize, setScreenSize] = useState("large")
+  // 固定使用large尺寸，不再根据屏幕宽度动态调整
+  const [screenSize] = useState("large")
   const location = useLocation()
   
   // 判断是否为详情页面
   const isDetailPage = location.pathname.includes('/detail/')
 
-  // 监听窗口大小变化，设置屏幕尺寸档位
-  useEffect(() => {
-    const handleResize = () => {
-      const width = window.innerWidth
-      if (width >= 1440) {
-        setScreenSize("large") // 1440px及以上使用大屏UI
-      } else if (width >= 1024) {
-        setScreenSize("medium") // 1024px-1439px使用中屏UI
-      } else if (width >= 768) {
-        setScreenSize("small") // 768px-1023px使用小屏UI
-      } else {
-        setScreenSize("small") // 小于768px也使用小屏UI
-      }
-    }
+  // 不再需要监听窗口大小变化
+  // useEffect(() => {
+  //   const handleResize = () => {
+  //     const width = window.innerWidth
+  //     if (width >= 1440) {
+  //       setScreenSize("large") // 1440px及以上使用大屏UI
+  //     } else if (width >= 1024) {
+  //       setScreenSize("medium") // 1024px-1439px使用中屏UI
+  //     } else if (width >= 768) {
+  //       setScreenSize("small") // 768px-1023px使用小屏UI
+  //     } else {
+  //       setScreenSize("small") // 小于768px也使用小屏UI
+  //     }
+  //   }
 
-    // 初始化
-    handleResize()
+  //   // 初始化
+  //   handleResize()
 
-    // 添加监听
-    window.addEventListener("resize", handleResize)
+  //   // 添加监听
+  //   window.addEventListener("resize", handleResize)
 
-    // 清理监听
-    return () => window.removeEventListener("resize", handleResize)
-  }, [])
+  //   // 清理监听
+  //   return () => window.removeEventListener("resize", handleResize)
+  // }, [])
 
   return (
     <div className="app-container">
@@ -77,7 +78,7 @@ const AppLayout = ({ children }) => {
         {/* 聊天浮动按钮 */}
         {!isChatOpen && (
           <button onClick={toggleChat} className="chat-floating-button">
-            <MessageOutlined />
+            {/* <MessageOutlined /> */}
           </button>
         )}
       </Layout>

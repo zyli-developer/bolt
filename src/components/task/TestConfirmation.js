@@ -134,7 +134,7 @@ const TestConfirmation = ({
           <Progress 
             type="circle" 
             percent={testProgress}
-            strokeColor="#1677FF"
+            strokeColor="var(--color-primary)"
             trailColor="#f3f3f3"
             width={120}
             format={percent => (
@@ -245,7 +245,7 @@ const TestConfirmation = ({
 
         <div className={styles.testWarning}>
           <Space align="start">
-            <InfoCircleOutlined style={{ color: '#faad14' }} />
+            <InfoCircleOutlined style={{ color: 'var(--color-assist-1)' }} />
             <div>
               <Text strong>注意：</Text>
               <Text>开始测试后将会按照配置的参数进行评估，过程中无法暂停。请确保已正确配置所有参数。</Text>
@@ -265,7 +265,7 @@ const TestConfirmation = ({
               fontWeight: '500',
               borderRadius: '24px',
               width: '280px',
-              boxShadow: '0 2px 10px rgba(88, 189, 109, 0.2)'
+              boxShadow: '0 2px 10px rgba(var(--color-primary-rgb), 0.2)'
             }}
             icon={<CheckCircleOutlined />}
           >
@@ -417,7 +417,7 @@ const TestConfirmation = ({
                     </div>
                   }
                   className={styles.timelineItem}
-                  color={activeSection === item.key ? '#006ffd' : '#8f9098'}
+                  color={activeSection === item.key ? 'var(--color-primary)' : 'var(--color-text-tertiary)'}
                   style={{ marginLeft: 0 }}
                 >
                   <div

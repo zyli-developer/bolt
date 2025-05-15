@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package syntrust.exploration;
+
+import "google/protobuf/timestamp.proto";
+import "user.proto";
+import "task.proto";
+import "asset.proto";
+import "common.proto";
+
+message Exploration {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  string status = 4;
+  int32 progress = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+  repeated syntrust.user.User team_members = 8;
+  repeated syntrust.task.Task tasks = 9;
+  repeated syntrust.asset.Asset assets = 10;
+}
+
+message Resource {
+  string id = 1;
+  string type = 2;
+  string name = 3;
+  string url = 4;
+}
+
+message Milestone {
+  string id = 1;
+  string title = 2;
+  string status = 3;
+  google.protobuf.Timestamp completion_date = 4;
+}
+
+message TeamMember {
+  string id = 1;
+  string name = 2;
+  string role = 3;
+}
+
+message GetExplorationResponse {
+  syntrust.exploration.Exploration exploration = 1;
+}

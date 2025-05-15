@@ -2,7 +2,10 @@
 
 import { useState, useEffect, useRef, useContext } from "react"
 import { useParams, useNavigate, useLocation } from "react-router-dom"
-import {  Button, Avatar, Tag, Spin, Select, Checkbox, Breadcrumb, Switch, Steps, message, Tooltip } from "antd"
+import {  Button, Avatar, Tag, Spin, Select, Checkbox, Breadcrumb, Switch, Steps, message, Tooltip, Card } from "antd"
+import { transparentScrollbarStyle, hideScrollbarStyle } from "../styles/scrollbarStyles"
+import { evaluationModelInfoStyle, evaluationLeftSectionStyle, evaluationRightSectionStyle, evaluationSectionStyle } from "../styles/evaluation-styles"
+import colorToken from "../styles/utils/colorToken"
 import {
   ArrowLeftOutlined,
   StarOutlined,
@@ -17,6 +20,8 @@ import {
   FileTextOutlined,
   CloseCircleOutlined,
   SendOutlined,
+  DownOutlined,
+  UpOutlined,
 } from "@ant-design/icons"
 import {
   Area,
@@ -33,6 +38,7 @@ import {
   PolarRadiusAxis,
 } from "recharts"
 import taskService from "../services/taskService"
+import cardService from "../services/cardService"
 import { useChatContext } from "../contexts/ChatContext"
 import CreateTaskModal from "../components/modals/CreateTaskModal"
 import TimelineIcon from "../components/icons/TimelineIcon"
@@ -53,7 +59,7 @@ import "../styles/overrides/qa.css"
 import "../styles/overrides/scene.css"
 import "../styles/overrides/template.css"
 import "../styles/overrides/retest.css"
-import "../styles/overrides/evaluation.css"
+
 
 // 导入右键菜单和讨论模态框组件
 import TextContextMenu from "../components/context/TextContextMenu"
@@ -84,8 +90,8 @@ const OptimizationSteps = ({ currentStep, onStepChange }) => {
     <div className="optimization-steps" style={{ 
       padding: "12px", 
       marginBottom: "12px", 
-      backgroundColor: "#f8f9fa", 
-      border: "1px solid #e9ecef", 
+      backgroundColor: "var(--color-bg-layout)", 
+      border: "1px solid var(--color-border-secondary)", 
       borderRadius: "8px" 
     }}>
       <Steps 
@@ -100,39 +106,52 @@ const OptimizationSteps = ({ currentStep, onStepChange }) => {
 };
 
 // QA优化界面组件
-const QAOptimizationSection = ({ comments = [] }) => {
+const QAOptimizationSection = ({ comments = [], card }) => {
   // 自定义样式
   const annotationTitleStyle = {
     fontSize: "16px",
     fontWeight: "500",
     margin: "0 0 8px 0",
-    color: "rgba(0, 0, 0, 0.88)"
+    color: "var(--color-text-base)"
   };
 
   return (
     <div className="qa-optimization-content" style={{ width: "100%" }}>
-      {/* 使用现有的QA组件 */}
-      <QASection isEditable={true} />
+      {/* 使用现有的QA组件，传递当前卡片的prompt和response_summary */}
+      <QASection 
+        isEditable={true} 
+        taskId={card?.id}
+        prompt={card?.prompt} 
+        response={card?.response_summary} 
+      />
     </div>
   );
 };
 
 // 场景优化界面组件
-const SceneOptimizationSection = ({ comments = [] }) => {
+const SceneOptimizationSection = ({ comments = [], card }) => {
   return (
     <div className="scene-optimization-content" style={{ width: "100%" }}>
-      {/* 使用现有的场景组件，场景组件中已包含注释列表 */}
-      <SceneSection isEditable={true} />
+      {/* 使用现有的场景组件，场景组件中已包含注释列表，传递当前卡片的scenario */}
+      <SceneSection 
+        isEditable={true} 
+        taskId={card?.id}
+        scenario={card?.scenario} 
+      />
     </div>
   );
 };
 
 // 模板优化界面组件
-const TemplateOptimizationSection = ({ comments = [] }) => {
+const TemplateOptimizationSection = ({ comments = [], card }) => {
   return (
     <div className="template-optimization-content" style={{ width: "100%" }}>
-      {/* 使用现有的模板组件，模板组件中已包含注释列表 */}
-      <TemplateSection isEditable={true} />
+      {/* 使用现有的模板组件，模板组件中已包含注释列表，传递当前卡片的step */}
+      <TemplateSection 
+        isEditable={true} 
+        taskId={card?.id}
+        steps={card?.templateData ? { templateData: card.templateData, ...card?.step } : card?.step} 
+      />
     </div>
   );
 };
@@ -145,7 +164,7 @@ const CustomQASection = (props) => {
       fontSize: "16px", 
       fontWeight: "500", 
       margin: "0 0 8px 0", 
-      color: "rgba(0, 0, 0, 0.88)" 
+      color: "var(--color-text-base)" 
     }}>
       {title}
     </div>
@@ -176,6 +195,9 @@ const CardDetailPage = () => {
   // 添加关注和分享相关状态
   const [isFollowing, setIsFollowing] = useState(false)
   const [isShareModalVisible, setIsShareModalVisible] = useState(false)
+  
+  // 添加用于保存完整卡片数据的状态
+  const [completeCardData, setCompleteCardData] = useState(null)
   
   // 使用全局优化模式上下文
   const { 
@@ -210,6 +232,8 @@ const CardDetailPage = () => {
   
   // 添加用于模态框显示的文本状态
   const [selectedModalText, setSelectedModalText] = useState('');
+  
+  const [isDetailsExpanded, setIsDetailsExpanded] = useState(false);
   
   // 处理注释展开切换
   const handleCommentToggle = (id) => {
@@ -307,15 +331,20 @@ const CardDetailPage = () => {
 
   // 返回按钮处理函数
   const handleBack = () => {
+    // 关闭优化模式
+    if (isOptimizationMode) {
+      setIsOptimizationMode(false);
+      setCurrentOptimizationStep(0);
+    }
+    
     // 关闭连续选择模式并清除高亮
     if (isMultiSelectActive) {
       setIsMultiSelectActive(false);
       clearAllHighlights();
     }
     
-    // 关闭优化模式
-    setIsOptimizationMode(false);
-  };
+    navigate(-1)
+  }
 
   // 上一步按钮处理函数
   const handlePrevStep = () => {
@@ -339,12 +368,36 @@ const CardDetailPage = () => {
     const fetchData = async () => {
       try {
         setLoading(true)
-        const [cardData, evaluationData] = await Promise.all([
-          taskService.getCardDetail(id),
-          taskService.getAllModelEvaluations()
-        ])
+        
+        let cardData;
+        // 检查ID格式，确定使用哪个API获取数据
+        // 如果ID是数字格式（如"1001"），则使用getExplorationDetail
+        // 否则使用getCardDetail
+        if (/^\d+$/.test(id)) {
+          // 获取探索详情
+          const response = await cardService.getExplorationDetail(id);
+          cardData = response.exploration || response;
+        } else {
+          // 获取普通卡片详情
+          cardData = await cardService.getCardDetail(id);
+        }
+        
+        // 获取模型评估数据
+        const evaluationData = await taskService.getAllModelEvaluations();
+        
+        // 确保templateData正确设置
+        if (!cardData.templateData && cardData.step) {
+          if (typeof cardData.step === 'object' && !Array.isArray(cardData.step) && cardData.step.templateData) {
+            cardData.templateData = cardData.step.templateData;
+          }
+        }
+        
         setCard(cardData)
         setEvaluationData(evaluationData)
+        
+        // 确保每次加载卡片详情时，优化模式默认是关闭的
+        setIsOptimizationMode(false);
+        setCurrentOptimizationStep(0);
         
         // 如果是从探索页面进入，默认设置一些注释数据
         if (isFromExplore) {
@@ -369,6 +422,18 @@ const CardDetailPage = () => {
   }, [id, isFromExplore])
 
   const handleGoBack = () => {
+    // 关闭优化模式
+    if (isOptimizationMode) {
+      setIsOptimizationMode(false);
+      setCurrentOptimizationStep(0);
+    }
+    
+    // 关闭连续选择模式并清除高亮
+    if (isMultiSelectActive) {
+      setIsMultiSelectActive(false);
+      clearAllHighlights();
+    }
+    
     navigate(-1)
   }
 
@@ -405,7 +470,8 @@ const CardDetailPage = () => {
   }
 
   const toggleModelPanel = (modelKey) => {
-    setExpandedModel(modelKey);
+    // 如果当前点击的模型已经展开，则收起它，否则展开它
+    setExpandedModel(expandedModel === modelKey ? null : modelKey);
   }
 
   // Prepare enhanced chart data with multiple model series
@@ -440,26 +506,34 @@ const CardDetailPage = () => {
   const enhancedChartData = getEnhancedChartData()
 
   const getModelColor = (modelKey) => {
-    // Implement your logic to determine the color based on the model
-    // For example, you can use a switch statement or a mapping function
     switch (modelKey) {
       case 'claude3.5':
-        return '#3ac0a0';
+        return 'var(--color-primary)';
       case 'claude3.6':
-        return '#006ffd';
+        return 'var(--color-assist-1)';
       case 'claude3.7':
-        return '#722ed1';
+        return 'var(--color-assist-2)';
       case 'agent2':
-        return '#ff7a45';
+        return 'var(--color-assist-1)';
       case 'deepseek':
-        return '#722ed1';
+        return 'var(--color-heavy)';
       default:
-        return '#8f9098';
+        return 'var(--color-primary)';
     }
-  }
+  };
 
   // 处理分支为新任务按钮点击
   const handleForkTask = () => {
+    // 确保传递完整的卡片数据，包含问题描述和答案描述
+    // 正确映射字段名：问题描述(questionDescription)对应prompt，回答描述(answerDescription)对应response_summary
+    const newCompleteCardData = {
+      ...card,
+      // 正确映射字段：使用prompt作为问题描述，response_summary作为答案描述
+      questionDescription: card.prompt || card.qa?.question || "基于卡片创建的问题描述。\n\n请在此处描述您想要测试或评估的内容。",
+      answerDescription: card.response_summary || card.summary || card.qa?.answer || "基于卡片创建的答案描述。\n\n请在此处描述预期的测试结果或评估标准。"
+    }
+    // 保存到状态中
+    setCompleteCardData(newCompleteCardData)
     setIsCreateTaskModalVisible(true)
   }
 
@@ -515,7 +589,7 @@ const CardDetailPage = () => {
       width: 50,
       render: (text) => (
         <div style={{ display: 'flex', justifyContent: 'center' }}>
-          <Avatar size={24} style={{ background: '#006ffd', fontSize: '12px' }}>{text}</Avatar>
+          <Avatar size={24} style={{ background: 'var(--color-primary)', fontSize: '12px' }}>{text}</Avatar>
         </div>
       ),
     },
@@ -534,7 +608,7 @@ const CardDetailPage = () => {
       ellipsis: true,
       render: (text) => (
         <Tooltip title={text}>
-          <a href="#" style={{ color: '#006ffd' }}>{text}</a>
+          <a href="#" style={{ color: 'var(--color-primary)' }}>{text}</a>
         </Tooltip>
       ),
     },
@@ -548,7 +622,7 @@ const CardDetailPage = () => {
         <div style={{ display: 'flex', gap: '8px', overflow: 'hidden' }}>
           {attachments.map((file, index) => (
             <Tag key={index} style={{ cursor: 'pointer', whiteSpace: 'nowrap' }}>
-              <a href={file.url} style={{ color: '#006ffd' }}>{file.name}</a>
+              <a href={file.url} style={{ color: 'var(--color-primary)' }}>{file.name}</a>
             </Tag>
           ))}
         </div>
@@ -637,19 +711,120 @@ const CardDetailPage = () => {
   const handleSubmitResults = () => {
     // 关闭连续选择模式并清除高亮
     if (isMultiSelectActive) {
-      setIsMultiSelectActive(false);
-      clearAllHighlights();
+      setIsMultiSelectActive(false)
+      clearAllHighlights()
     }
     
-    // 模拟提交测试结果到服务器
-    message.success('测试结果已成功提交');
+    // 设置提交加载状态
+    setLoading(true)
     
-    // 提交后，您可以选择重置优化模式或跳转到其他页面
-    // 这里示例为重置到第一步
-    setTimeout(() => {
-      setCurrentOptimizationStep(0);
-    }, 1500);
-  };
+    // 收集所有优化步骤的数据
+    const optimizationData = {
+      sourceCardId: card?.id,
+      title: `优化: ${card?.title || "未命名任务"}`,
+      originalTitle: card?.title,
+      source: card?.source || "优化测试",
+      tags: [...(card?.tags || []), "已优化"],
+      author: card?.author,
+      comments: comments, // 所有注释
+      steps: savedData, // 各步骤保存的数据
+      selectedModels: selectedModels, // 选中的模型
+      // 添加卡片的原始数据
+      description: card?.description,
+      chartData: card?.chartData,
+      updatedAt: new Date().toLocaleString(),
+      updatedBy: { name: "当前用户", avatar: null },
+      optimizationResults: {
+        beforeScore: card?.score || 0,
+        afterScore: Math.min(100, ((card?.score || 70) * 1.15).toFixed(1)), // 模拟优化后的得分提高15%
+        improvementRate: "15%",
+      }
+    }
+    
+    try {
+      // 直接修改mock数据，添加新的优化任务
+      const { taskCardsData } = require("../mocks/data")
+      
+      // 生成新任务ID（确保是纯数字格式）
+      const timestamp = Date.now()
+      const newTaskId = Math.floor(Math.random() * 900) + 100 // 生成100-999之间的随机ID
+      const createdAt = { seconds: Math.floor(timestamp / 1000) }
+      
+      // 创建符合taskCardsData结构的新任务对象
+      const newTask = {
+        id: newTaskId.toString(), // 确保ID是字符串格式
+        prompt: optimizationData.title,
+        response_summary: optimizationData.description || card?.description || "优化后的任务",
+        created_by: optimizationData.author?.name || "当前用户",
+        created_from: optimizationData.source,
+        created_at: createdAt,
+        status: "running",
+        type: "optimization",
+        step: [
+          {
+            agent: "优化助手",
+            score: [
+              {
+                version: "1.0",
+                confidence: "0.95",
+                score: optimizationData.optimizationResults.afterScore / 10, // 转换为0-1区间
+                consumed_points: 50,
+                description: "优化后的任务评估",
+                dimension: optimizationData.chartData?.radar?.map(item => ({
+                  latitude: item.name,
+                  weight: item.value / 100 // 转换为0-1区间
+                })) || []
+              }
+            ],
+            reason: "通过优化模式改进"
+          }
+        ],
+        title: optimizationData.title,
+        author: optimizationData.author,
+        source: optimizationData.source,
+        tags: optimizationData.tags,
+        summary: optimizationData.description || card?.description,
+        credibility: optimizationData.optimizationResults.afterScore,
+        credibilityChange: `+${optimizationData.optimizationResults.improvementRate}`,
+        score: optimizationData.optimizationResults.afterScore / 10, // 转换为0-10区间
+        scoreChange: `+${optimizationData.optimizationResults.improvementRate}`,
+        chartData: optimizationData.chartData,
+        optimizationResults: optimizationData.optimizationResults,
+        sourceCardId: optimizationData.sourceCardId
+      }
+      
+      // 将新任务添加到任务数据数组的最前面
+      taskCardsData.unshift(newTask)
+      
+      console.log("已将优化结果添加到mock数据:", newTask)
+      
+      // 将完整的新任务对象保存到localStorage，确保页面刷新后数据不丢失
+      localStorage.setItem(`task_${newTaskId}`, JSON.stringify(newTask))
+      
+      // 设置标记，通知TaskPage激活任务菜单
+      localStorage.setItem('activate_tasks_menu', 'true')
+      
+      // 完成后关闭加载状态
+      setLoading(false)
+      
+      // 显示成功消息
+      message.success("优化结果已提交，任务已创建")
+      
+      // 跳转到任务列表页面，并传递需要刷新列表的信息
+      navigate('/tasks', { 
+        state: { 
+          refreshList: true,
+          activateTasksMenu: true,
+          newTaskId: newTaskId,  // 现在是数字ID
+          newTask: newTask // 传递完整任务对象
+        } 
+      })
+    } catch (error) {
+      console.error("提交优化结果失败:", error)
+      setLoading(false)
+      message.error("提交失败: " + error.message)
+    }
+  }
 
   // 处理文本选择事件
   const handleTextSelection = (event) => {
@@ -1008,6 +1183,11 @@ const CardDetailPage = () => {
     }));
   };
 
+  // 切换任务详情展开/收起
+  const toggleDetailsExpanded = () => {
+    setIsDetailsExpanded(!isDetailsExpanded);
+  };
+
   if (loading) {
     return (
       <div className={`card-detail-page ${isChatOpen ? "chat-open" : "chat-closed"}`}>
@@ -1056,10 +1236,20 @@ const CardDetailPage = () => {
 
       {/* 卡片标题和信息 */}
       <div className="task-detail-title-section" style={{ padding: "6px", marginBottom: "4px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <h1 className="task-title" style={{ fontSize: "18px", margin: "0 0 4px 0" }}>{card.title}</h1>
+          <Button 
+            type="text"
+            icon={isDetailsExpanded ? <UpOutlined /> : <DownOutlined />}
+            onClick={toggleDetailsExpanded}
+            style={{ fontSize: "12px" }}
+          >
+            {isDetailsExpanded ? '收起' : '展开'}
+          </Button>
+        </div>
         <div className="task-creator-section" style={{ padding: "4px", gap: "8px" }}>
           <div className="task-creator-info" style={{ gap: "8px" }}>
-            <Avatar size={28} className="creator-avatar">
+            <Avatar size={24} className="creator-avatar">
               {card.author?.name?.charAt(0)}
             </Avatar>
             <span className="creator-text" style={{ fontSize: "12px" }}>
@@ -1069,7 +1259,7 @@ const CardDetailPage = () => {
           </div>
           <div className="task-tags" style={{ gap: "4px" }}>
             {card.tags.map((tag, index) => (
-              <Tag key={index} className="task-dimension-tag" style={{ fontSize: "10px", padding: "0 4px", margin: "0" }}>
+              <Tag key={index} className="task-dimension-tag">
                 {tag}
               </Tag>
             ))}
@@ -1084,9 +1274,9 @@ const CardDetailPage = () => {
                 height: "24px", 
                 padding: "0 8px",
                 transition: "all 0.3s",
-                backgroundColor: isFollowing ? "#fff7e6" : "transparent",
-                borderColor: isFollowing ? "#ffbd5c" : "#d9d9d9",
-                color: isFollowing ? "#fa8c16" : "inherit"
+                backgroundColor: isFollowing ? "var(--color-primary-bg)" : "transparent",
+                borderColor: isFollowing ? "var(--color-primary-border)" : "var(--color-border-secondary)",
+                color: isFollowing ? "var(--color-primary-text)" : "inherit"
               }}
             >
               {isFollowing ? '已关注' : '关注'}
@@ -1103,6 +1293,91 @@ const CardDetailPage = () => {
           </div>
         </div>
       </div>
+
+      {/* 任务基本信息卡片 - 可展开/收起 */}
+      {isDetailsExpanded && (
+        <Card 
+          className="task-basic-info-card"
+          style={{ 
+            marginBottom: "12px", 
+            borderRadius: "12px",
+            background: "#fff",
+            boxShadow: "0 2px 8px rgba(0, 0, 0, 0.06)"
+          }}
+        >
+          <div style={{ padding: "8px 16px" }}>
+            <h3 style={{ fontSize: "16px", fontWeight: "500", marginBottom: "16px", color: "var(--color-text-base)" }}>任务基本信息</h3>
+
+            {/* 描述单独一行显示 */}
+            <div style={{ marginBottom: "16px" }}>
+              <div style={{ display: "flex" }}>
+                <div style={{ width: "80px", color: "var(--color-text-tertiary)", fontSize: "13px" }}>描述</div>
+                <div style={{ flex: 1, fontSize: "13px", lineHeight: "1.6" }}>{card.description || card.summary || card.response_summary || "无描述"}</div>
+              </div>
+            </div>
+
+            {/* 三列布局的字段 */}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "16px" }}>
+              <div style={{ flex: "1 1 30%", minWidth: "250px" }}>
+                <div style={{ display: "flex", marginBottom: "12px" }}>
+                  <div style={{ width: "80px", color: "var(--color-text-tertiary)", fontSize: "13px" }}>优先级</div>
+                  <div style={{ flex: 1, fontSize: "13px" }}>
+                    {card.priority === 'high' ? '高' : 
+                    card.priority === 'medium' ? '中' : 
+                    card.priority === 'low' ? '低' : '未设置'}
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", marginBottom: "12px" }}>
+                  <div style={{ width: "80px", color: "var(--color-text-tertiary)", fontSize: "13px" }}>创建时间</div>
+                  <div style={{ flex: 1, fontSize: "13px" }}>
+                    {card.created_at?.seconds ? new Date(card.created_at.seconds * 1000).toLocaleString() : "未知"}
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", marginBottom: "12px" }}>
+                  <div style={{ width: "80px", color: "var(--color-text-tertiary)", fontSize: "13px" }}>完成期限</div>
+                  <div style={{ flex: 1, fontSize: "13px" }}>{card.deadline || "未设置"}</div>
+                </div>
+              </div>
+
+              <div style={{ flex: "1 1 30%", minWidth: "250px" }}>
+                <div style={{ display: "flex", marginBottom: "12px" }}>
+                  <div style={{ width: "80px", color: "var(--color-text-tertiary)", fontSize: "13px" }}>测评对象</div>
+                  <div style={{ flex: 1, fontSize: "13px" }}>{card.testTarget || "未设置"}</div>
+                </div>
+
+                <div style={{ display: "flex", marginBottom: "12px" }}>
+                  <div style={{ width: "80px", color: "var(--color-text-tertiary)", fontSize: "13px" }}>品牌</div>
+                  <div style={{ flex: 1, fontSize: "13px" }}>{card.brand || "未设置"}</div>
+                </div>
+
+                <div style={{ display: "flex", marginBottom: "12px" }}>
+                  <div style={{ width: "80px", color: "var(--color-text-tertiary)", fontSize: "13px" }}>型号</div>
+                  <div style={{ flex: 1, fontSize: "13px" }}>{card.model || "未设置"}</div>
+                </div>
+              </div>
+
+              <div style={{ flex: "1 1 30%", minWidth: "250px" }}>
+                <div style={{ display: "flex", marginBottom: "12px" }}>
+                  <div style={{ width: "80px", color: "var(--color-text-tertiary)", fontSize: "13px" }}>版本</div>
+                  <div style={{ flex: 1, fontSize: "13px" }}>{card.version || "未设置"}</div>
+                </div>
+
+                <div style={{ display: "flex", marginBottom: "12px" }}>
+                  <div style={{ width: "80px", color: "var(--color-text-tertiary)", fontSize: "13px" }}>参数量</div>
+                  <div style={{ flex: 1, fontSize: "13px" }}>{card.paramCount || "未设置"}</div>
+                </div>
+
+                <div style={{ display: "flex", marginBottom: "12px" }}>
+                  <div style={{ width: "80px", color: "var(--color-text-tertiary)", fontSize: "13px" }}>推理精度</div>
+                  <div style={{ flex: 1, fontSize: "13px" }}>{card.recommendPrecision || "未设置"}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Card>
+      )}
 
       {/* 评估结果和图表区域 - 左右结构或优化模式结构 */}
       <div className="evaluation-charts-wrapper" style={{ gap: "4px", marginTop: "4px", flexDirection: isOptimizationMode ? "column" : "row" }}>
@@ -1124,7 +1399,7 @@ const CardDetailPage = () => {
                   <div style={{ flex: comments.length > 0 ? 2 : 3, display: "flex", flexDirection: "row", gap: "4px" }}>
                     {/* 左侧评估区域 */}
                     <div className="evaluation-left-section" style={{ flex: 1, gap: "4px" }}>
-                      <div className="evaluation-section" style={{ padding: "8px", marginBottom: "4px" }}>
+                      <div className="evaluation-section" style={{ padding: "8px" }}>
                         <div className="evaluation-header" style={{ marginBottom: "8px" }}>
                           <div className="evaluation-title" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                             <span style={{ fontSize: "14px", fontWeight: "500" }}>评估结果</span>
@@ -1156,7 +1431,7 @@ const CardDetailPage = () => {
                           </div>
                         </div>
 
-                        <div className="evaluation-model-info" style={{ gap: "4px" }}>
+                        <div className="evaluation-model-info" style={{ gap: "4px", height: "320px", ...hideScrollbarStyle }}>
                           {selectedModels.map(modelKey => (
                             <div className="model-panel" key={modelKey} style={{ marginBottom: "4px" }}>
                               <div className="model-panel-header" onClick={() => toggleModelPanel(modelKey)} style={{ padding: "8px" }}>
@@ -1222,7 +1497,7 @@ const CardDetailPage = () => {
                                     <stop offset="5%" stopColor={getModelColor(modelKey)} stopOpacity={0.2}/>
                                     <stop offset="95%" stopColor={getModelColor(modelKey)} stopOpacity={0}/>
                                   </linearGradient>
-                                ))}
+                                ))} 
                               </defs>
                               <CartesianGrid 
                                 vertical={false} 
@@ -1307,24 +1582,13 @@ const CardDetailPage = () => {
                           </ResponsiveContainer>
                         </div>
                       </div>
-
-                      {/* 历史记录区域 */}
-                      <div className="history-section-wrapper" style={{ padding: "8px" }}>
-                        <div className="history-section" style={{ gap: "4px" }}>
-                          <div className="history-time" style={{ fontSize: "12px" }}>{currentEvaluation.updatedAt}</div>
-                          <div className="history-author" style={{ fontSize: "12px" }}>
-                            by <span>{currentEvaluation.updatedBy}</span>
-                          </div>
-                          <div className="history-content" style={{ fontSize: "12px", lineHeight: "1.4", marginTop: "4px" }}>{currentEvaluation.history}</div>
-                        </div>
-                      </div>
                     </div>
                   </div>
                   
                   {/* 右侧注释列表 - 始终显示 */}
                   <div className="comments-section" style={{ 
                     flex: 1, 
-                    backgroundColor: '#fff',
+                    backgroundColor: 'var(--color-bg-container)',
                     borderRadius: '8px',
                     maxHeight: 'calc(100vh - 320px)',
                     overflow: 'hidden'
@@ -1339,13 +1603,13 @@ const CardDetailPage = () => {
                 </>
               ) : currentOptimizationStep === 1 ? (
                 // QA优化界面
-                <QAOptimizationSection comments={comments} />
+                <QAOptimizationSection comments={comments} card={card} />
               ) : currentOptimizationStep === 2 ? (
                 // 场景优化界面
-                <SceneOptimizationSection comments={comments} />
+                <SceneOptimizationSection comments={comments} card={card} />
               ) : currentOptimizationStep === 3 ? (
                 // 模板优化界面
-                <TemplateOptimizationSection comments={comments} />
+                <TemplateOptimizationSection comments={comments} card={card} />
               ) : currentOptimizationStep === 4 ? (
                 // 再次测试界面
                 <div style={{ width: "100%", display: "flex", flex: 1 }}>
@@ -1389,8 +1653,8 @@ const CardDetailPage = () => {
           // 原始布局
           <>
         {/* 左侧评估区域 */}
-        <div className="evaluation-left-section" style={{ flex: "0 0 400px", gap: "4px" }}>
-          <div className="evaluation-section" style={{ padding: "8px", marginBottom: "4px" }}>
+        <div className="evaluation-left-section" style={evaluationLeftSectionStyle}>
+          <div className="evaluation-section" style={{ padding: "8px" }}>
             <div className="evaluation-header" style={{ marginBottom: "8px" }}>
               <div className="evaluation-title" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <span style={{ fontSize: "14px", fontWeight: "500" }}>评估结果</span>
@@ -1422,7 +1686,7 @@ const CardDetailPage = () => {
           </div>
         </div>
 
-            <div className="evaluation-model-info" style={{ gap: "4px" }}>
+            <div className="evaluation-model-info" style={evaluationModelInfoStyle}>
               {selectedModels.map(modelKey => (
                 <div className="model-panel" key={modelKey} style={{ marginBottom: "4px" }}>
                   <div className="model-panel-header" onClick={() => toggleModelPanel(modelKey)} style={{ padding: "8px" }}>
@@ -1573,17 +1837,6 @@ const CardDetailPage = () => {
               </ResponsiveContainer>
             </div>
           </div>
-
-          {/* 历史记录区域 */}
-          <div className="history-section-wrapper" style={{ padding: "8px" }}>
-            <div className="history-section" style={{ gap: "4px" }}>
-              <div className="history-time" style={{ fontSize: "12px" }}>{currentEvaluation.updatedAt}</div>
-              <div className="history-author" style={{ fontSize: "12px" }}>
-                by <span>{currentEvaluation.updatedBy}</span>
-              </div>
-              <div className="history-content" style={{ fontSize: "12px", lineHeight: "1.4", marginTop: "4px" }}>{currentEvaluation.history}</div>
-              </div>
-          </div>
         </div>
           </>
         )}
@@ -1668,8 +1921,8 @@ const CardDetailPage = () => {
                     padding: '0 12px',
                     height: '32px',
                     fontSize: '12px',
-                    border: '1px solid #d9d9d9',
-                    background: isOptimizationMode ? '#e6f7ff' : 'white',
+                    border: '1px solid var(--color-border-secondary)',
+                    background: isOptimizationMode ? 'var(--color-primary-bg)' : 'var(--color-bg-container)',
                     flex: 1
                   }}
                 >
@@ -1781,9 +2034,8 @@ const CardDetailPage = () => {
                     padding: '0 12px',
                     height: '32px',
                     fontSize: '12px',
-                    border: '1px solid #d9d9d9',
-                    background: isOptimizationMode ? '#e6f7ff' : 'white',
-                    flex: 1
+                    border: '1px solid var(--color-border-secondary)',
+                    background: isOptimizationMode ? 'var(--color-primary-bg)' : 'var(--color-bg-container)'
                   }}
                 >
                   <SettingOutlined style={{ fontSize: '14px' }} />
@@ -1792,7 +2044,6 @@ const CardDetailPage = () => {
                     size="small" 
                     checked={isOptimizationMode}
                     onChange={toggleOptimizationMode}
-                    style={{ marginLeft: '4px' }}
                   />
                 </div>
               </>
@@ -1860,8 +2111,8 @@ const CardDetailPage = () => {
             padding: '0 12px',
             height: '32px',
                 fontSize: '12px',
-                border: '1px solid #d9d9d9',
-                background: isOptimizationMode ? '#e6f7ff' : 'white'
+                border: '1px solid var(--color-border-secondary)',
+                background: isOptimizationMode ? 'var(--color-primary-bg)' : 'var(--color-bg-container)'
               }}
             >
               <SettingOutlined style={{ fontSize: '14px' }} />
@@ -1870,7 +2121,6 @@ const CardDetailPage = () => {
                 size="small" 
                 checked={isOptimizationMode}
                 onChange={toggleOptimizationMode}
-                style={{ marginLeft: '4px' }}
               />
             </div>
           </>
@@ -1881,7 +2131,7 @@ const CardDetailPage = () => {
       <CreateTaskModal
         visible={isCreateTaskModalVisible}
         onCancel={handleCancelCreateTask}
-        cardData={card}
+        cardData={completeCardData}
       />
       
       {/* 右键菜单 */}

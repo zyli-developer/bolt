@@ -15,7 +15,7 @@ import { OptimizationContext } from '../../contexts/OptimizationContext';
 const { Title } = Typography;
 const { TextArea } = Input;
 
-const SceneSection = ({ isEditable = false }) => {
+const SceneSection = ({ isEditable = false, taskId, scenario }) => {
   const { styles } = useStyles();
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
@@ -44,13 +44,141 @@ const SceneSection = ({ isEditable = false }) => {
   } = useContext(OptimizationContext);
 
   useEffect(() => {
-    Promise.all([
-      fetchSceneContent(),
-      fetchAnnotations()
-    ]).finally(() => {
-      setLoading(false);
-    });
-  }, []);
+    // 如果提供了scenario参数，则使用props数据，否则从服务获取数据
+    if (scenario) {
+      // 将scenario数据转换为React Flow所需的格式
+      const flowNodes = scenario.node ? scenario.node.map(node => {
+        // 根据节点类型设置不同的样式
+        let nodeStyle = {
+          background: '#fff',
+          border: '1px solid #d9d9d9',
+          borderRadius: '8px',
+          padding: '12px 20px',
+          fontSize: '14px'
+        };
+        
+        // 根节点样式
+        if (node.type === 'root') {
+          nodeStyle = {
+            ...nodeStyle,
+            background: '#f0f7ff',
+            border: '1px solid #006ffd',
+            fontWeight: 'bold'
+          };
+        } 
+        // 分支节点样式
+        else if (node.type === 'branch') {
+          nodeStyle = {
+            ...nodeStyle,
+            background: '#f9f9f9',
+            border: '1px solid #a6a6a6'
+          };
+        }
+        // 叶子节点样式
+        else if (node.type === 'leaf') {
+          nodeStyle = {
+            ...nodeStyle,
+            background: '#fff',
+            border: '1px solid #d9d9d9',
+            width: node.label.length > 15 ? '280px' : 'auto'
+          };
+        }
+        
+        return {
+          id: node.id,
+          data: { label: node.label },
+          position: node.position || { x: 0, y: 0 },
+          type: 'default',
+          style: nodeStyle
+        };
+      }) : [];
+
+      const flowEdges = scenario.edge ? scenario.edge.map(edge => ({
+        id: edge.id,
+        source: edge.source,
+        target: edge.target,
+        animated: true,
+        style: { stroke: '#006ffd' }
+      })) : [];
+
+      setNodes(flowNodes);
+      setEdges(flowEdges);
+      fetchAnnotations().finally(() => {
+        setLoading(false);
+      });
+    } else {
+      // 如果没有提供scenario参数，则从服务获取数据
+      Promise.all([
+        fetchSceneContent(),
+        fetchAnnotations()
+      ]).finally(() => {
+        setLoading(false);
+      });
+    }
+  }, [scenario]);
+
+  // 监听scenario props变化，更新nodes和edges
+  useEffect(() => {
+    if (scenario) {
+      // 将scenario数据转换为React Flow所需的格式
+      const flowNodes = scenario.node ? scenario.node.map(node => {
+        // 根据节点类型设置不同的样式
+        let nodeStyle = {
+          background: '#fff',
+          border: '1px solid #d9d9d9',
+          borderRadius: '8px',
+          padding: '12px 20px',
+          fontSize: '14px'
+        };
+        
+        // 根节点样式
+        if (node.type === 'root') {
+          nodeStyle = {
+            ...nodeStyle,
+            background: '#f0f7ff',
+            border: '1px solid #006ffd',
+            fontWeight: 'bold'
+          };
+        } 
+        // 分支节点样式
+        else if (node.type === 'branch') {
+          nodeStyle = {
+            ...nodeStyle,
+            background: '#f9f9f9',
+            border: '1px solid #a6a6a6'
+          };
+        }
+        // 叶子节点样式
+        else if (node.type === 'leaf') {
+          nodeStyle = {
+            ...nodeStyle,
+            background: '#fff',
+            border: '1px solid #d9d9d9',
+            width: node.label.length > 15 ? '280px' : 'auto'
+          };
+        }
+        
+        return {
+          id: node.id,
+          data: { label: node.label },
+          position: node.position || { x: 0, y: 0 },
+          type: 'default',
+          style: nodeStyle
+        };
+      }) : [];
+
+      const flowEdges = scenario.edge ? scenario.edge.map(edge => ({
+        id: edge.id,
+        source: edge.source,
+        target: edge.target,
+        animated: true,
+        style: { stroke: '#006ffd' }
+      })) : [];
+
+      setNodes(flowNodes);
+      setEdges(flowEdges);
+    }
+  }, [scenario]);
 
   // 当从优化上下文获取到注释数据时，更新本地状态
   useEffect(() => {
@@ -337,22 +465,12 @@ const SceneSection = ({ isEditable = false }) => {
               minZoom={0.1}
               maxZoom={4}
               zoomOnScroll={false}
-              panOnScroll={true}
+              panOnScroll={false}
               panOnDrag={true}
+              preventScrolling={true}
             >
               <Background />
               <Controls />
-              <Panel position="top-right">
-                <Button 
-                  type="primary"
-                  onClick={() => {
-                    sceneService.updateSceneContent({ nodes, edges });
-                    message.success('保存成功');
-                  }}
-                >
-                  保存布局
-                </Button>
-              </Panel>
             </ReactFlow>
           </ReactFlowProvider>
         </div>
@@ -386,6 +504,7 @@ const SceneSection = ({ isEditable = false }) => {
           y={contextMenu.y}
           onAction={handleContextMenuAction}
           onClose={() => setContextMenu(null)}
+          contextType="scene"
         />
       )}
 

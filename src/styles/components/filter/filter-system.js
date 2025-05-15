@@ -34,6 +34,36 @@ const useStyles = createStyles(({ token, css }) => {
         box-shadow: 0 0 0 2px ${token.colorPrimaryBg};
       }
     `,
+    importTaskButton: css`
+      display: flex;
+      align-items: center;
+      background-color: white;
+      color: ${token.colorText};
+      border: 1px solid ${token.colorBorder};
+      border-radius: 30px;
+      padding: 0 16px;
+      height: 32px;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.3s;
+
+      &:hover {
+        color: ${token.colorPrimary};
+        border-color: ${token.colorPrimary};
+        transform: translateY(-1px);
+      }
+
+      &:active {
+        color: ${token.colorPrimaryActive};
+        border-color: ${token.colorPrimaryActive};
+        transform: translateY(0);
+      }
+
+      .anticon {
+        margin-right: 6px;
+        font-size: 14px;
+      }
+    `,
     createTaskButton: css`
       display: flex;
       align-items: center;

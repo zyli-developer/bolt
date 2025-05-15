@@ -59,3 +59,35 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+/* ReactFlow 全局样式覆盖 */
+.react-flow__panel.react-flow__controls {
+  border: none !important;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.1) !important;
+}
+
+.react-flow__panel {
+  border: none !important;
+}
+
+.react-flow__controls button {
+  border-bottom: none !important;
+  border-top: none !important;
+  border-left: none !important;
+  border-right: none !important;
+}
+
+/* 移除垂直控制面板的边框线 */
+.react-flow__controls.vertical.bottom.left button {
+  border: none !important;
+}
+
+/* 修复右键菜单功能 */
+.react-flow {
+  position: relative;
+}
+
+/* 确保右键菜单可以正常工作 */
+.react-flow__pane {
+  z-index: 1;
+}

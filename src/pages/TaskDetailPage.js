@@ -34,6 +34,7 @@ import {
   AreaChart,
 } from "recharts"
 import taskService from "../services/taskService"
+import cardService from "../services/cardService"
 import { useChatContext } from "../contexts/ChatContext"
 import TimelineIcon from "../components/icons/TimelineIcon"
 import { taskAnnotationData } from "../mocks/data"
@@ -148,7 +149,7 @@ const TaskDetailPage = () => {
       width: 50,
       render: (text) => (
         <div style={{ display: 'flex', justifyContent: 'center' }}>
-          <Avatar size={24} style={{ background: '#006ffd', fontSize: '12px' }}>{text}</Avatar>
+          <Avatar size={24} style={{ background: 'var(--color-primary)', fontSize: '12px' }}>{text}</Avatar>
         </div>
       ),
     },
@@ -167,7 +168,7 @@ const TaskDetailPage = () => {
       ellipsis: true,
       render: (text) => (
         <Tooltip title={text}>
-          <a href="#" style={{ color: '#006ffd' }}>{text}</a>
+          <a href="#" style={{ color: 'var(--color-primary)' }}>{text}</a>
         </Tooltip>
       ),
     },
@@ -179,9 +180,9 @@ const TaskDetailPage = () => {
       ellipsis: true,
       render: (attachments) => (
         <div style={{ display: 'flex', gap: '8px', overflow: 'hidden' }}>
-          {attachments.map((file, index) => (
+          {Array.isArray(attachments) && attachments.map((file, index) => (
             <Tag key={index} style={{ cursor: 'pointer', whiteSpace: 'nowrap' }}>
-              <a href={file.url} style={{ color: '#006ffd' }}>{file.name}</a>
+              <a href={file.url} style={{ color: 'var(--color-primary)' }}>{file.name}</a>
             </Tag>
           ))}
         </div>
@@ -206,7 +207,7 @@ const TaskDetailPage = () => {
       width: 86,
       align: 'right',
       render: (time) => (
-        <div style={{ color: '#8f9098', fontSize: '12px' }}>
+        <div style={{ color: 'var(--color-text-tertiary)', fontSize: '12px' }}>
           <div>{time.hour}</div>
           <div>{time.date}</div>
         </div>
@@ -221,17 +222,57 @@ const TaskDetailPage = () => {
     const fetchData = async () => {
       try {
         setLoading(true)
-        const [taskData, evaluationData] = await Promise.all([
-          taskService.getTaskDetail(id),
-          taskService.getAllModelEvaluations()
-        ])
+        
+        let taskData;
+        // 获取任务详情，直接使用ID
+          taskData = await taskService.getTaskDetail(id);
+          // 如果是任务API返回的数据，从task字段中获取
+          if (taskData && taskData.task) {
+            taskData = taskData.task;
+        }
+        
+        // 确保taskData有基本结构
+        taskData = taskData || {};
+        taskData.tags = taskData.tags || [];
+        taskData.author = taskData.author || { name: '未知用户' };
+        taskData.title = taskData.title || '未命名任务';
+        taskData.description = taskData.description || '暂无描述';
+        taskData.source = taskData.source || '未知来源';
+        taskData.chartData = taskData.chartData || {
+          radar: [
+            { name: "维度1", value: 80 },
+            { name: "维度2", value: 75 },
+            { name: "维度3", value: 85 },
+            { name: "维度4", value: 70 },
+            { name: "维度5", value: 90 },
+            { name: "维度6", value: 85 }
+          ],
+          line: [
+            { month: "08", value: 70 },
+            { month: "09", value: 75 },
+            { month: "10", value: 82 },
+            { month: "11", value: 88 }
+          ]
+        };
+        
+        // 确保templateData正确设置
+        if (!taskData.templateData && taskData.step) {
+          if (typeof taskData.step === 'object' && !Array.isArray(taskData.step) && taskData.step.templateData) {
+            taskData.templateData = taskData.step.templateData;
+          }
+        }
+        
+        // 获取评估数据
+        const evaluationData = await taskService.getAllModelEvaluations();
+        
+        console.log("获取到的任务数据:", taskData);
         setTask(taskData)
 
-        // 设置注释数据
+        // 设置注释数据，添加保护措施防止undefined使用map
         if (taskData && taskData.annotations) {
           setAnnotationData(taskData.annotations);
-        } else if (taskAnnotationData && taskAnnotationData.data) {
-          setAnnotationData(taskAnnotationData.data);
+        } else if (taskAnnotationData) {
+          setAnnotationData(taskAnnotationData);
         }
 
         // 如果没有评估数据，提供默认数据
@@ -291,6 +332,19 @@ const TaskDetailPage = () => {
       } catch (err) {
         console.error(`获取数据失败 (ID: ${id}):`, err)
         setError("获取数据失败，请重试")
+        
+        // 设置一些默认数据，防止界面崩溃
+        setTask({
+          title: '加载失败的任务',
+          author: { name: '未知用户' },
+          source: '未知来源',
+          tags: ['加载失败'],
+          description: '无法加载任务数据，请刷新页面重试',
+          chartData: {
+            radar: [],
+            line: []
+          }
+        });
       } finally {
         setLoading(false)
       }
@@ -352,23 +406,35 @@ const TaskDetailPage = () => {
         case 1:
           return (
             <div className="qa-section" style={{
-              background: '#FAFAFA',
+              background: 'var(--color-bg-container)',
               borderRadius: '12px',
-              margin: '-24px'
             }}>
-              <QASection isEditable={true} />
+              <QASection 
+                isEditable={true} 
+                taskId={task?.id}
+                prompt={task?.prompt} 
+                response={task?.response_summary}
+              />
             </div>
           );
         case 2:
           return (
             <div className="scene-section">
-              <SceneSection isEditable={true} />
+              <SceneSection 
+                isEditable={true} 
+                taskId={task?.id}
+                scenario={task?.scenario}
+              />
             </div>
           );
         case 3:
           return (
             <div className="template-section">
-              <TemplateSection isEditable={true} />
+              <TemplateSection 
+                isEditable={true} 
+                taskId={task?.id}
+                steps={task?.templateData ? { templateData: task.templateData, ...task?.step } : task?.step}
+              />
             </div>
           );
         case 4:
@@ -387,7 +453,7 @@ const TaskDetailPage = () => {
           <>
             {/* 积分说明区域 */}
             <div className="score-section" style={{
-              background: '#EAF2FF',
+              background: 'var(--color-primary-bg)',
               padding: '16px',
               borderRadius: '12px',
               marginBottom: '24px'
@@ -406,16 +472,16 @@ const TaskDetailPage = () => {
                   fontWeight: '500'
                 }}>积分消耗说明</span>
                 {isScoreExpanded ?
-                  <CaretDownOutlined style={{ marginLeft: '4px', color: '#8f9098' }} /> :
-                  <CaretRightOutlined style={{ marginLeft: '4px', color: '#8f9098' }} />
+                  <CaretDownOutlined style={{ marginLeft: '4px', color: 'var(--color-text-tertiary)' }} /> :
+                  <CaretRightOutlined style={{ marginLeft: '4px', color: 'var(--color-text-tertiary)' }} />
                 }
               </div>
               {isScoreExpanded && (
-                <div style={{ fontSize: '14px', color: '#8f9098' }}>
+                <div style={{ fontSize: '14px', color: 'var(--color-text-tertiary)' }}>
                   <div>根据此任务的配置，预计每次测试消耗XXX积分*。</div>
                   <div style={{ marginTop: '4px' }}>
                     <span>*根据配置参数动态计算，</span>
-                    <a href="#" style={{ color: '#006FFD' }}>了解计算规则&gt;&gt;</a>
+                    <a href="#" style={{ color: 'var(--color-primary)' }}>了解计算规则&gt;&gt;</a>
                   </div>
                 </div>
               )}
@@ -427,33 +493,33 @@ const TaskDetailPage = () => {
                 display: 'flex',
                 marginBottom: '16px'
               }}>
-                <div style={{ width: '80px', color: '#8f9098' }}>任务名称</div>
-                <div style={{ flex: 1 }}>{task.title}</div>
+                <div style={{ width: '80px', color: 'var(--color-text-tertiary)' }}>任务名称</div>
+                <div style={{ flex: 1 }}>{task?.title}</div>
               </div>
               <div className="info-row" style={{
                 display: 'flex',
                 marginBottom: '16px'
               }}>
-                <div style={{ width: '80px', color: '#8f9098' }}>创建人</div>
+                <div style={{ width: '80px', color: 'var(--color-text-tertiary)' }}>创建人</div>
                 <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Avatar size={24}>{task.author?.name?.charAt(0)}</Avatar>
-                  <span>{task.author?.name}</span>
+                  <Avatar size={24}>{task?.author?.name?.charAt(0)}</Avatar>
+                  <span>{task?.author?.name}</span>
                 </div>
               </div>
               <div className="info-row" style={{
                 display: 'flex',
                 marginBottom: '16px'
               }}>
-                <div style={{ width: '80px', color: '#8f9098' }}>描述</div>
-                <div style={{ flex: 1 }}>{task.description}</div>
+                <div style={{ width: '80px', color: 'var(--color-text-tertiary)' }}>描述</div>
+                <div style={{ flex: 1 }}>{task?.description}</div>
               </div>
               <div className="info-row" style={{
                 display: 'flex',
                 marginBottom: '16px'
               }}>
-                <div style={{ width: '80px', color: '#8f9098' }}>关键词</div>
+                <div style={{ width: '80px', color: 'var(--color-text-tertiary)' }}>关键词</div>
                 <div style={{ flex: 1 }}>
-                  {task.tags.map((tag, index) => (
+                  {Array.isArray(task?.tags) && task?.tags.map((tag, index) => (
                     <Tag key={index} style={{ borderRadius: '12px', marginRight: '8px' }}>{tag}</Tag>
                   ))}
                 </div>
@@ -476,8 +542,8 @@ const TaskDetailPage = () => {
                   fontWeight: '500'
                 }}>注释</span>
                 {isAnnotationExpanded ?
-                  <CaretDownOutlined style={{ marginLeft: '4px', color: '#8f9098' }} /> :
-                  <CaretRightOutlined style={{ marginLeft: '4px', color: '#8f9098' }} />
+                  <CaretDownOutlined style={{ marginLeft: '4px', color: 'var(--color-text-tertiary)' }} /> :
+                  <CaretRightOutlined style={{ marginLeft: '4px', color: 'var(--color-text-tertiary)' }} />
                 }
               </div>
 
@@ -486,7 +552,7 @@ const TaskDetailPage = () => {
                   {loading ? (
                     <div style={{ padding: '20px 0', textAlign: 'center' }}>
                       <Spin size="small" />
-                      <div style={{ marginTop: '8px', color: '#8f9098', fontSize: '12px' }}>
+                      <div style={{ marginTop: '8px', color: 'var(--color-text-tertiary)', fontSize: '12px' }}>
                         加载注释数据...
                       </div>
                     </div>
@@ -512,25 +578,39 @@ const TaskDetailPage = () => {
       case 'qa':
         return (
           <div className="qa-section" style={{
-            background: '#FAFAFA',
+            background: 'var(--color-bg-container)',
             borderRadius: '12px',
           }}>
-            <QASection isEditable={false} />
+            <QASection 
+              isEditable={false} 
+              taskId={task?.id}
+              prompt={task?.prompt} 
+              response={task?.response_summary}
+            />
           </div>
         );
       case 'scene':
         return (
           <div className="scene-section">
-
-            <SceneSection isEditable={false} />
+            <SceneSection 
+              isEditable={false} 
+              taskId={task?.id}
+              scenario={task?.scenario}
+            />
           </div>
         );
       case 'template':
         return (
           <div className="template-section">
-            <TemplateSection isEditable={false} />
+            <TemplateSection 
+              isEditable={false} 
+              taskId={task?.id}
+              steps={task?.templateData ? { templateData: task.templateData, ...task?.step } : task?.step}
+            />
           </div>
         );
+      case 'result':
+        return renderResultPage();
       default:
         return null;
     }
@@ -614,7 +694,7 @@ const TaskDetailPage = () => {
       <TestConfirmation
         isTesting={isTesting}
         testProgress={testProgress}
-        task={task}
+        task={task || {}}
         isTaskStarted={isTaskStarted}
         TimelineIcon={TimelineIcon}
         currentStep={4}
@@ -634,7 +714,7 @@ const TaskDetailPage = () => {
 
   // 处理全选/取消全选
   const handleSelectAll = (checked) => {
-    const modelOptions = Object.keys(evaluationData);
+    const modelOptions = Object.keys(evaluationData || {});
     setSelectedModels(checked ? modelOptions : []);
   };
 
@@ -647,17 +727,17 @@ const TaskDetailPage = () => {
   const getModelColor = (modelKey) => {
     switch (modelKey) {
       case 'claude3.5':
-        return '#3ac0a0';
+        return 'var(--color-success)';
       case 'claude3.6':
-        return '#006ffd';
+        return 'var(--color-primary)';
       case 'claude3.7':
-        return '#722ed1';
-      case 'agent2':
-        return '#ff7a45';
+        return 'var(--color-heavy)';
+      case 'agent2': 
+        return 'var(--color-assist-1)';
       case 'deepseek':
-        return '#722ed1';
+        return 'var(--color-heavy)';
       default:
-        return '#8f9098';
+        return 'var(--color-text-tertiary)';
     }
   };
 
@@ -712,8 +792,8 @@ const TaskDetailPage = () => {
 
   // 渲染结果页面
   const renderResultPage = () => {
-    const modelOptions = Object.keys(evaluationData);
-    const currentEvaluation = evaluationData[selectedModel] || evaluationData.claude3;
+    const modelOptions = Object.keys(evaluationData || {});
+    const currentEvaluation = evaluationData?.[selectedModel] || evaluationData?.claude3;
 
     if (!task || !enhancedChartData || !currentEvaluation) {
       return (
@@ -728,13 +808,13 @@ const TaskDetailPage = () => {
       <div className="evaluation-charts-wrapper" style={{ gap: "4px", marginTop: "4px" }}>
         {/* 左侧评估区域 */}
         <div className="evaluation-left-section" style={{ flex: "0 0 400px", gap: "4px" }}>
-          <div className="evaluation-section" style={{ padding: "8px", marginBottom: "4px" }}>
+          <div className="evaluation-section" style={{ padding: "8px" }}>
             <div className="evaluation-header" style={{ marginBottom: "8px" }}>
               <div className="evaluation-title" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <span style={{ fontSize: "14px", fontWeight: "500" }}>评估结果</span>
                 <Select
                   mode="multiple"
-                  value={selectedModels}
+                  value={selectedModels || []}
                   onChange={handleModelChange}
                   className="model-selector"
                   maxTagCount={2}
@@ -742,8 +822,8 @@ const TaskDetailPage = () => {
                   style={{ minWidth: "270px", flex: 1 }}
                   dropdownRender={(menu) => (
                     <>
-                      <div className="select-all-option" onClick={() => handleSelectAll(selectedModels.length < modelOptions.length)} style={{ padding: "4px 8px" }}>
-                        <Checkbox checked={selectedModels.length === modelOptions.length}>
+                      <div className="select-all-option" onClick={() => handleSelectAll(selectedModels?.length < modelOptions?.length)} style={{ padding: "4px 8px" }}>
+                        <Checkbox checked={selectedModels?.length === modelOptions?.length}>
                           全选
                         </Checkbox>
                       </div>
@@ -761,20 +841,22 @@ const TaskDetailPage = () => {
             </div>
 
             <div className="evaluation-model-info" style={{ gap: "4px" }}>
-              {selectedModels.map(modelKey => (
+              {Array.isArray(selectedModels) && selectedModels.map(modelKey => {
+                if (!evaluationData || !evaluationData[modelKey]) return null;
+                return (
                 <div className="model-panel" key={modelKey} style={{ marginBottom: "4px" }}>
                   <div className="model-panel-header" onClick={() => toggleModelPanel(modelKey)} style={{ padding: "8px" }}>
                     <div className="model-panel-left">
                       <Avatar size={32} className="model-avatar" style={{ background: getModelColor(modelKey) }}>
-                        {evaluationData[modelKey]?.name?.charAt(0)}
+                          {evaluationData[modelKey]?.name?.charAt(0) || '?'}
                       </Avatar>
                       <div className="model-info">
                         <div className="model-name" style={{ fontSize: "14px" }}>
-                          {evaluationData[modelKey]?.name}
+                            {evaluationData[modelKey]?.name || 'Unknown Model'}
                           <span className="model-usage" style={{ fontSize: "12px", marginLeft: "4px" }}>128k</span>
                         </div>
                         <div className="model-tags" style={{ gap: "4px" }}>
-                          {evaluationData[modelKey]?.tags?.map((tag, index) => (
+                            {Array.isArray(evaluationData[modelKey]?.tags) && evaluationData[modelKey]?.tags.map((tag, index) => (
                             <span key={index} className="model-tag" style={{ padding: "0 4px", fontSize: "11px" }}>
                               {tag}
                             </span>
@@ -790,12 +872,13 @@ const TaskDetailPage = () => {
                   {expandedModel === modelKey && (
                     <div className="model-panel-content" style={{ padding: "0 8px 8px" }}>
                       <div className="evaluation-content" style={{ padding: "8px" }}>
-                        <p className="evaluation-text" style={{ fontSize: "12px", margin: 0, lineHeight: "1.4" }}>{evaluationData[modelKey]?.description}</p>
+                          <p className="evaluation-text" style={{ fontSize: "12px", margin: 0, lineHeight: "1.4" }}>{evaluationData[modelKey]?.description || '暂无描述'}</p>
                       </div>
                     </div>
                   )}
                 </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>
@@ -805,10 +888,10 @@ const TaskDetailPage = () => {
           {/* 折线图区域 */}
           <div className="line-chart-section" style={{ padding: "8px" }}>
             <div className="chart-legend" style={{ marginBottom: "8px", gap: "8px" }}>
-              {selectedModels.map(modelKey => (
+              {Array.isArray(selectedModels) && selectedModels.map(modelKey => (
                 <div className="legend-item" key={modelKey} style={{ gap: "4px" }}>
                   <span className="legend-color" style={{ backgroundColor: getModelColor(modelKey), width: "10px", height: "10px" }}></span>
-                  <span className="legend-label" style={{ fontSize: "12px" }}>{evaluationData[modelKey]?.name}</span>
+                  <span className="legend-label" style={{ fontSize: "12px" }}>{evaluationData?.[modelKey]?.name || modelKey}</span>
                 </div>
               ))}
             </div>
@@ -816,12 +899,12 @@ const TaskDetailPage = () => {
             <div className="line-chart-container" style={{ height: "150px", marginTop: "4px" }}>
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart
-                  data={enhancedChartData.line}
+                  data={enhancedChartData?.line || []}
                   margin={{ top: 2, right: 5, left: 0, bottom: 2 }}
                 >
                   {/* 渐变定义 */}
                   <defs>
-                    {Object.keys(evaluationData).map(modelKey => (
+                    {Object.keys(evaluationData || {}).map(modelKey => (
                       <linearGradient key={modelKey} id={`color${modelKey}`} x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor={getModelColor(modelKey)} stopOpacity={0.2} />
                         <stop offset="95%" stopColor={getModelColor(modelKey)} stopOpacity={0} />
@@ -831,13 +914,13 @@ const TaskDetailPage = () => {
                   <CartesianGrid
                     vertical={false}
                     horizontal={true}
-                    stroke="#f0f0f0"
+                    stroke="var(--color-border-secondary)"
                   />
                   <XAxis
                     dataKey="month"
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fontSize: 10, fill: '#8f9098' }}
+                    tick={{ fontSize: 10, fill: 'var(--color-text-tertiary)' }}
                   />
                   <YAxis
                     hide={true}
@@ -846,19 +929,19 @@ const TaskDetailPage = () => {
                   <RechartsTooltip
                     cursor={false}
                     contentStyle={{
-                      background: '#fff',
+                      background: 'var(--color-bg-container)',
                       border: 'none',
                       boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
                       borderRadius: '4px',
                       padding: '4px 8px'
                     }}
                   />
-                  {selectedModels.map(modelKey => (
+                  {Array.isArray(selectedModels) && selectedModels.map(modelKey => (
                     <Area
                       key={modelKey}
                       type="monotone"
                       dataKey={modelKey}
-                      name={evaluationData[modelKey]?.name}
+                      name={evaluationData?.[modelKey]?.name || modelKey}
                       stroke={getModelColor(modelKey)}
                       strokeWidth={1.5}
                       fill={`url(#color${modelKey})`}
@@ -872,20 +955,20 @@ const TaskDetailPage = () => {
 
           {/* 评分和雷达图区域 */}
           <div className="score-radar-section" style={{ gap: "8px", padding: "8px" }}>
-            <div className="metrics-section" style={{ gap: "8px", minWidth: "150px" }}>
+            <div className="metrics-section" style={{ gap: "8px", minWidth: "70px" }}>
               <div className="metric-item" style={{ padding: "8px" }}>
                 <div className="metric-label" style={{ fontSize: "12px", marginBottom: "4px" }}>综合得分</div>
-                <div className="metric-value" style={{ fontSize: "20px" }}>{currentEvaluation.score}</div>
-                <div className={`metric-change ${currentEvaluation.scoreChange?.startsWith("+") ? "positive" : "negative"}`} style={{ fontSize: "12px" }}>
-                  {currentEvaluation.scoreChange}
+                <div className="metric-value" style={{ fontSize: "20px" }}>{currentEvaluation?.score || 'N/A'}</div>
+                <div className={`metric-change ${currentEvaluation?.scoreChange?.startsWith("+") ? "positive" : "negative"}`} style={{ fontSize: "12px" }}>
+                  {currentEvaluation?.scoreChange || '0'}
                 </div>
               </div>
 
               <div className="metric-item" style={{ padding: "8px" }}>
                 <div className="metric-label" style={{ fontSize: "12px", marginBottom: "4px" }}>各维度得分</div>
-                <div className="metric-value" style={{ fontSize: "20px" }}>{currentEvaluation.credibility}%</div>
-                <div className={`metric-change ${currentEvaluation.credibilityChange?.startsWith("+") ? "positive" : "negative"}`} style={{ fontSize: "12px" }}>
-                  {currentEvaluation.credibilityChange}
+                <div className="metric-value" style={{ fontSize: "20px" }}>{currentEvaluation?.credibility || 'N/A'}%</div>
+                <div className={`metric-change ${currentEvaluation?.credibilityChange?.startsWith("+") ? "positive" : "negative"}`} style={{ fontSize: "12px" }}>
+                  {currentEvaluation?.credibilityChange || '0'}
                 </div>
               </div>
             </div>
@@ -893,14 +976,14 @@ const TaskDetailPage = () => {
             {/* 雷达图 */}
             <div className="radar-chart-content" style={{ height: "220px" }}>
               <ResponsiveContainer width="100%" height="100%">
-                <RadarChart data={enhancedChartData.radar}>
-                  <PolarGrid stroke="#e0e0e0" />
-                  <PolarAngleAxis dataKey="name" tick={{ fontSize: 10, fill: "#8f9098" }} />
-                  <PolarRadiusAxis domain={[0, 100]} tick={{ fontSize: 9, fill: "#8f9098" }} axisLine={false} />
-                  {selectedModels.map(modelKey => (
+                <RadarChart data={enhancedChartData?.radar || []}>
+                  <PolarGrid stroke="var(--color-border-secondary)" />
+                  <PolarAngleAxis dataKey="name" tick={{ fontSize: 10, fill: "var(--color-text-tertiary)" }} />
+                  <PolarRadiusAxis domain={[0, 100]} tick={{ fontSize: 9, fill: "var(--color-text-tertiary)" }} axisLine={false} />
+                  {Array.isArray(selectedModels) && selectedModels.map(modelKey => (
                     <Radar
                       key={modelKey}
-                      name={evaluationData[modelKey]?.name}
+                      name={evaluationData?.[modelKey]?.name || modelKey}
                       dataKey={modelKey}
                       stroke={getModelColor(modelKey)}
                       fill={getModelColor(modelKey)}
@@ -915,11 +998,11 @@ const TaskDetailPage = () => {
           {/* 历史记录区域 */}
           <div className="history-section-wrapper" style={{ padding: "8px" }}>
             <div className="history-section" style={{ gap: "4px" }}>
-              <div className="history-time" style={{ fontSize: "12px" }}>{currentEvaluation.updatedAt}</div>
+              <div className="history-time" style={{ fontSize: "12px" }}>{currentEvaluation?.updatedAt || '未知时间'}</div>
               <div className="history-author" style={{ fontSize: "12px" }}>
-                by <span>{currentEvaluation.updatedBy}</span>
+                by <span>{currentEvaluation?.updatedBy || '未知用户'}</span>
               </div>
-              <div className="history-content" style={{ fontSize: "12px", lineHeight: "1.4", marginTop: "4px" }}>{currentEvaluation.history}</div>
+              <div className="history-content" style={{ fontSize: "12px", lineHeight: "1.4", marginTop: "4px" }}>{currentEvaluation?.history || '暂无历史记录'}</div>
             </div>
           </div>
         </div>
@@ -927,10 +1010,33 @@ const TaskDetailPage = () => {
     );
   };
 
-  // 添加处理步骤点击的函数
+  // 检查步骤是否有数据
+  const hasStepData = (stepNumber) => {
+    if (!task) return false;
+    
+    switch (stepNumber) {
+      case 1: // QA步骤
+        return Boolean(task.prompt || task.response_summary);
+      case 2: // 场景步骤
+        return Boolean(task.scenario);
+      case 3: // 模板步骤
+        return Boolean(task.templateData || (task.step && (typeof task.step === 'object' || Array.isArray(task.step))));
+      case 4: // 确认测试步骤 - 前三个步骤有数据即可
+        return hasStepData(1) && hasStepData(2) && hasStepData(3);
+      case 5: // 结果步骤
+        return Boolean(task.status === 'completed' || task.evaluations?.length > 0);
+      default:
+        return false;
+    }
+  };
+
+  // 修改处理步骤点击的函数
   const handleStepClick = (stepNumber) => {
-    // 只允许点击已完成的步骤和当前步骤
-    if (stepNumber <= currentStep) {
+    // 只有在任务已经开始后才允许点击进行跳转
+    if (!isTaskStarted) return;
+
+    // 允许点击已完成的步骤、当前步骤，以及已有数据的后续步骤
+    if (stepNumber <= currentStep || hasStepData(stepNumber)) {
       setCurrentStep(stepNumber);
 
       // 根据步骤设置activeSection
@@ -956,9 +1062,116 @@ const TaskDetailPage = () => {
     }
   };
 
+  // 添加完成任务的处理函数
+  const handleCompleteTask = async () => {
+    try {
+      setLoading(true);
+      // 更新任务状态为completed
+      const updatedTaskData = {
+        ...task,
+        status: "completed"
+      };
+      
+      // 调用taskService的更新任务方法
+      await taskService.updateTask(id, updatedTaskData);
+      
+      // 更新本地状态
+      setTask(updatedTaskData);
+      
+      // 显示成功消息
+      message.success("任务已成功完成！");
+      
+      // 可选：导航回任务列表
+      // navigate("/tasks");
+    } catch (error) {
+      console.error("完成任务失败:", error);
+      message.error("完成任务失败，请重试");
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // 添加提交结果的处理函数
+  const handleSubmitResults = async () => {
+    try {
+      setLoading(true);
+      
+      // 生成本次测试结果的数据
+      const testResultData = {
+        taskId: id,
+        createdAt: new Date().toISOString(),
+        models: selectedModels.map(modelKey => {
+          const model = evaluationData[modelKey] || {};
+          return {
+            name: model.name || modelKey,
+            trustworthiness: parseInt(model.credibility) || 85,
+            description: model.description || "模型评估描述",
+            strengths: ["评估优势1", "评估优势2"],
+            weaknesses: ["评估弱点1", "评估弱点2"]
+          };
+        }),
+        optimizationHistory: [
+          {
+            id: Date.now(),
+            description: `进行了最新一轮测试，使用了${selectedModels.length}个模型`,
+            result: `平均置信度从${task.credibility || 85}%变为${enhancedChartData.radar?.[0]?.value || 88}%`
+          }
+        ]
+      };
+      
+      // 如果有优化模式，调用优化结果提交方法
+      if (isOptimizeMode) {
+        // 创建优化数据
+        const optimizationData = {
+          sourceTaskId: id,
+          title: `优化: ${task.title || ""}`,
+          result: testResultData,
+          models: selectedModels
+        };
+        
+        await taskService.submitOptimizationResult(optimizationData);
+      } else {
+        // 直接更新任务数据中的测试结果
+        const updatedTaskData = {
+          ...task,
+          evaluations: [...(task.evaluations || []), testResultData]
+        };
+        
+        await taskService.updateTask(id, updatedTaskData);
+        
+        // 更新本地状态
+        setTask(updatedTaskData);
+      }
+      
+      // 显示成功消息
+      message.success("测试结果已成功提交！");
+      
+      // 可选：导航到结果页面
+      // setActiveSection('result');
+    } catch (error) {
+      console.error("提交测试结果失败:", error);
+      message.error("提交测试结果失败，请重试");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 添加生成报告的处理函数
+  const handleGenerateReport = () => {
+    message.info("报告生成功能正在开发中...");
+  };
+
   // 渲染底部按钮
   const renderFooterButtons = () => {
     if (!isTaskStarted) {
+      // 根据任务状态显示不同的按钮文本
+      let buttonText = "开始任务";
+      if (task.status === "running") {
+        buttonText = "继续任务";
+      } else if (task.status === "completed") {
+        buttonText = "重新开始任务";
+      }
+      
       return (
         <Button
           type="primary"
@@ -967,7 +1180,7 @@ const TaskDetailPage = () => {
           onClick={handleStartTask}
           className={styles.startTaskButton}
         >
-          开始任务
+          {buttonText}
         </Button>
       );
     }
@@ -976,24 +1189,34 @@ const TaskDetailPage = () => {
       return (
         <>
           <Button
+            type="primary"
             size="large"
-            onClick={() => {/* 处理生成报告 */ }}
+            onClick={handleCompleteTask}
+            className={`${styles.primaryButton} ${styles.flexButton}`}
+            icon={<CheckOutlined />}
+          >
+            完成任务
+          </Button>
+          <Button
+            size="large"
+            onClick={handleSubmitResults}
+            className={styles.flexButton}
+          >
+            提交结果
+          </Button>
+          <Button
+            size="large"
+            onClick={handleGenerateReport}
             className={styles.flexButton}
           >
             生成报告
           </Button>
-          <Button
-            size="large"
-            onClick={() => {/* 处理完成任务 */ }}
-            className={styles.flexButton}
-          >
-            完成任务，提交结果
-          </Button>
-          <div className={styles.optimizeModeContainer}>
+          <div className={styles.optimizeModeContainer} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span>优化模式</span>
             <Switch
               checked={isOptimizeMode}
               onChange={setIsOptimizeMode}
+              size="small"
             />
           </div>
         </>
@@ -1129,19 +1352,19 @@ const TaskDetailPage = () => {
 
       {/* 任务标题和信息 */}
       <div className="task-detail-title-section">
-        <h1 className="task-title">{task.title}</h1>
+        <h1 className="task-title">{task?.title}</h1>
         <div className="task-creator-section">
           <div className="task-creator-info">
-            <Avatar size={40} className="creator-avatar">
-              {task.author?.name?.charAt(0)}
+            <Avatar size={24} className="creator-avatar">
+              {task?.author?.name?.charAt(0)}
             </Avatar>
             <span className="creator-text">
-              by <span className="creator-name">{task.author?.name}</span> from{" "}
-              <span className="creator-source">{task.source}</span>
+              by <span className="creator-name">{task?.author?.name}</span> from{" "}
+              <span className="creator-source">{task?.source}</span>
             </span>
           </div>
           <div className="task-tags">
-            {task.tags.map((tag, index) => (
+            {Array.isArray(task?.tags) && task?.tags.map((tag, index) => (
               <Tag key={index} className="task-dimension-tag">
                 {tag}
               </Tag>
@@ -1166,36 +1389,40 @@ const TaskDetailPage = () => {
             // 判断步骤状态：当前步骤、已完成步骤、未完成步骤
             const isCurrentStep = currentStep === item.step;
             const isCompletedStep = currentStep > item.step;
+            const hasData = hasStepData(item.step);
+            // 步骤可点击条件：任务已开始 且 (是当前步骤 或 已完成步骤 或 已有数据的步骤)
+            const isClickable = isTaskStarted && (isCurrentStep || isCompletedStep || hasData);
 
             return (
-              <div key={item.step} className={`step ${isCurrentStep ? 'current-step' : ''}`} style={{
+              <div key={item.step} className={`step ${isCurrentStep ? 'current-step' : ''} ${hasData ? 'has-data' : ''}`} style={{
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
                 gap: '4px',
-                cursor: isCurrentStep || isCompletedStep ? 'pointer' : 'default'
+                cursor: isClickable ? 'pointer' : 'default',
+                opacity: isTaskStarted ? (isClickable ? 1 : 0.7) : (isCurrentStep ? 1 : 0.7)
               }}
-                onClick={() => isCurrentStep || isCompletedStep ? handleStepClick(item.step) : null}
+                onClick={() => isClickable ? handleStepClick(item.step) : null}
               >
                 <div className="step-icon" style={{
                   width: '20px',
                   height: '20px',
                   borderRadius: '50%',
-                  border: `1px solid ${isCurrentStep ? '#006ffd' : isCompletedStep ? '#006ffd' : '#8f9098'}`,
-                  background: isCurrentStep ? '#006ffd' : isCompletedStep ? '#B4DBFF' : '#fff',
+                  border: `1px solid ${isCurrentStep ? 'var(--color-primary)' : isCompletedStep ? 'var(--color-primary)' : hasData ? 'var(--color-success)' : 'var(--color-text-tertiary)'}`,
+                  background: isCurrentStep ? 'var(--color-primary)' : isCompletedStep ? 'var(--color-primary-bg)' : hasData ? 'var(--color-success-bg)' : '#fff',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   fontSize: '12px',
                   fontWeight: 700,
-                  color: isCurrentStep ? '#fff' : isCompletedStep ? '#006ffd' : '#8f9098'
+                  color: isCurrentStep ? '#fff' : isCompletedStep ? 'var(--color-primary)' : hasData ? 'var(--color-success)' : 'var(--color-text-tertiary)'
                 }}>
                   {isCompletedStep ? <CheckOutlined style={{ fontSize: '12px' }} /> : item.step}
                 </div>
                 <div className="step-label" style={{
                   fontSize: '12px',
                   fontWeight: 700,
-                  color: isCurrentStep ? '#006ffd' : isCompletedStep ? '#006ffd' : '#8f9098'
+                  color: isCurrentStep ? 'var(--color-primary)' : isCompletedStep ? 'var(--color-primary)' : hasData ? 'var(--color-success)' : 'var(--color-text-tertiary)'
                 }}>{item.label}</div>
               </div>
             );
@@ -1215,7 +1442,7 @@ const TaskDetailPage = () => {
                 padding: '0 0 40px',
                 fontSize: '14px',
                 fontWeight: 600,
-                color: '#000'
+                color: 'var(--color-text-base)'
               }}>
                 任务概览
               </div>
@@ -1225,7 +1452,9 @@ const TaskDetailPage = () => {
                   { key: 'overview', label: '概览' },
                   { key: 'qa', label: 'QA' },
                   { key: 'scene', label: '场景' },
-                  { key: 'template', label: '模板' }
+                  { key: 'template', label: '模板' },
+                  // 当任务状态为completed时才显示结果选项
+                  ...(task.status === 'running' || task.status === 'completed' ? [{ key: 'result', label: '结果' }] : [])
                 ].map((item) => (
                   <Timeline.Item
                     key={item.key}
@@ -1238,7 +1467,7 @@ const TaskDetailPage = () => {
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          background: activeSection === item.key ? '#f0f7ff' : '#f9f9f9',
+                          background: activeSection === item.key ? 'var(--color-primary-bg)' : '#f9f9f9',
                           cursor: 'pointer'
                         }}
                         onClick={() => setActiveSection(item.key)}
@@ -1249,11 +1478,11 @@ const TaskDetailPage = () => {
                     style={{
                       padding: '0 0 32px'
                     }}
-                    color={activeSection === item.key ? '#006ffd' : '#8f9098'}
+                    color={activeSection === item.key ? 'var(--color-primary)' : 'var(--color-text-tertiary)'}
                   >
                     <div
                       style={{
-                        color: activeSection === item.key ? '#006ffd' : '#8f9098',
+                        color: activeSection === item.key ? 'var(--color-primary)' : 'var(--color-text-tertiary)',
                         fontSize: '14px',
                         cursor: 'pointer',
                         marginLeft: '8px'
@@ -1289,7 +1518,7 @@ const TaskDetailPage = () => {
 
       <style jsx global>{`
         .ant-timeline-item-head.ant-timeline-item-head-custom {
-          background: #f9f9f9 !important;
+          background: var(--color-bg-container) !important;
           padding: 0;
           border: none;
         }
@@ -1297,12 +1526,24 @@ const TaskDetailPage = () => {
         /* 步骤导航样式 */
         .steps-navigation {
           position: relative;
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: 16px;
         }
         
         .step {
           transition: all 0.3s ease;
           position: relative;
           z-index: 1;
+          padding: 8px 10px;
+          margin: 0 2px;
+          border-radius: 8px;
+        }
+        .step:hover {
+          background-color: ${isTaskStarted ? 'var(--color-primary-bg)' : 'transparent'};
+        }
+        .step.has-data:hover {
+          background-color: ${isTaskStarted ? 'var(--color-success-bg)' : 'transparent'};
         }
         .step-icon {
           transition: all 0.3s ease;
@@ -1312,26 +1553,51 @@ const TaskDetailPage = () => {
         }
         .step:hover .step-icon {
           transform: ${isTaskStarted ? 'scale(1.1)' : 'none'};
-          box-shadow: 0 0 0 4px rgba(180, 219, 255, 0.3);
+          box-shadow: 0 0 0 4px rgba(var(--color-primary-rgb), 0.3);
+        }
+        .step.has-data:hover .step-icon {
+          transform: ${isTaskStarted ? 'scale(1.1)' : 'none'};
+          box-shadow: 0 0 0 4px rgba(var(--color-success-rgb), 0.3);
         }
         .step-label {
           transition: all 0.3s ease;
           margin-top: 4px;
         }
+        .step:hover .step-label {
+          color: ${isTaskStarted ? 'var(--color-primary)' : ''};
+        }
+        .step.has-data:hover .step-label {
+          color: ${isTaskStarted ? 'var(--color-success)' : ''};
+        }
         
         .current-step .step-icon {
           animation: pulse 1.5s infinite;
         }
+        .current-step.has-data .step-icon {
+          animation: pulseSuccess 1.5s infinite;
+        }
         
         @keyframes pulse {
           0% {
-            box-shadow: 0 0 0 0 rgba(0, 111, 253, 0.4);
+            box-shadow: 0 0 0 0 rgba(var(--color-primary-rgb), 0.4);
           }
           70% {
-            box-shadow: 0 0 0 6px rgba(0, 111, 253, 0);
+            box-shadow: 0 0 0 6px rgba(var(--color-primary-rgb), 0);
           }
           100% {
-            box-shadow: 0 0 0 0 rgba(0, 111, 253, 0);
+            box-shadow: 0 0 0 0 rgba(var(--color-primary-rgb), 0);
+          }
+        }
+        
+        @keyframes pulseSuccess {
+          0% {
+            box-shadow: 0 0 0 0 rgba(var(--color-success-rgb), 0.4);
+          }
+          70% {
+            box-shadow: 0 0 0 6px rgba(var(--color-success-rgb), 0);
+          }
+          100% {
+            box-shadow: 0 0 0 0 rgba(var(--color-success-rgb), 0);
           }
         }
         
@@ -1367,7 +1633,7 @@ const TaskDetailPage = () => {
           transition: background-color 0.3s;
         }
         .model-panel-header:hover {
-          background-color: #f0f7ff;
+          background-color: var(--color-primary-bg);
         }
         .model-panel-left {
           display: flex;
@@ -1411,10 +1677,10 @@ const TaskDetailPage = () => {
           min-width: 120px;
         }
         .positive {
-          color: #52c41a;
+          color: var(--color-success);
         }
         .negative {
-          color: #ff4d4f;
+          color: var(--color-error);
         }
         .score-radar-section {
           display: flex;

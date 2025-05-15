@@ -39,7 +39,7 @@ const MainContentLayout = ({
                   </div>
                 }
                 className={styles.timelineItem}
-                color={activeSection === item.key ? '#006ffd' : '#8f9098'}
+                color={activeSection === item.key ? 'var(--color-primary)' : 'var(--color-text-tertiary)'}
               >
                 <div
                   className={`${styles.timelineLabel} ${activeSection === item.key ? styles.timelineLabelActive : styles.timelineLabelInactive}`}
