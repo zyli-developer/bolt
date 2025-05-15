@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Empty, Pagination, Spin, Typography, Button } from 'antd'
 import { DownOutlined, UpOutlined } from '@ant-design/icons'
 import AssetCard from './AssetCard'
@@ -17,6 +17,7 @@ const { Title } = Typography
  * @param {Number} pageSize - 每页记录数
  * @param {Function} onPageChange - 分页回调
  * @param {Boolean} isChatOpen - 聊天区域是否展开
+ * @param {Number} refreshTrigger - 刷新触发器，当值变化时重新加载数据
  */
 const AssetList = ({ 
   assets = [], 
@@ -25,33 +26,60 @@ const AssetList = ({
   currentPage = 1,
   pageSize = 12,
   onPageChange,
-  isChatOpen = false
+  isChatOpen = false,
+  refreshTrigger = 0
 }) => {
   const { styles } = useAssetStyles()
   const [expandedSections, setExpandedSections] = useState({
     scene: true,
     qa: true,
-    template: true
+    template: true,
+    report: true
   })
+  
+  // 本地报告数据
+  const [localReports, setLocalReports] = useState([])
   
   // 按类型分组资产
   const groupAssetsByType = (assets) => {
     const groups = {
       scene: [],
       qa: [],
-      template: []
+      template: [],
+      report: [...localReports] // 添加本地报告数据
     }
+    
+    // 添加调试日志
+    console.log('分组前的资产数据:', assets);
+    console.log('本地报告数据:', localReports);
     
     assets.forEach(asset => {
       const type = asset.type || 'template'
+      // 添加调试日志
+      // console.log('处理资产:', asset.id, '类型:', type);
+      
       if (type === 'scene') {
         groups.scene.push(asset)
       } else if (type === 'qa') {
         groups.qa.push(asset)
+      } else if (type === 'report') {
+        // 确保不重复添加已经在localReports中的报告
+        const isDuplicate = groups.report.some(report => report.id === asset.id);
+        if (!isDuplicate) {
+          groups.report.push(asset)
+        }
       } else {
         groups.template.push(asset)
       }
     })
+    
+    // 完成分组后记录结果
+    console.log('资产分组结果:', {
+      scene: groups.scene.length,
+      qa: groups.qa.length,
+      template: groups.template.length,
+      report: groups.report.length
+    });
     
     return groups
   }
@@ -63,6 +91,132 @@ const AssetList = ({
       [sectionType]: !prev[sectionType]
     }))
   }
+  
+  // 加载本地报告数据的函数
+  const loadLocalReports = () => {
+    try {
+      // 从localStorage获取报告数据
+      const reportsJson = localStorage.getItem('task_reports');
+      if (reportsJson) {
+        const reports = JSON.parse(reportsJson);
+        if (Array.isArray(reports) && reports.length > 0) {
+          // 将报告数据添加到资产列表中
+          const reportAssets = reports.map(report => ({
+            ...report,
+            type: 'report',
+            // 确保必要字段存在
+            name: report.name || report.title || `报告 ${report.id}`,
+            title: report.title || report.name || `报告 ${report.id}`,
+            response_summary: report.response_summary || report.summary || report.content || '无报告内容',
+            summary: report.summary || report.response_summary || report.content || '无报告内容',
+            created_by: report.created_by || '系统',
+            created_from: report.created_from || '报告生成器',
+            keywords: Array.isArray(report.keywords) ? report.keywords : ['报告'],
+            dimensions: Array.isArray(report.dimensions) ? report.dimensions : ['分析']
+          }));
+          
+          // 更新本地报告数据
+          setLocalReports(reportAssets);
+          console.log('加载报告数据成功:', reportAssets.length);
+        } else {
+          // 如果没有报告数据，设置为空数组
+          setLocalReports([]);
+        }
+      } else {
+        // 如果localStorage中没有报告数据，设置为空数组
+        setLocalReports([]);
+      }
+    } catch (error) {
+      console.error('加载报告数据失败:', error);
+      setLocalReports([]);
+    }
+  };
+  
+  // 初始化报告数据
+  useEffect(() => {
+    loadLocalReports();
+  }, []);
+  
+  // 当refreshTrigger变化时重新加载报告数据
+  useEffect(() => {
+    if (refreshTrigger > 0) {
+      console.log('检测到刷新触发器变化，重新加载报告数据:', refreshTrigger);
+      loadLocalReports();
+    }
+  }, [refreshTrigger]);
+  
+  // 添加对自定义reportsUpdated事件的监听
+  useEffect(() => {
+    const handleReportsUpdated = (e) => {
+      console.log('收到报告更新事件:', e.detail);
+      // 立即重新加载报告数据
+      loadLocalReports();
+    };
+    
+    // 添加事件监听
+    window.addEventListener('reportsUpdated', handleReportsUpdated);
+    
+    // 组件卸载时移除事件监听
+    return () => {
+      window.removeEventListener('reportsUpdated', handleReportsUpdated);
+    };
+  }, []);
+  
+  // 也监听reports_last_updated存储变化
+  useEffect(() => {
+    const checkReportUpdate = () => {
+      const lastUpdateTime = localStorage.getItem('reports_last_updated');
+      if (lastUpdateTime) {
+        console.log('检测到报告最后更新时间:', lastUpdateTime);
+        loadLocalReports();
+      }
+    };
+    
+    // 初始检查
+    checkReportUpdate();
+    
+    // 添加存储事件监听
+    const handleStorageChange = (e) => {
+      if (e.key === 'reports_last_updated') {
+        checkReportUpdate();
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
+  
+  // 添加对task_reports直接变化的监听
+  useEffect(() => {
+    const handleTaskReportsChange = (e) => {
+      if (e.key === 'task_reports') {
+        console.log('检测到localStorage中的task_reports数据变化');
+        loadLocalReports();
+      }
+    };
+    
+    // 添加事件监听
+    window.addEventListener('storage', handleTaskReportsChange);
+    
+    // 组件卸载时移除事件监听
+    return () => {
+      window.removeEventListener('storage', handleTaskReportsChange);
+    };
+  }, []);
+  
+  // 每30秒自动检查一次报告数据更新
+  useEffect(() => {
+    const checkInterval = setInterval(() => {
+      loadLocalReports();
+    }, 30000); // 30秒
+    
+    return () => {
+      clearInterval(checkInterval);
+    };
+  }, []);
   
   // 渲染资产分组标题
   const renderSectionHeader = (title, type, count) => {
@@ -96,7 +250,10 @@ const AssetList = ({
   
   // 渲染资产分组区域
   const renderSection = (title, type, assets) => {
-    if (!assets || assets.length === 0) return null
+    // 无论是否有数据，报告分组始终渲染（添加强制渲染逻辑）
+    const shouldAlwaysRender = type === 'report';
+    
+    if (!shouldAlwaysRender && (!assets || assets.length === 0)) return null
     
     const isExpanded = expandedSections[type]
     // 默认只显示4条数据，展开时显示全部
@@ -104,17 +261,13 @@ const AssetList = ({
     
     return (
       <div className={styles.assetSection}>
-        {renderSectionHeader(title, type, assets.length)}
+        {renderSectionHeader(title, type, assets ? assets.length : 0)}
         <div className={styles.sectionBackground}>
-          {isExpanded && displayedAssets.length > 0 ? (
+          {displayedAssets && displayedAssets.length > 0 ? (
             renderAssetGrid(displayedAssets)
           ) : (
             <div className={styles.collapsedHint}>
-              {displayedAssets.length > 0 ? (
-                renderAssetGrid(displayedAssets)
-              ) : (
-                <Empty description={`暂无${title}数据`} />
-              )}
+              <Empty description={`暂无${title}数据`} />
             </div>
           )}
         </div>
@@ -132,7 +285,10 @@ const AssetList = ({
       )
     }
     
-    if (!assets || assets.length === 0) {
+    // 合并API资产和本地报告数据
+    const allAssets = assets && assets.length > 0 ? assets : [];
+    
+    if (allAssets.length === 0 && localReports.length === 0) {
       return (
         <Empty 
           className={styles.emptyState}
@@ -143,13 +299,14 @@ const AssetList = ({
     }
     
     // 按类型分组资产
-    const groupedAssets = groupAssetsByType(assets)
+    const groupedAssets = groupAssetsByType(allAssets);
     
     return (
       <div className={styles.assetSections}>
         {renderSection('场景', 'scene', groupedAssets.scene)}
         {renderSection('问答', 'qa', groupedAssets.qa)}
         {renderSection('模板', 'template', groupedAssets.template)}
+        {renderSection('报告', 'report', groupedAssets.report)}
       </div>
     )
   }

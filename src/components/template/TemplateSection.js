@@ -16,7 +16,7 @@ import { OptimizationContext } from '../../contexts/OptimizationContext';
 const { Title } = Typography;
 const { TextArea } = Input;
 
-const TemplateSection = ({ isEditable = false }) => {
+const TemplateSection = ({ isEditable = false, taskId, steps }) => {
   const { styles } = useStyles();
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
@@ -42,13 +42,106 @@ const TemplateSection = ({ isEditable = false }) => {
   } = useContext(OptimizationContext);
 
   useEffect(() => {
-    Promise.all([
-      fetchTemplateContent(),
-      fetchAnnotations()
-    ]).finally(() => {
-      setLoading(false);
-    });
-  }, []);
+    // 如果提供了steps参数，则使用它来设置模板数据
+    if (taskId && steps) {
+      // 优先检查是否有templateData
+      if (steps.templateData) {
+        // 如果steps是对象且包含templateData属性
+        setNodes(steps.templateData.nodes);
+        setEdges(steps.templateData.edges);
+        fetchAnnotations().finally(() => {
+          setLoading(false);
+        });
+      } else if (Array.isArray(steps) && steps.length > 0) {
+        // 将steps数组数据转换为React Flow所需的格式
+        // 创建一个简单的流程图，每个step作为一个节点
+        const flowNodes = steps.map((step, index) => ({
+          id: `${index}`,
+          data: { label: step.agent || `步骤 ${index + 1}` },
+          position: { x: 250, y: index * 100 },
+          type: 'default',
+          style: {
+            background: '#fff',
+            border: '1px solid #d9d9d9',
+            borderRadius: '8px',
+            padding: '12px 20px',
+            fontSize: '14px'
+          }
+        }));
+
+        // 创建节点之间的连接边
+        const flowEdges = steps.slice(0, -1).map((_, index) => ({
+          id: `e${index}-${index + 1}`,
+          source: `${index}`,
+          target: `${index + 1}`,
+          animated: true,
+          style: { stroke: '#006ffd' }
+        }));
+
+        setNodes(flowNodes);
+        setEdges(flowEdges);
+        fetchAnnotations().finally(() => {
+          setLoading(false);
+        });
+      } else {
+        // 如果steps为空或无效格式，则从服务获取数据
+        Promise.all([
+          fetchTemplateContent(),
+          fetchAnnotations()
+        ]).finally(() => {
+          setLoading(false);
+        });
+      }
+    } else {
+      // 如果没有提供steps参数，则从服务获取数据
+      Promise.all([
+        fetchTemplateContent(),
+        fetchAnnotations()
+      ]).finally(() => {
+        setLoading(false);
+      });
+    }
+  }, [steps, taskId]);
+
+  // 监听steps props变化，更新nodes和edges
+  useEffect(() => {
+    // 如果提供了steps参数，则使用它来设置模板数据
+    if (taskId && steps) {
+      // 优先检查是否有templateData
+      if (steps.templateData) {
+        // 如果steps是对象且包含templateData属性
+        setNodes(steps.templateData.nodes);
+        setEdges(steps.templateData.edges);
+      } else if (Array.isArray(steps) && steps.length > 0) {
+        // 将steps数据转换为React Flow所需的格式
+        const flowNodes = steps.map((step, index) => ({
+          id: `${index}`,
+          data: { label: step.agent || `步骤 ${index + 1}` },
+          position: { x: 250, y: index * 100 },
+          type: 'default',
+          style: {
+            background: '#fff',
+            border: '1px solid #d9d9d9',
+            borderRadius: '8px',
+            padding: '12px 20px',
+            fontSize: '14px'
+          }
+        }));
+
+        // 创建节点之间的连接边
+        const flowEdges = steps.slice(0, -1).map((_, index) => ({
+          id: `e${index}-${index + 1}`,
+          source: `${index}`,
+          target: `${index + 1}`,
+          animated: true,
+          style: { stroke: '#006ffd' }
+        }));
+
+        setNodes(flowNodes);
+        setEdges(flowEdges);
+      }
+    }
+  }, [steps, taskId]);
 
   // 当从优化上下文获取到注释数据时，更新本地状态
   useEffect(() => {
@@ -295,22 +388,12 @@ const TemplateSection = ({ isEditable = false }) => {
               minZoom={0.1}
               maxZoom={4}
               zoomOnScroll={false}
-              panOnScroll={true}
+              panOnScroll={false}
               panOnDrag={true}
+              preventScrolling={true}
             >
               <Background />
               <Controls />
-              <Panel position="top-right">
-                <Button 
-                  type="primary"
-                  onClick={() => {
-                    templateService.updateTemplateContent({ nodes, edges });
-                    message.success('保存成功');
-                  }}
-                >
-                  保存布局
-                </Button>
-              </Panel>
             </ReactFlow>
           </ReactFlowProvider>
         </div>
@@ -344,6 +427,7 @@ const TemplateSection = ({ isEditable = false }) => {
           y={contextMenu.y}
           onAction={handleContextMenuAction}
           onClose={() => setContextMenu(null)}
+          contextType="template"
         />
       )}
 

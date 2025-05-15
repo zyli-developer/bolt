@@ -37,6 +37,9 @@ const CardItem = ({ card }) => {
       scoreChange: '+0%',
       chartData: { radar: [], line: [] },
       agents: { overall: false, agent1: false, agent2: false },
+      qa: { question: '', answer: '' },
+      questionDescription: '',
+      answerDescription: ''
     };
     
     // 提供默认值以防属性不存在
@@ -68,6 +71,12 @@ const CardItem = ({ card }) => {
         ]
       },
       agents: card.agents || { overall: true, agent1: false, agent2: false },
+      qa: card.qa || { 
+        question: card.question || card.questionDescription || "",
+        answer: card.answer || card.answerDescription || ""
+      },
+      questionDescription: card.questionDescription || card.qa?.question || card.question || "",
+      answerDescription: card.answerDescription || card.qa?.answer || card.answer || ""
     };
   }, [card]);
   
@@ -79,6 +88,11 @@ const CardItem = ({ card }) => {
     agent2: safeCard.agents?.agent2 || false,
   })
   const [isCreateTaskModalVisible, setIsCreateTaskModalVisible] = useState(false)
+  const [completeCardData, setCompleteCardData] = useState({
+    ...safeCard,
+    questionDescription: safeCard.prompt || "基于卡片创建的问题描述。\n\n请在此处描述您想要测试或评估的内容。",
+    answerDescription: safeCard.response_summary || safeCard.summary || "基于卡片创建的答案描述。\n\n请在此处描述预期的测试结果或评估标准。"
+  })
 
   const toggleRadarChart = () => {
     setShowRadarChart(!showRadarChart)
@@ -92,6 +106,15 @@ const CardItem = ({ card }) => {
   }
 
   const handleBranchClimbClick = () => {
+    // 在点击"分支为新任务"按钮时，构建一个包含完整数据的对象
+    // 正确映射字段名：问题描述(questionDescription)对应prompt，回答描述(answerDescription)对应response_summary
+    const newCompleteCardData = {
+      ...safeCard,
+      questionDescription: safeCard.prompt || "基于卡片创建的问题描述。\n\n请在此处描述您想要测试或评估的内容。",
+      answerDescription: safeCard.response_summary || safeCard.summary || "基于卡片创建的答案描述。\n\n请在此处描述预期的测试结果或评估标准。"
+    };
+    // 更新状态
+    setCompleteCardData(newCompleteCardData)
     setIsCreateTaskModalVisible(true)
   }
 
@@ -167,7 +190,7 @@ const CardItem = ({ card }) => {
             <polyline points="16 6 12 2 8 6" />
             <line x1="12" y1="2" x2="12" y2="15" />
           </svg>
-          分支爬升
+          分支为新任务
         </button>
       </div>
 
@@ -395,8 +418,7 @@ const CardItem = ({ card }) => {
       <CreateTaskModal
         visible={isCreateTaskModalVisible}
         onCancel={handleModalCancel}
-        sourceCardId={safeCard.id}
-        initialTitle={`基于: ${safeCard.title}`}
+        cardData={completeCardData}
       />
     </div>
   )

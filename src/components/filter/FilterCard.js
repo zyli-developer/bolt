@@ -3,6 +3,7 @@ import { Button, Select, Tag } from "antd"
 import { PlusOutlined } from "@ant-design/icons"
 import CloseIcon from "../icons/CloseIcon"
 import { fieldOptions, operatorOptions, valueOptions } from "../../mocks/filterData"
+import { useEffect } from "react"
 
 const { Option } = Select
 
@@ -17,10 +18,52 @@ const { Option } = Select
 // }
 
 const FilterCard = ({ config, onConfigChange, onNext }) => {
-  // 添加新条件
+  // 确保所有条件都有对应的值选项并且values属性存在
+  useEffect(() => {
+    // 检查条件中是否有任何需要修复的问题
+    let needsFix = false;
+    
+    const updatedConditions = config.conditions.map(condition => {
+      // 复制条件以便修改
+      const newCondition = { ...condition };
+      
+      // 确保values属性存在，如果不存在则从value属性转换
+      if (!Array.isArray(newCondition.values)) {
+        if (newCondition.value !== undefined) {
+          // 如果有value属性，转换为values数组
+          newCondition.values = Array.isArray(newCondition.value) ? newCondition.value : [newCondition.value];
+          console.log(`转换条件 ${newCondition.id} 的value到values:`, newCondition.values);
+          needsFix = true;
+        } else {
+          // 如果没有value属性，初始化为空数组
+          newCondition.values = [];
+          needsFix = true;
+        }
+      }
+      
+      // 检查字段是否有对应的值选项
+      if (!valueOptions[newCondition.field]) {
+        console.warn(`字段 ${newCondition.field} 没有对应的值选项`);
+      }
+      
+      return newCondition;
+    });
+    
+    // 如果有任何条件需要修复，更新配置
+    if (needsFix) {
+      console.log("修复筛选条件中的values属性:", updatedConditions);
+      onConfigChange({
+        ...config,
+        conditions: updatedConditions
+      });
+    }
+  }, [config, onConfigChange]);
+
+  // 添加新条件 - 使用fieldOptions中的第一个选项作为默认值
   const addCondition = () => {
+    const defaultField = fieldOptions[0]; // 使用fieldOptions中的第一个字段
     const newCondition = {
-      field: "场景",
+      field: defaultField,
       operator: "等于",
       values: [],
       id: Date.now().toString(),
@@ -42,16 +85,18 @@ const FilterCard = ({ config, onConfigChange, onNext }) => {
 
   // 更新条件字段
   const updateConditionField = (id, field) => {
+    console.log(`更新条件 ${id} 的字段为:`, field);
     onConfigChange({
       ...config,
       conditions: config.conditions.map((condition) =>
-        condition.id === id ? { ...condition, field, values: [] } : condition,
+        condition.id === id ? { ...condition, field, values: [], value: undefined } : condition,
       ),
     })
   }
 
   // 更新条件操作符
   const updateConditionOperator = (id, operator) => {
+    console.log(`更新条件 ${id} 的操作符为:`, operator);
     onConfigChange({
       ...config,
       conditions: config.conditions.map((condition) => (condition.id === id ? { ...condition, operator } : condition)),
@@ -60,10 +105,27 @@ const FilterCard = ({ config, onConfigChange, onNext }) => {
 
   // 更新条件值
   const updateConditionValues = (id, values) => {
+    console.log(`更新条件 ${id} 的值为:`, values);
     onConfigChange({
       ...config,
-      conditions: config.conditions.map((condition) => (condition.id === id ? { ...condition, values } : condition)),
+      conditions: config.conditions.map((condition) => (
+        condition.id === id ? { 
+          ...condition, 
+          values: values,
+          value: values.length === 1 ? values[0] : values // 同时更新value属性以保持兼容性
+        } : condition
+      )),
     })
+  }
+
+  // 获取字段对应的值选项
+  const getValueOptions = (field) => {
+    // 确保字段有对应的值选项
+    if (!valueOptions[field]) {
+      console.warn(`未找到字段 ${field} 的值选项`);
+      return [];
+    }
+    return valueOptions[field];
   }
 
   return (
@@ -103,17 +165,19 @@ const FilterCard = ({ config, onConfigChange, onNext }) => {
             <div className="filter-condition-value">
               <Select
                 mode="multiple"
-                value={condition.values}
+                value={condition.values || []} // 使用values，并提供默认空数组
                 onChange={(values) => updateConditionValues(condition.id, values)}
                 style={{ width: "100%" }}
                 placeholder="请选择值"
+                optionFilterProp="children"
+                showSearch
                 tagRender={(props) => (
                   <Tag color="blue" closable={props.closable} onClose={props.onClose} style={{ marginRight: 3 }}>
                     {props.value}
                   </Tag>
                 )}
               >
-                {valueOptions[condition.field]?.map((option) => (
+                {getValueOptions(condition.field).map((option) => (
                   <Option key={option} value={option}>
                     {option}
                   </Option>

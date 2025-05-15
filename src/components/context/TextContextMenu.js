@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { MessageOutlined, PlusCircleOutlined, UnorderedListOutlined, CheckOutlined } from '@ant-design/icons';
+import { MessageOutlined, PlusCircleOutlined, UnorderedListOutlined, CheckOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import styles from '../../styles/components/context/TextContextMenu.module.css';
 
 /**
@@ -10,8 +10,16 @@ import styles from '../../styles/components/context/TextContextMenu.module.css';
  * @param {function} props.onAction 菜单动作回调，接收action参数
  * @param {function} props.onClose 关闭菜单回调
  * @param {boolean} props.isMultiSelectActive 是否处于连续选择模式
+ * @param {string} props.contextType 当前上下文类型，可能的值有：text, scene, template
  */
-const TextContextMenu = ({ x, y, onAction, onClose, isMultiSelectActive = false }) => {
+const TextContextMenu = ({ 
+  x, 
+  y, 
+  onAction, 
+  onClose, 
+  isMultiSelectActive = false,
+  contextType = 'text'
+}) => {
   // 点击文档其他地方关闭菜单
   useEffect(() => {
     const handleOutsideClick = (e) => {
@@ -36,6 +44,9 @@ const TextContextMenu = ({ x, y, onAction, onClose, isMultiSelectActive = false 
     onAction(action);
     onClose();
   };
+
+  // 检查是否为场景或模板上下文
+  const isSceneOrTemplate = contextType === 'scene' || contextType === 'template';
 
   return (
     <div 
@@ -67,6 +78,28 @@ const TextContextMenu = ({ x, y, onAction, onClose, isMultiSelectActive = false 
         <PlusCircleOutlined className={styles.menuItemIcon} />
         <span className={styles.menuItemText}>添加观点</span>
       </div>
+
+      {/* 只在场景或模板上下文中显示编辑选项 */}
+      {isSceneOrTemplate && (
+        <div 
+          className={styles.menuItem}
+          onClick={() => handleMenuItemClick('edit')}
+        >
+          <EditOutlined className={styles.menuItemIcon} />
+          <span className={styles.menuItemText}>编辑</span>
+        </div>
+      )}
+      
+      {/* 只在场景或模板上下文中显示删除选项 */}
+      {isSceneOrTemplate && (
+        <div 
+          className={styles.menuItem}
+          onClick={() => handleMenuItemClick('delete')}
+        >
+          <DeleteOutlined className={styles.menuItemIcon} />
+          <span className={styles.menuItemText}>删除</span>
+        </div>
+      )}
     </div>
   );
 };

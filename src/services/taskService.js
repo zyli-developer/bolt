@@ -132,7 +132,11 @@ const taskService = {
       // 返回mock数据，防止前端崩溃
       // 从taskCardsData中查找对应ID的任务
       const { taskCardsData } = require("../mocks/data");
-      const mockTask = taskCardsData.find(task => task.id === id);
+      
+      // 尝试查找匹配ID的任务，同时支持字符串和数字格式的ID比较
+      const mockTask = taskCardsData.find(task => 
+        task.id === id || task.id === id.toString() || task.id.toString() === id
+      );
       
       if (mockTask) {
         console.log("使用mock数据:", mockTask);
@@ -309,13 +313,50 @@ const taskService = {
         user_id: currentUser?.id || ""
       };
       
-      // 调用API
+      // ---- 使用mock数据，不调用真实API ----
+      console.log(`更新任务(模拟), ID: ${id}:`, requestData);
+      
+      // 更新taskCardsData中的任务
+      try {
+        const { taskCardsData } = require("../mocks/data");
+        const taskIndex = taskCardsData.findIndex(task => 
+          task.id === id || task.id === id.toString() || task.id.toString() === id
+        );
+        
+        if (taskIndex !== -1) {
+          // 更新status字段
+          if (requestData.status) {
+            taskCardsData[taskIndex].status = requestData.status;
+          }
+          
+          // 更新evaluations字段
+          if (requestData.evaluations) {
+            taskCardsData[taskIndex].evaluations = requestData.evaluations;
+          }
+          
+          console.log("任务已更新:", taskCardsData[taskIndex]);
+        }
+      } catch (error) {
+        console.error("更新mock数据失败:", error);
+      }
+      
+      // 模拟API延迟
+      await new Promise(resolve => setTimeout(resolve, 600));
+      
+      // 返回模拟的成功响应
+      return {
+        status: "success",
+        message: "任务更新成功(模拟)"
+      };
+      
+      /* 实际API调用代码（暂时注释掉）
       return await api.put(
         endpoints.tasks.update(id),
         requestData,
         'UpdateTaskRequest',
         'UpdateTaskResponse'
       );
+      */
     } catch (error) {
       console.error(`更新任务失败 (ID: ${id}):`, error);
       throw error;
@@ -346,6 +387,112 @@ const taskService = {
       );
     } catch (error) {
       console.error(`删除任务失败 (ID: ${id}):`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * 提交优化结果，创建新任务 (API规范: POST /v1/syntrust/task/optimization)
+   * @param {Object} optimizationData - 优化结果数据
+   * @returns {Promise} - 创建结果
+   */
+  submitOptimizationResult: async (optimizationData) => {
+    try {
+      // 获取当前用户
+      const currentUser = getCurrentUser();
+      
+      // 生成新任务ID（确保是纯数字格式）
+      const timestamp = Date.now();
+      const newTaskId = Math.floor(Math.random() * 900) + 100; // 生成100-999之间的随机ID
+      
+      // 创建新任务对象
+      const newTask = {
+        ...optimizationData,
+        id: newTaskId.toString(), // 确保ID是字符串格式
+        user_id: currentUser?.id || "",
+        created_at: { seconds: Math.floor(timestamp / 1000) },
+        status: "completed",
+        type: "optimization",
+        // 添加创建时间
+        updatedAt: new Date().toLocaleString(),
+        updatedBy: { name: currentUser?.name || "当前用户", avatar: null }
+      };
+      
+      console.log("提交优化结果(模拟):", newTask);
+      
+      // 将新任务添加到mock数据
+      try {
+        const { taskCardsData } = require("../mocks/data");
+        
+        // 构建符合taskCardsData结构的新任务对象
+        const newMockTask = {
+          id: newTaskId.toString(),
+          prompt: optimizationData.title || `优化任务 ${newTaskId}`,
+          response_summary: optimizationData.result?.models?.[0]?.description || "优化结果",
+          created_by: currentUser?.name || "当前用户",
+          created_from: "优化测试",
+          created_at: { seconds: Math.floor(timestamp / 1000) },
+          status: "completed",
+          type: "optimization",
+          title: optimizationData.title || `优化任务 ${newTaskId}`,
+          author: {
+            id: currentUser?.id || "1",
+            name: currentUser?.name || "当前用户",
+            avatar: null
+          },
+          source: "优化测试",
+          tags: ["优化任务"],
+          evaluations: [optimizationData.result],
+          step: [
+            {
+              agent: "优化助手",
+              score: [
+                {
+                  version: "1.0",
+                  confidence: "0.9",
+                  score: "0.9",
+                  consumed_points: 60,
+                  description: "优化后的任务评估",
+                  dimension: optimizationData.result?.models?.[0]?.strengths?.map((strength, index) => ({
+                    latitude: `维度${index + 1}`,
+                    weight: (0.8 + index * 0.02).toFixed(2)
+                  })) || []
+                }
+              ],
+              reason: "通过优化模式改进"
+            }
+          ]
+        };
+        
+        // 将新任务添加到taskCardsData数组的开头
+        taskCardsData.unshift(newMockTask);
+        
+        console.log("新的优化任务已添加:", newMockTask);
+      } catch (error) {
+        console.error("添加优化任务到mock数据失败:", error);
+      }
+      
+      // 模拟API延迟
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      // 返回模拟的成功响应，包含完整的新任务数据
+      return {
+        task_id: newTaskId.toString(),
+        task: newTask, // 返回完整的新任务数据
+        status: "success",
+        message: "优化结果提交成功，已创建新任务"
+      };
+      
+      /* 实际API调用代码（暂时注释掉）
+      return await api.post(
+        endpoints.tasks.submitOptimization,
+        newTask,
+        'OptimizationSubmitRequest',
+        'OptimizationSubmitResponse'
+      );
+      */
+    } catch (error) {
+      console.error("提交优化结果失败:", error);
       throw error;
     }
   },

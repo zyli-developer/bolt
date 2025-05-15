@@ -17,14 +17,19 @@ const { Title } = Typography;
 /**
  * QA优化界面组件
  */
-const QASection = ({ isEditable = false }) => {
+const QASection = ({ isEditable = false, taskId, prompt, response }) => {
   const { styles } = useStyles();
   
   const [annotations, setAnnotations] = useState([]);
   const [expandedAnnotation, setExpandedAnnotation] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [qaContent, setQAContent] = useState({ title: '', content: '' });
+  const [qaContent, setQAContent] = useState({
+    title: "问答详情",
+    content: prompt && response ? 
+      `问：${prompt || ''}\n\n答：${response || ''}` :
+      "暂无问答内容"
+  });
   const contentRef = useRef(null);
   
   // 添加讨论模态框状态
@@ -90,10 +95,8 @@ const QASection = ({ isEditable = false }) => {
   }, []);
 
   useEffect(() => {
-    Promise.all([
-      fetchAnnotations(),
-      fetchQAContent()
-    ]).finally(() => {
+    // 只获取注释，不再获取QA内容
+    fetchAnnotations().finally(() => {
       setLoading(false);
     });
   }, []);
@@ -105,14 +108,15 @@ const QASection = ({ isEditable = false }) => {
     }
   }, [currentOptimizationStep, currentStepComments]);
 
-  const fetchQAContent = async () => {
-    try {
-      const data = await qaService.getQAContent();
-      setQAContent(data);
-    } catch (error) {
-      message.error('获取问答内容失败');
+  // 添加effect监听props变化，更新qaContent
+  useEffect(() => {
+    if (prompt || response) {
+      setQAContent({
+        title: "问答详情",
+        content: `问：${prompt || ''}\n\n答：${response || ''}`
+      });
     }
-  };
+  }, [prompt, response]);
 
   const fetchAnnotations = async () => {
     try {

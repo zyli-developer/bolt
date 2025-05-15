@@ -54,8 +54,9 @@ code {
 
 /* Add these styles to ensure the collapsed sidebar works correctly */
 .app-sidebar.collapsed {
-  width: 48px !important;
-  min-width: 48px !important;
+  /* width: 48px !important;
+  min-width: 48px !important; */
+  flex: 0 0 48px !important;
 }
 
 .app-sidebar.collapsed .ant-layout-sider-children {
@@ -139,7 +140,7 @@ code {
 
 /* 主内容区域 */
 .main-content {
-  padding: 12px 16px;
+  /* padding: 12px 16px; */
   overflow-y: auto;
   flex: 1;
   scrollbar-width: none; /* Firefox */
@@ -203,7 +204,7 @@ code {
 .content-nav-container {
   display: flex;
   justify-content: center;
-  padding: 12px 0;
+  padding: 12px 0 0;
   background-color: var(--color-bg-container);
 }
 
@@ -383,17 +384,23 @@ code {
 /* 聊天浮动按钮 */
 .chat-floating-button {
   position: fixed;
-  bottom: 32px;
+  bottom: 6px;
   right: 32px;
-  width: 96px;
-  height: 96px;
-  border-radius: 32px;
-  background-color: var(--color-primary);
+  width: 128px;
+  height: 141px;
+  /* border-radius: 22px 0 22px 22px; */
+  /* background-color: var(--color-primary); */
+  /* background-color: transparent; */
+  background-image: url('./styles/images/IM.png');
+  background-size: 72%;
+  background-position: center;
+  background-repeat: no-repeat;
   color: white;
-  display: flex;
+  display: flex
+;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(88, 189, 109, 0.4);
+  /* box-shadow: 0 2px 8px rgba(88, 189, 109, 0.4); */
   border: none;
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
@@ -403,7 +410,7 @@ code {
 
 .chat-floating-button:hover {
   transform: scale(1.05);
-  box-shadow: 0 6px 16px rgba(88, 189, 109, 0.5);
+  /* box-shadow: 0 6px 16px rgba(88, 189, 109, 0.5); */
 }
 
 .chat-floating-button:active {
@@ -556,7 +563,7 @@ code {
 
 /* 探索页面样式 */
 .explore-page {
-  padding: 24px 32px;
+  padding: 12px 16px;
   flex: 1;
   overflow-y: auto;
   display: flex;
@@ -1079,6 +1086,56 @@ code {
   font-size: 16px;
 }
 
+/* 优化任务卡片样式 */
+.task-card.optimization-task {
+  background-color: #E7F0F5; /* 优化任务背景色略带蓝色 */
+  border-left: 3px solid var(--color-primary);
+}
+
+.task-optimization-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 0 6px;
+  font-size: 12px;
+  line-height: 20px;
+  height: 20px;
+  background-color: var(--color-primary-bg);
+  color: var(--color-primary);
+  border-radius: 10px;
+  font-weight: normal;
+  vertical-align: text-top;
+}
+
+.task-tag.optimization-tag {
+  background-color: var(--color-success-bg);
+  color: var(--color-success);
+  font-weight: 500;
+}
+
+/* 优化结果显示 */
+.optimization-results {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed #e0e0e0;
+}
+
+.optimization-score {
+  font-size: 11px;
+  line-height: 1.4;
+  color: #666;
+}
+
+.optimization-score strong {
+  color: var(--color-success);
+  font-weight: 600;
+}
+
+.score-improvement {
+  color: var(--color-success);
+  margin-left: 4px;
+  font-weight: 500;
+}
+
 /* Responsive styles */
 @media (max-width: 768px) {
   .card-content-horizontal {
@@ -1167,7 +1224,7 @@ code {
 }
 
 .creator-text {
-  font-size: 15px;
+  font-size: 12px;
   color: #71727a;
 }
 
@@ -1205,7 +1262,7 @@ code {
 .evaluation-section {
   background-color: #fff;
   border-radius: 12px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+  /* box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06); */
   padding: 24px;
   border: 1px solid #e8e9f1;
   flex: 3;

@@ -31,6 +31,7 @@ const endpoints = {
     qna: (id) => `/v1/syntrust/task/${id}/qna`,
     scenario: (id) => `/v1/syntrust/task/${id}/scenario`,
     flow: (id) => `/v1/syntrust/task/${id}/flow`,
+    submitOptimization: "/v1/syntrust/task/optimization",
   },
 
   // 资产相关 (API规范: /v1/syntrust/assets)

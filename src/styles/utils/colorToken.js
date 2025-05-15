@@ -37,8 +37,7 @@ const colorToken = {
 };
 
 // 导出CSS变量版本，用于生成CSS样式表
-export const cssColorVariables = `
-:root {
+export const cssColorVariables = `:root {
   --color-primary: ${colorToken.colorPrimary};
   --color-primary-hover: ${colorToken.colorPrimaryHover};
   --color-primary-active: ${colorToken.colorPrimaryActive};
@@ -66,7 +65,6 @@ export const cssColorVariables = `
   --color-primary-text: ${colorToken.colorPrimaryText};
   --color-primary-text-hover: ${colorToken.colorPrimaryTextHover};
   --color-primary-text-active: ${colorToken.colorPrimaryTextActive};
-}
-`;
+}`;
 
 export default colorToken; 

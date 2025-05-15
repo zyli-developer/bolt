@@ -18,9 +18,11 @@ const CreateTaskModal = ({ visible, onCancel, cardData }) => {
   const [form] = Form.useForm()
   const [loading, setLoading] = useState(false)
   const [currentStep, setCurrentStep] = useState(0)
-  const [nameValidating, setNameValidating] = useState(false)
   const [confirmSection, setConfirmSection] = useState('basicInfo')
   const [showTargetDescription, setShowTargetDescription] = useState(false)
+  
+  // 判断是否是从卡片详情页或探索页打开
+  const isFromCardDetail = cardData && !!cardData.id
   
   // 模拟用户数据
   const mockUsers = [
@@ -42,7 +44,7 @@ const CreateTaskModal = ({ visible, onCancel, cardData }) => {
       content: 'third',
     },
     {
-      title: '确认发布',
+      title: '确认创建',
       content: 'fourth',
     },
   ]
@@ -61,6 +63,9 @@ const CreateTaskModal = ({ visible, onCancel, cardData }) => {
         version: cardData.version || "",
         paramCount: cardData.paramCount || "",
         recommendPrecision: cardData.recommendPrecision || "",
+        // 设置问题描述和答案描述 - 正确映射字段
+        questionDescription: cardData.questionDescription || cardData.prompt || cardData.qa?.question || "",
+        answerDescription: cardData.answerDescription || cardData.response_summary || cardData.summary || cardData.qa?.answer || "",
       });
       
       // 如果测评对象是"other"，显示补充描述输入框
@@ -69,23 +74,6 @@ const CreateTaskModal = ({ visible, onCancel, cardData }) => {
       }
     }
   }, [visible, cardData, form]);
-  
-  // 检查名称唯一性的函数
-  const checkNameUnique = async (name) => {
-    if (!name || name.trim() === '') return true
-    
-    try {
-      setNameValidating(true)
-      // 调用API检查名称是否已存在
-      const isUnique = await taskService.checkTaskNameUnique(name)
-      return isUnique
-    } catch (error) {
-      console.error("检查名称唯一性失败:", error)
-      return false
-    } finally {
-      setNameValidating(false)
-    }
-  }
   
   // 禁用当前日期之前的所有日期
   const disabledDate = (current) => {
@@ -134,7 +122,92 @@ const CreateTaskModal = ({ visible, onCancel, cardData }) => {
       }
 
       // 调用保存任务接口
-      await taskService.createTask(taskData)
+      const result = await taskService.createTask(taskData)
+
+      // 为mock数据生成一个新的纯数字ID
+      const generateNumericId = () => {
+        // 生成一个大于当前最大ID的数字
+        const { taskCardsData } = require("../../mocks/data")
+        const maxId = Math.max(...taskCardsData.map(task => parseInt(task.id) || 0))
+        return String(maxId + 1)
+      }
+      
+      // 将新任务添加到mock数据中
+      const addTaskToMockData = () => {
+        try {
+          const { taskCardsData } = require("../../mocks/data")
+          const newId = generateNumericId()
+          
+          // 创建新任务对象，保持与现有数据结构一致
+          const newTask = {
+            id: newId,
+            prompt: values.questionDescription,
+            response_summary: values.answerDescription,
+            created_by: cardData?.author?.name || "当前用户",
+            created_from: cardData?.source || "用户创建",
+            created_at: { seconds: Math.floor(Date.now() / 1000) },
+            status: "进行中",
+            step: [
+              {
+                agent: "GPT-4",
+                score: [
+                  {
+                    version: "1.0",
+                    confidence: "0.85",
+                    score: "0.85",
+                    consumed_points: 90,
+                    description: "新创建的任务，等待评估",
+                    dimension: [
+                      { latitude: "维度1", weight: 0.80 },
+                      { latitude: "维度2", weight: 0.85 }
+                    ],
+                    updated_at: { seconds: Math.floor(Date.now() / 1000) }
+                  }
+                ],
+                reason: "初始创建的任务"
+              }
+            ],
+            title: values.title,
+            author: {
+              id: cardData?.author?.id || "1",
+              name: cardData?.author?.name || "当前用户",
+              avatar: cardData?.author?.avatar || null
+            },
+            source: cardData?.source || "用户创建",
+            tags: cardData?.tags || [],
+            summary: values.description || "",
+            credibility: 85.0,
+            credibilityChange: "+0.0%",
+            score: 8.5,
+            scoreChange: "+0.0%",
+            chartData: cardData?.chartData || {
+              radar: [
+                { name: "维度1", weight: 0.80, value: 80 },
+                { name: "维度2", weight: 0.85, value: 85 },
+                { name: "维度3", weight: 0.75, value: 75 }
+              ],
+              line: [
+                { month: "11", value: 85 }
+              ]
+            },
+            agents: {
+              overall: true,
+              agent1: true,
+              agent2: false
+            }
+          }
+          
+          // 将新任务添加到taskCardsData
+          taskCardsData.unshift(newTask)
+          
+          console.log("新任务已添加到mock数据", newTask)
+        } catch (error) {
+          console.error("添加任务到mock数据失败", error)
+        }
+      }
+      
+      // 添加到mock数据
+      addTaskToMockData()
 
       message.success("任务创建成功")
       form.resetFields()
@@ -398,49 +471,70 @@ const CreateTaskModal = ({ visible, onCancel, cardData }) => {
               label="名称" 
               rules={[
                 { required: true, message: "请输入任务名称" },
-                {
-                  validator: async (_, value) => {
-                    if (!value || value.trim() === '') return
-                    
-                    const isUnique = await checkNameUnique(value)
-                    if (!isUnique) {
-                      throw new Error('任务名称已存在，请更换名称')
-                    }
-                  },
-                }
               ]}
-              validateStatus={nameValidating ? 'validating' : undefined}
-              hasFeedback
             >
-              <Input placeholder="请输入任务名称" />
+              <Input 
+                placeholder="请输入任务名称" 
+                disabled={isFromCardDetail} 
+              />
             </Form.Item>
 
-            <Form.Item name="description" label="描述" rules={[{ required: true, message: "请输入任务描述" }]}>
-              <TextArea rows={6} placeholder="请输入任务描述" className={styles.textArea} />
+            <Form.Item 
+              name="description" 
+              label="描述" 
+              rules={[{ required: true, message: "请输入任务描述" }]}
+            >
+              <TextArea 
+                rows={6} 
+                placeholder="请输入任务描述" 
+                className={styles.textArea} 
+                disabled={isFromCardDetail} 
+              />
             </Form.Item>
 
-            <Form.Item name="priority" label="优先级" rules={[{ required: true, message: "请选择优先级" }]}>
-              <Select placeholder="Please select">
+            <div className={styles.formRow}>
+              <Form.Item 
+                name="priority" 
+                label="优先级" 
+                rules={[{ required: true, message: "请选择优先级" }]}
+                className={styles.formRowItem}
+              >
+                <Select 
+                  placeholder="Please select" 
+                  disabled={isFromCardDetail}
+                >
                 <Option value="high">高</Option>
                 <Option value="medium">中</Option>
                 <Option value="low">低</Option>
               </Select>
             </Form.Item>
 
-            <Form.Item name="deadline" label="完成期限">
+              <Form.Item 
+                name="deadline" 
+                label="完成期限" 
+                className={styles.formRowItem}
+              >
               <DatePicker 
                 placeholder="Select date" 
                 style={{ width: '100%' }} 
                 disabledDate={disabledDate}
+          
               />
             </Form.Item>
             
-            <Divider />
-            
-            <Form.Item name="testTarget" label="测评对象" rules={[{ required: true, message: "请选择测评对象" }]}>
-              <Select placeholder="Please select" onChange={(value) => {
+              <Form.Item 
+                name="testTarget" 
+                label="测评对象" 
+                rules={[{ required: true, message: "请选择测评对象" }]}
+                className={styles.formRowItem}
+              >
+                <Select 
+                  placeholder="Please select" 
+                  onChange={(value) => {
                 setShowTargetDescription(value === 'other');
-              }}>
+                  }}
+                  disabled={isFromCardDetail}
+                >
                 <Option value="web_app_llm">大语言模型（网页、app端）</Option>
                 <Option value="local_llm">大语言模型（本地部署）</Option>
                 <Option value="smart_cockpit">智能座舱</Option>
@@ -450,6 +544,7 @@ const CreateTaskModal = ({ visible, onCancel, cardData }) => {
                 <Option value="other">其他</Option>
               </Select>
             </Form.Item>
+            </div>
             
             {showTargetDescription && (
               <Form.Item
@@ -457,31 +552,73 @@ const CreateTaskModal = ({ visible, onCancel, cardData }) => {
                 label="补充描述"
                 rules={[{ required: true, message: "请输入补充描述" }]}
               >
-                <TextArea rows={2} placeholder="请补充描述" className={styles.textArea} />
+                <TextArea 
+                  rows={2} 
+                  placeholder="请补充描述" 
+                  className={styles.textArea} 
+                  disabled={isFromCardDetail}
+                />
               </Form.Item>
             )}
             
             <div className={styles.infoText}>选填但很重要：填写越详细，测试可信度越高。</div>
             
-            <div className={styles.formGrid}>
-              <Form.Item name="brand" label="品牌" className={styles.gridItem}>
-                <Input placeholder="请输入任务名称" />
+            <div className={styles.formRow}>
+              <Form.Item 
+                name="brand" 
+                label="品牌" 
+                className={styles.formRowItem}
+              >
+                <Input 
+                  placeholder="请输入品牌" 
+            
+                />
               </Form.Item>
               
-              <Form.Item name="model" label="型号" className={styles.gridItem}>
-                <Input placeholder="请输入任务名称" />
+              <Form.Item 
+                name="model" 
+                label="型号" 
+                className={styles.formRowItem}
+              >
+                <Input 
+                  placeholder="请输入型号" 
+               
+                />
               </Form.Item>
               
-              <Form.Item name="version" label="版本" className={styles.gridItem}>
-                <Input placeholder="请输入任务名称" />
+              <Form.Item 
+                name="version" 
+                label="版本" 
+                className={styles.formRowItem}
+              >
+                <Input 
+                  placeholder="请输入版本" 
+              
+                />
+              </Form.Item>
+            </div>
+            
+            <div className={styles.formRow}>
+              <Form.Item 
+                name="paramCount" 
+                label="参数量" 
+                className={styles.formRowItem}
+              >
+                <Input 
+                  placeholder="请输入参数量" 
+             
+                />
               </Form.Item>
               
-              <Form.Item name="paramCount" label="参数量" className={styles.gridItem}>
-                <Input placeholder="请输入任务名称" />
-              </Form.Item>
-              
-              <Form.Item name="recommendPrecision" label="推理精度" className={styles.gridItem} style={{ gridColumn: "1 / span 2" }}>
-                <Input placeholder="请输入任务名称" />
+              <Form.Item 
+                name="recommendPrecision" 
+                label="推理精度" 
+                className={styles.formRowItem}
+              >
+                <Input 
+                  placeholder="请输入推理精度" 
+            
+                />
               </Form.Item>
             </div>
           </>
@@ -499,6 +636,7 @@ const CreateTaskModal = ({ visible, onCancel, cardData }) => {
                   rows={10} 
                   placeholder="请输入问题描述" 
                   className={styles.qaTextarea} 
+                  disabled={isFromCardDetail}
                 />
               </Form.Item>
               
@@ -511,6 +649,7 @@ const CreateTaskModal = ({ visible, onCancel, cardData }) => {
                   rows={10} 
                   placeholder="请输入答案描述" 
                   className={styles.qaTextarea} 
+                  disabled={isFromCardDetail}
                 />
               </Form.Item>
             </div>
@@ -541,6 +680,7 @@ const CreateTaskModal = ({ visible, onCancel, cardData }) => {
                       onSearch={(value) => handleUserSearch(value, 'scene')}
                       className={styles.userSearch}
                       prefix={<UserOutlined />}
+                      disabled={isFromCardDetail}
                     />
                   </div>
                   
@@ -570,6 +710,7 @@ const CreateTaskModal = ({ visible, onCancel, cardData }) => {
                       onSearch={(value) => handleUserSearch(value, 'template')}
                       className={styles.userSearch}
                       prefix={<UserOutlined />}
+                      disabled={isFromCardDetail}
                     />
                   </div>
                   
@@ -599,6 +740,7 @@ const CreateTaskModal = ({ visible, onCancel, cardData }) => {
                       onSearch={(value) => handleUserSearch(value, 'viewpoint')}
                       className={styles.userSearch}
                       prefix={<UserOutlined />}
+                      disabled={isFromCardDetail}
                     />
                   </div>
                   

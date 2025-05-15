@@ -1,9 +1,9 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Spin, Empty, Button, Pagination } from "antd"
+import { Spin, Empty, Button, Pagination, message } from "antd"
 import { FilterOutlined, GroupOutlined } from "@ant-design/icons"
-import { useLocation } from "react-router-dom"
+import { useLocation, useNavigate } from "react-router-dom"
 import TaskCard from "../components/card/TaskCard"
 import taskService from "../services/taskService"
 import FilterSystem from "../components/filter/FilterSystem"
@@ -14,13 +14,14 @@ import { useNavContext } from "../contexts/NavContext"
 
 const TaskPage = () => {
   const location = useLocation()
+  const navigate = useNavigate()
   // 修改初始化状态，确保tasks始终是一个数组
   const [tasks, setTasks] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const { isChatOpen } = useChatContext()
   // 添加导航上下文
-  const { selectedNav } = useNavContext()
+  const { selectedNav, handleNavChange } = useNavContext()
   // 添加分页状态
   const [pagination, setPagination] = useState({
     current: 1,
@@ -32,6 +33,183 @@ const TaskPage = () => {
   const [sortParams, setSortParams] = useState(null)
   // 添加强制刷新状态
   const [forceRefresh, setForceRefresh] = useState(0)
+
+  // 加载时检查是否需要激活任务菜单
+  useEffect(() => {
+    const activateTasksMenu = localStorage.getItem('activate_tasks_menu');
+    if (activateTasksMenu === 'true') {
+      // 设置导航为社区任务
+      handleNavChange("community");
+      console.log("根据localStorage标记激活社区任务菜单");
+      
+      // 移除标记，避免重复激活
+      localStorage.removeItem('activate_tasks_menu');
+    }
+  }, [handleNavChange]);
+
+  // 应用保存的视图或清空筛选条件
+  useEffect(() => {
+    // 检查是否需要刷新任务列表（提交优化结果后）
+    if (location.state?.refreshList) {
+      console.log("任务页收到刷新请求，新任务ID:", location.state?.newTaskId);
+      
+      // 如果需要激活任务菜单
+      if (location.state?.activateTasksMenu) {
+        // 设置导航为社区任务
+        handleNavChange("community");
+        console.log("已将导航设置为社区任务");
+      }
+      
+      // 使用延迟确保状态更新后再处理
+      setTimeout(() => {
+        // 如果有新创建的完整任务数据，直接添加到任务列表中
+        if (location.state?.newTask) {
+          const newTask = location.state.newTask;
+          console.log("收到新优化任务数据:", newTask);
+          
+          // 直接更新本地任务列表，将新任务添加到列表首位
+          setTasks(prevTasks => {
+            // 检查任务是否已存在，避免重复添加
+            const taskExists = prevTasks.some(task => task.id === newTask.id);
+            if (taskExists) {
+              return prevTasks;
+            }
+            return [newTask, ...prevTasks];
+          });
+          
+          // 提示用户新任务已创建
+          message.success(`优化任务已创建: ${newTask.title}`);
+        } 
+        // 如果只有任务ID，尝试从localStorage获取完整数据
+        else if (location.state?.newTaskId) {
+          try {
+            // 从localStorage中获取task数据
+            const taskData = localStorage.getItem(`task_${location.state.newTaskId}`);
+            if (taskData) {
+              const newTask = JSON.parse(taskData);
+              console.log("从localStorage获取到新任务数据:", newTask);
+              
+              // 添加到任务列表中
+              setTasks(prevTasks => {
+                const taskExists = prevTasks.some(task => task.id === newTask.id);
+                if (taskExists) {
+                  return prevTasks;
+                }
+                return [newTask, ...prevTasks];
+              });
+              
+              message.success(`优化任务已加载: ${newTask.title}`);
+            } else {
+              // 如果没有在localStorage中找到，直接强制刷新任务列表
+              setForceRefresh(prev => prev + 1);
+              message.info("任务列表已刷新");
+            }
+          } catch (error) {
+            console.error("从localStorage加载任务失败:", error);
+            setForceRefresh(prev => prev + 1);
+          }
+        } else {
+          // 如果没有获取到任何任务数据，强制刷新任务列表
+          setForceRefresh(prev => prev + 1);
+        }
+      }, 200);
+      
+      return;
+    }
+
+    // 检查是否只需要刷新菜单（保存视图后）
+    if (location.state?.refreshMenu) {
+      console.log("任务页收到刷新菜单请求");
+      
+      // 如果需要保留筛选条件
+      if (location.state.preserveFilters) {
+        // 使用传递的筛选和排序条件
+        if (location.state.filterParams) {
+          setFilterParams(location.state.filterParams);
+        }
+        
+        if (location.state.sortParams) {
+          setSortParams(location.state.sortParams);
+        }
+      }
+      
+      return;
+    }
+    
+    // 检查是否需要清空筛选条件（点击了一级菜单）
+    if (location.state?.clearFilters) {
+      console.log("任务页收到清空筛选条件请求");
+      
+      // 清空筛选条件和排序条件
+      setFilterParams(null);
+      setSortParams(null);
+      
+      // 重置页码
+      setPagination(prev => ({
+        ...prev,
+        current: 1
+      }));
+      
+      // 清空任务列表
+      setTasks([]);
+      
+      // 设置加载中状态
+      setLoading(true);
+      
+      return;
+    }
+    
+    // 检查location.state是否包含应用视图的标志
+    if (location.state?.applyViewFilters) {
+      try {
+        // 优先从location.state直接获取筛选参数
+        if (location.state.filterParams) {
+          setFilterParams(location.state.filterParams);
+        }
+        
+        // 优先从location.state直接获取排序参数
+        if (location.state.sortParams) {
+          setSortParams(location.state.sortParams);
+        }
+        
+        // 如果state中没有直接的参数，则从localStorage获取
+        if (!location.state.filterParams && !location.state.sortParams) {
+          const viewDataJson = localStorage.getItem('current_view_data');
+          
+          if (viewDataJson) {
+            const viewData = JSON.parse(viewDataJson);
+            
+            // 应用筛选条件
+            if (viewData.filterParams) {
+              setFilterParams(viewData.filterParams);
+            }
+            
+            // 应用排序条件
+            if (viewData.sortParams) {
+              setSortParams(viewData.sortParams);
+            }
+          }
+        }
+        
+        // 重置页码
+        setPagination(prev => ({
+          ...prev,
+          current: 1
+        }));
+        
+        // 清空任务列表
+        setTasks([]);
+        
+        // 设置加载中状态
+        setLoading(true);
+        
+        // 清除本地存储中的视图数据，避免刷新页面时重复应用
+        localStorage.removeItem('current_view_data');
+      } catch (error) {
+        console.error('应用视图筛选条件失败:', error);
+      }
+    }
+  }, [location.state]);
 
   // 获取当前活动的标签页
   const getActiveTab = () => {
@@ -49,6 +227,7 @@ const TaskPage = () => {
 
   // 处理筛选条件变化
   const handleFilterChange = (filterConfig) => {
+    console.log("任务页筛选条件变化:", filterConfig);
     // 如果filterConfig为null或undefined，则清空筛选参数
     if (!filterConfig) {
       setFilterParams(null);
@@ -63,20 +242,36 @@ const TaskPage = () => {
     
     // 如果filterConfig已经是API格式，直接使用
     if (filterConfig.exprs) {
+      console.log("应用API格式的筛选条件:", filterConfig);
       setFilterParams(filterConfig);
     } 
     // 如果filterConfig有conditions属性（UI格式），转换为API格式
     else if (filterConfig.conditions) {
-      const apiFilter = filterConfig.conditions.map(condition => ({
-        exprs: [
-          {
-            field: condition.field,
-            op: condition.operator.toUpperCase(),
-            values: condition.values
-          }
-        ]
-      }));
+      // 打印UI格式的筛选条件
+      console.log("转换UI格式的筛选条件:", filterConfig.conditions);
       
+      const apiFilter = [];
+      
+      // 处理每个筛选条件
+      filterConfig.conditions.forEach(condition => {
+        // 确保values是有效的数组
+        const conditionValues = condition.values || [];
+        if (conditionValues.length === 0) return; // 跳过没有值的条件
+        
+        // 创建API筛选表达式
+        const expr = {
+          field: condition.field,
+          op: condition.operator.toUpperCase(),
+          values: conditionValues
+        };
+        
+        // 添加到筛选列表
+        apiFilter.push({
+          exprs: [expr]
+        });
+      });
+      
+      console.log("转换后的API筛选条件:", apiFilter);
       setFilterParams(apiFilter.length > 0 ? apiFilter : null);
     }
     
@@ -90,7 +285,21 @@ const TaskPage = () => {
 
   // 处理排序条件变化
   const handleSortChange = (sortConfig) => {
-    if (sortConfig.fields && sortConfig.fields.length > 0) {
+    console.log("任务页排序条件变化:", sortConfig);
+    // 判断是否已经是API格式的排序参数
+    if (sortConfig && sortConfig.field !== undefined) {
+      setSortParams(sortConfig);
+      setPagination(prev => ({
+        ...prev,
+        current: 1 // 重置页码
+      }));
+      setTasks([]); // 清空现有数据
+      setLoading(true);
+      return;
+    }
+    
+    // 处理UI格式的排序配置
+    if (sortConfig && sortConfig.fields && sortConfig.fields.length > 0) {
       // 只使用第一个排序字段（API当前只支持单字段排序）
       const firstSort = sortConfig.fields[0];
       setSortParams({
@@ -100,6 +309,7 @@ const TaskPage = () => {
     } else {
       setSortParams(null);
     }
+    
     setPagination(prev => ({
       ...prev,
       current: 1 // 重置页码
@@ -124,6 +334,153 @@ const TaskPage = () => {
     setForceRefresh(prev => prev + 1);
   };
 
+  // 处理生成报告
+  const handleGenerateReport = (selectedTaskIds) => {
+    console.log('生成报告的任务ID:', selectedTaskIds);
+    
+    // 如果选中的任务ID为空（开发测试时），创建一个演示报告
+    if (selectedTaskIds.length === 0) {
+      console.log('创建演示报告...');
+      // 创建一个演示报告对象
+      const demoReport = {
+        id: `report-demo-${Date.now()}`,
+        taskId: 'demo-task',
+        title: '演示报告 - 任务评估',
+        type: 'report',
+        content: '这是一个演示报告，展示报告功能的样式和布局。实际报告将基于任务评估数据生成。',
+        createdAt: new Date().toISOString(),
+        sourceTask: {
+          id: 'demo-task',
+          title: '演示任务',
+          status: 'completed'
+        }
+      };
+      
+      try {
+        // 获取现有报告数据
+        const existingReportsJson = localStorage.getItem('task_reports') || '[]';
+        const existingReports = JSON.parse(existingReportsJson);
+        
+        // 添加演示报告
+        existingReports.push(demoReport);
+        
+        // 保存回localStorage
+        localStorage.setItem('task_reports', JSON.stringify(existingReports));
+        
+        console.log('已创建演示报告并保存');
+        
+        // 触发自定义事件，通知所有相关组件刷新报告数据
+        const reportEvent = new CustomEvent('reportsUpdated', {
+          detail: { timestamp: Date.now() }
+        });
+        window.dispatchEvent(reportEvent);
+        
+        // 同时更新localStorage中的一个特殊标记，以触发Storage事件
+        localStorage.setItem('reports_last_updated', Date.now().toString());
+        
+        return;
+      } catch (error) {
+        console.error('保存演示报告失败:', error);
+      }
+    }
+    
+    // 为每个选中的任务生成报告
+    selectedTaskIds.forEach(taskId => {
+      // 这里应该是调用实际的API生成报告
+      console.log(`正在为任务 ${taskId} 生成报告...`);
+      
+      // 创建一个报告对象，包含任务信息和报告数据
+      const taskData = tasks.find(task => task.id === taskId);
+      if (!taskData) {
+        console.error(`找不到任务数据: ${taskId}`);
+        return;
+      }
+      
+      const reportData = {
+        id: `report-${Date.now()}-${taskId}`,
+        taskId: taskId,
+        title: `${taskData.title} - 报告`,
+        type: 'report',
+        content: `这是任务 "${taskData.title}" 的报告内容`,
+        createdAt: new Date().toISOString(),
+        sourceTask: taskData
+      };
+      
+      // 保存报告数据到localStorage
+      try {
+        // 获取现有报告数据
+        const existingReportsJson = localStorage.getItem('task_reports') || '[]';
+        const existingReports = JSON.parse(existingReportsJson);
+        
+        // 添加新报告
+        existingReports.push(reportData);
+        
+        // 保存回localStorage
+        localStorage.setItem('task_reports', JSON.stringify(existingReports));
+        
+        console.log(`已为任务 ${taskId} 生成报告并保存`);
+      } catch (error) {
+        console.error(`保存报告数据失败:`, error);
+        message.error('保存报告数据失败');
+      }
+    });
+    
+    // 触发自定义事件，通知所有相关组件刷新报告数据
+    try {
+      // 创建并分发自定义事件
+      const reportEvent = new CustomEvent('reportsUpdated', {
+        detail: { timestamp: Date.now() }
+      });
+      window.dispatchEvent(reportEvent);
+      
+      // 同时更新localStorage中的一个特殊标记，以触发Storage事件
+      localStorage.setItem('reports_last_updated', Date.now().toString());
+      
+      console.log('已触发报告更新事件');
+    } catch (error) {
+      console.error('触发报告更新事件失败:', error);
+    }
+    
+    // 提示用户报告已生成 - 由FilterSystem组件处理，这里不需要显示
+  };
+
+  // 处理任务状态更新
+  const handleTaskUpdate = (taskId, updatedTask) => {
+    console.log("任务状态已更新:", taskId, updatedTask);
+    
+    // 更新本地任务列表
+    setTasks(prevTasks => 
+      prevTasks.map(task => 
+        task.id === taskId ? { ...task, ...updatedTask } : task
+      )
+    );
+    
+    // 可选：立即保存到localStorage以便在刷新页面后保持状态
+    try {
+      localStorage.setItem(`task_${taskId}_status`, updatedTask.status);
+    } catch (error) {
+      console.error("保存任务状态到localStorage失败:", error);
+    }
+  };
+
+  // 监听任务状态更新事件
+  useEffect(() => {
+    const handleTaskStatusEvent = (event) => {
+      const { taskId, status } = event.detail;
+      if (taskId && status) {
+        handleTaskUpdate(taskId, { status });
+      }
+    };
+    
+    // 添加事件监听
+    window.addEventListener('taskStatusUpdated', handleTaskStatusEvent);
+    
+    // 清理函数
+    return () => {
+      window.removeEventListener('taskStatusUpdated', handleTaskStatusEvent);
+    };
+  }, []);
+
   // 加载任务数据
   useEffect(() => {
     const fetchTasks = async () => {
@@ -146,6 +503,8 @@ const TaskPage = () => {
         if (sortParams) {
           params.sort = sortParams;
         }
+        
+        console.log("任务页请求参数:", params);
         
         // 调用API获取任务数据
         const response = await taskService.getTasks(params);
@@ -175,6 +534,9 @@ const TaskPage = () => {
       current: 1
     }));
     setTasks([]);
+    // 导航变化时清空筛选和排序
+    setFilterParams(null);
+    setSortParams(null);
   }, [selectedNav]);
 
   return (
@@ -184,20 +546,23 @@ const TaskPage = () => {
           onFilterChange={handleFilterChange}
           onSortChange={handleSortChange}
           onImportSuccess={handleImportSuccess}
+          onGenerateReport={handleGenerateReport}
+          currentFilter={filterParams}
+          currentSort={sortParams}
         />
       </div>
 
-      <div className="tasks-container" style={{width:  isChatOpen ?"":"832px"}}>
+      <div className="tasks-container" style={{width: isChatOpen ? "" : "832px"}}>
         {loading ? (
           <div className="loading-container">
             <Spin tip="加载中..." />
-                  </div>
+          </div>
         ) : tasks.length > 0 ? (
           <>
             <div className="tasks-grid">
               {tasks.map((task) => (
-                <TaskCard key={task.id} task={task} />
-                ))}
+                <TaskCard key={task.id} task={task} onTaskUpdate={handleTaskUpdate} />
+              ))}
             </div>
             
             <div className="pagination-container">
@@ -216,9 +581,9 @@ const TaskPage = () => {
         )}
 
         {error && <div className="error-message">{error}</div>}
-        </div>
+      </div>
     </div>
-  )
-}
+  );
+};
 
-export default TaskPage
+export default TaskPage;

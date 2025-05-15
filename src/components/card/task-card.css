@@ -19,6 +19,9 @@
 /* 卡片标题 */
 .task-card-header {
   margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .task-card-title {
@@ -31,6 +34,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   cursor: pointer;
+  flex: 1;
 }
 
 /* 作者信息和标签 */
@@ -115,7 +119,6 @@
 
 .task-details {
   margin-bottom: 8px;
-  overflow-y: auto;
   flex: 1;
   min-height: 0;
 }

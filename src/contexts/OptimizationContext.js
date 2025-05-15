@@ -1,4 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 
 // 创建优化模式上下文
 export const OptimizationContext = createContext({
@@ -18,6 +19,7 @@ export const OptimizationProvider = ({ children }) => {
   const [currentOptimizationStep, setCurrentOptimizationStep] = useState(0);
   // 使用对象存储各步骤的注释，格式为 { 0: [...step0Comments], 1: [...step1Comments], ... }
   const [commentsMap, setCommentsMap] = useState({});
+  const location = useLocation();
   
   // 当前步骤的注释列表
   const currentStepComments = commentsMap[currentOptimizationStep] || [];
@@ -55,6 +57,21 @@ export const OptimizationProvider = ({ children }) => {
       }));
     }
   }, [currentOptimizationStep, commentsMap]);
+
+  // 监听路由变化，当离开详情页时自动关闭优化模式
+  useEffect(() => {
+    const path = location.pathname;
+    
+    // 检查是否在探索详情页
+    const isExplorationDetail = path.includes('/explore/detail/');
+    
+    // 如果不在探索详情页，且优化模式开启，则关闭优化模式
+    if (!isExplorationDetail && isOptimizationMode) {
+      console.log('已离开探索详情页，重置优化模式');
+      setIsOptimizationMode(false);
+      setCurrentOptimizationStep(0);
+    }
+  }, [location.pathname, isOptimizationMode]);
 
   // 优化模式上下文值
   const optimizationContextValue = {

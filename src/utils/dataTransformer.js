@@ -34,8 +34,8 @@ export const processExplorationCard = (card) => {
   // 处理时间戳
   const createdAt = card.created_at ? timestampToDate(card.created_at) : new Date();
   
-  // 返回处理后的卡片数据
-  return {
+  // 确保templateData正确设置
+  let processedCard = {
     ...card,
     created_at: createdAt,
     agents: card.agents || {
@@ -51,6 +51,20 @@ export const processExplorationCard = (card) => {
     credibilityChange: "+0.0%",
     scoreChange: "+0.0%",
   };
+  
+  // 如果没有templateData字段但有step数据，可以尝试从中创建templateData
+  if (!processedCard.templateData && processedCard.step) {
+    if (Array.isArray(processedCard.step)) {
+      // 保持原有的step数组结构，不做修改
+    } else if (typeof processedCard.step === 'object') {
+      // 如果step是一个对象而不是数组，尝试查找其中的templateData
+      if (processedCard.step.templateData) {
+        processedCard.templateData = processedCard.step.templateData;
+      }
+    }
+  }
+  
+  return processedCard;
 };
 
 /**
@@ -82,8 +96,8 @@ export const processTaskCard = (task) => {
   // 处理时间戳
   const createdAt = task.created_at ? timestampToDate(task.created_at) : new Date();
   
-  // 返回处理后的任务数据
-  return {
+  // 确保templateData正确设置
+  let processedTask = {
     ...task,
     created_at: createdAt,
     agents: task.agents || {
@@ -99,6 +113,20 @@ export const processTaskCard = (task) => {
     credibilityChange: "+0.0%",
     scoreChange: "+0.0%",
   };
+  
+  // 如果没有templateData字段但有step数据，可以尝试从中创建templateData
+  if (!processedTask.templateData && processedTask.step) {
+    if (Array.isArray(processedTask.step)) {
+      // 保持原有的step数组结构，不做修改
+    } else if (typeof processedTask.step === 'object') {
+      // 如果step是一个对象而不是数组，尝试查找其中的templateData
+      if (processedTask.step.templateData) {
+        processedTask.templateData = processedTask.step.templateData;
+      }
+    }
+  }
+  
+  return processedTask;
 };
 
 /**

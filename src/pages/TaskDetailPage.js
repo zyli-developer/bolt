@@ -224,20 +224,11 @@ const TaskDetailPage = () => {
         setLoading(true)
         
         let taskData;
-        // 检查ID格式，确定使用哪个API获取数据
-        // 如果ID是"1001"、"1002"等格式（以1开头的4位数），则使用getExplorationDetail
-        // 如果ID是"101"、"102"等格式（3位数），则使用getTaskDetail
-        if (/^1\d{3}$/.test(id)) {
-          // 获取探索详情
-          const response = await cardService.getExplorationDetail(id);
-          taskData = response.exploration || response;
-        } else {
-          // 获取任务详情
+        // 获取任务详情，直接使用ID
           taskData = await taskService.getTaskDetail(id);
           // 如果是任务API返回的数据，从task字段中获取
           if (taskData && taskData.task) {
             taskData = taskData.task;
-          }
         }
         
         // 确保taskData有基本结构
@@ -263,6 +254,13 @@ const TaskDetailPage = () => {
             { month: "11", value: 88 }
           ]
         };
+        
+        // 确保templateData正确设置
+        if (!taskData.templateData && taskData.step) {
+          if (typeof taskData.step === 'object' && !Array.isArray(taskData.step) && taskData.step.templateData) {
+            taskData.templateData = taskData.step.templateData;
+          }
+        }
         
         // 获取评估数据
         const evaluationData = await taskService.getAllModelEvaluations();
@@ -410,21 +408,33 @@ const TaskDetailPage = () => {
             <div className="qa-section" style={{
               background: 'var(--color-bg-container)',
               borderRadius: '12px',
-          
             }}>
-              <QASection isEditable={true} />
+              <QASection 
+                isEditable={true} 
+                taskId={task?.id}
+                prompt={task?.prompt} 
+                response={task?.response_summary}
+              />
             </div>
           );
         case 2:
           return (
             <div className="scene-section">
-              <SceneSection isEditable={true} />
+              <SceneSection 
+                isEditable={true} 
+                taskId={task?.id}
+                scenario={task?.scenario}
+              />
             </div>
           );
         case 3:
           return (
             <div className="template-section">
-              <TemplateSection isEditable={true} />
+              <TemplateSection 
+                isEditable={true} 
+                taskId={task?.id}
+                steps={task?.templateData ? { templateData: task.templateData, ...task?.step } : task?.step}
+              />
             </div>
           );
         case 4:
@@ -571,22 +581,36 @@ const TaskDetailPage = () => {
             background: 'var(--color-bg-container)',
             borderRadius: '12px',
           }}>
-            <QASection isEditable={false} />
+            <QASection 
+              isEditable={false} 
+              taskId={task?.id}
+              prompt={task?.prompt} 
+              response={task?.response_summary}
+            />
           </div>
         );
       case 'scene':
         return (
           <div className="scene-section">
-
-            <SceneSection isEditable={false} />
+            <SceneSection 
+              isEditable={false} 
+              taskId={task?.id}
+              scenario={task?.scenario}
+            />
           </div>
         );
       case 'template':
         return (
           <div className="template-section">
-            <TemplateSection isEditable={false} />
+            <TemplateSection 
+              isEditable={false} 
+              taskId={task?.id}
+              steps={task?.templateData ? { templateData: task.templateData, ...task?.step } : task?.step}
+            />
           </div>
         );
+      case 'result':
+        return renderResultPage();
       default:
         return null;
     }
@@ -784,7 +808,7 @@ const TaskDetailPage = () => {
       <div className="evaluation-charts-wrapper" style={{ gap: "4px", marginTop: "4px" }}>
         {/* 左侧评估区域 */}
         <div className="evaluation-left-section" style={{ flex: "0 0 400px", gap: "4px" }}>
-          <div className="evaluation-section" style={{ padding: "8px", marginBottom: "4px" }}>
+          <div className="evaluation-section" style={{ padding: "8px" }}>
             <div className="evaluation-header" style={{ marginBottom: "8px" }}>
               <div className="evaluation-title" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <span style={{ fontSize: "14px", fontWeight: "500" }}>评估结果</span>
@@ -986,10 +1010,33 @@ const TaskDetailPage = () => {
     );
   };
 
-  // 添加处理步骤点击的函数
+  // 检查步骤是否有数据
+  const hasStepData = (stepNumber) => {
+    if (!task) return false;
+    
+    switch (stepNumber) {
+      case 1: // QA步骤
+        return Boolean(task.prompt || task.response_summary);
+      case 2: // 场景步骤
+        return Boolean(task.scenario);
+      case 3: // 模板步骤
+        return Boolean(task.templateData || (task.step && (typeof task.step === 'object' || Array.isArray(task.step))));
+      case 4: // 确认测试步骤 - 前三个步骤有数据即可
+        return hasStepData(1) && hasStepData(2) && hasStepData(3);
+      case 5: // 结果步骤
+        return Boolean(task.status === 'completed' || task.evaluations?.length > 0);
+      default:
+        return false;
+    }
+  };
+
+  // 修改处理步骤点击的函数
   const handleStepClick = (stepNumber) => {
-    // 只允许点击已完成的步骤和当前步骤
-    if (stepNumber <= currentStep) {
+    // 只有在任务已经开始后才允许点击进行跳转
+    if (!isTaskStarted) return;
+
+    // 允许点击已完成的步骤、当前步骤，以及已有数据的后续步骤
+    if (stepNumber <= currentStep || hasStepData(stepNumber)) {
       setCurrentStep(stepNumber);
 
       // 根据步骤设置activeSection
@@ -1015,9 +1062,116 @@ const TaskDetailPage = () => {
     }
   };
 
+  // 添加完成任务的处理函数
+  const handleCompleteTask = async () => {
+    try {
+      setLoading(true);
+      // 更新任务状态为completed
+      const updatedTaskData = {
+        ...task,
+        status: "completed"
+      };
+      
+      // 调用taskService的更新任务方法
+      await taskService.updateTask(id, updatedTaskData);
+      
+      // 更新本地状态
+      setTask(updatedTaskData);
+      
+      // 显示成功消息
+      message.success("任务已成功完成！");
+      
+      // 可选：导航回任务列表
+      // navigate("/tasks");
+    } catch (error) {
+      console.error("完成任务失败:", error);
+      message.error("完成任务失败，请重试");
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // 添加提交结果的处理函数
+  const handleSubmitResults = async () => {
+    try {
+      setLoading(true);
+      
+      // 生成本次测试结果的数据
+      const testResultData = {
+        taskId: id,
+        createdAt: new Date().toISOString(),
+        models: selectedModels.map(modelKey => {
+          const model = evaluationData[modelKey] || {};
+          return {
+            name: model.name || modelKey,
+            trustworthiness: parseInt(model.credibility) || 85,
+            description: model.description || "模型评估描述",
+            strengths: ["评估优势1", "评估优势2"],
+            weaknesses: ["评估弱点1", "评估弱点2"]
+          };
+        }),
+        optimizationHistory: [
+          {
+            id: Date.now(),
+            description: `进行了最新一轮测试，使用了${selectedModels.length}个模型`,
+            result: `平均置信度从${task.credibility || 85}%变为${enhancedChartData.radar?.[0]?.value || 88}%`
+          }
+        ]
+      };
+      
+      // 如果有优化模式，调用优化结果提交方法
+      if (isOptimizeMode) {
+        // 创建优化数据
+        const optimizationData = {
+          sourceTaskId: id,
+          title: `优化: ${task.title || ""}`,
+          result: testResultData,
+          models: selectedModels
+        };
+        
+        await taskService.submitOptimizationResult(optimizationData);
+      } else {
+        // 直接更新任务数据中的测试结果
+        const updatedTaskData = {
+          ...task,
+          evaluations: [...(task.evaluations || []), testResultData]
+        };
+        
+        await taskService.updateTask(id, updatedTaskData);
+        
+        // 更新本地状态
+        setTask(updatedTaskData);
+      }
+      
+      // 显示成功消息
+      message.success("测试结果已成功提交！");
+      
+      // 可选：导航到结果页面
+      // setActiveSection('result');
+    } catch (error) {
+      console.error("提交测试结果失败:", error);
+      message.error("提交测试结果失败，请重试");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 添加生成报告的处理函数
+  const handleGenerateReport = () => {
+    message.info("报告生成功能正在开发中...");
+  };
+
   // 渲染底部按钮
   const renderFooterButtons = () => {
     if (!isTaskStarted) {
+      // 根据任务状态显示不同的按钮文本
+      let buttonText = "开始任务";
+      if (task.status === "running") {
+        buttonText = "继续任务";
+      } else if (task.status === "completed") {
+        buttonText = "重新开始任务";
+      }
+      
       return (
         <Button
           type="primary"
@@ -1026,7 +1180,7 @@ const TaskDetailPage = () => {
           onClick={handleStartTask}
           className={styles.startTaskButton}
         >
-          开始任务
+          {buttonText}
         </Button>
       );
     }
@@ -1035,24 +1189,34 @@ const TaskDetailPage = () => {
       return (
         <>
           <Button
+            type="primary"
             size="large"
-            onClick={() => {/* 处理生成报告 */ }}
+            onClick={handleCompleteTask}
+            className={`${styles.primaryButton} ${styles.flexButton}`}
+            icon={<CheckOutlined />}
+          >
+            完成任务
+          </Button>
+          <Button
+            size="large"
+            onClick={handleSubmitResults}
+            className={styles.flexButton}
+          >
+            提交结果
+          </Button>
+          <Button
+            size="large"
+            onClick={handleGenerateReport}
             className={styles.flexButton}
           >
             生成报告
           </Button>
-          <Button
-            size="large"
-            onClick={() => {/* 处理完成任务 */ }}
-            className={styles.flexButton}
-          >
-            完成任务，提交结果
-          </Button>
-          <div className={styles.optimizeModeContainer}>
+          <div className={styles.optimizeModeContainer} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span>优化模式</span>
             <Switch
               checked={isOptimizeMode}
               onChange={setIsOptimizeMode}
+              size="small"
             />
           </div>
         </>
@@ -1191,7 +1355,7 @@ const TaskDetailPage = () => {
         <h1 className="task-title">{task?.title}</h1>
         <div className="task-creator-section">
           <div className="task-creator-info">
-            <Avatar size={40} className="creator-avatar">
+            <Avatar size={24} className="creator-avatar">
               {task?.author?.name?.charAt(0)}
             </Avatar>
             <span className="creator-text">
@@ -1225,36 +1389,40 @@ const TaskDetailPage = () => {
             // 判断步骤状态：当前步骤、已完成步骤、未完成步骤
             const isCurrentStep = currentStep === item.step;
             const isCompletedStep = currentStep > item.step;
+            const hasData = hasStepData(item.step);
+            // 步骤可点击条件：任务已开始 且 (是当前步骤 或 已完成步骤 或 已有数据的步骤)
+            const isClickable = isTaskStarted && (isCurrentStep || isCompletedStep || hasData);
 
             return (
-              <div key={item.step} className={`step ${isCurrentStep ? 'current-step' : ''}`} style={{
+              <div key={item.step} className={`step ${isCurrentStep ? 'current-step' : ''} ${hasData ? 'has-data' : ''}`} style={{
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
                 gap: '4px',
-                cursor: isCurrentStep || isCompletedStep ? 'pointer' : 'default'
+                cursor: isClickable ? 'pointer' : 'default',
+                opacity: isTaskStarted ? (isClickable ? 1 : 0.7) : (isCurrentStep ? 1 : 0.7)
               }}
-                onClick={() => isCurrentStep || isCompletedStep ? handleStepClick(item.step) : null}
+                onClick={() => isClickable ? handleStepClick(item.step) : null}
               >
                 <div className="step-icon" style={{
                   width: '20px',
                   height: '20px',
                   borderRadius: '50%',
-                  border: `1px solid ${isCurrentStep ? 'var(--color-primary)' : isCompletedStep ? 'var(--color-primary)' : 'var(--color-text-tertiary)'}`,
-                  background: isCurrentStep ? 'var(--color-primary)' : isCompletedStep ? 'var(--color-primary-bg)' : '#fff',
+                  border: `1px solid ${isCurrentStep ? 'var(--color-primary)' : isCompletedStep ? 'var(--color-primary)' : hasData ? 'var(--color-success)' : 'var(--color-text-tertiary)'}`,
+                  background: isCurrentStep ? 'var(--color-primary)' : isCompletedStep ? 'var(--color-primary-bg)' : hasData ? 'var(--color-success-bg)' : '#fff',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   fontSize: '12px',
                   fontWeight: 700,
-                  color: isCurrentStep ? '#fff' : isCompletedStep ? 'var(--color-primary)' : 'var(--color-text-tertiary)'
+                  color: isCurrentStep ? '#fff' : isCompletedStep ? 'var(--color-primary)' : hasData ? 'var(--color-success)' : 'var(--color-text-tertiary)'
                 }}>
                   {isCompletedStep ? <CheckOutlined style={{ fontSize: '12px' }} /> : item.step}
                 </div>
                 <div className="step-label" style={{
                   fontSize: '12px',
                   fontWeight: 700,
-                  color: isCurrentStep ? 'var(--color-primary)' : isCompletedStep ? 'var(--color-primary)' : 'var(--color-text-tertiary)'
+                  color: isCurrentStep ? 'var(--color-primary)' : isCompletedStep ? 'var(--color-primary)' : hasData ? 'var(--color-success)' : 'var(--color-text-tertiary)'
                 }}>{item.label}</div>
               </div>
             );
@@ -1284,7 +1452,9 @@ const TaskDetailPage = () => {
                   { key: 'overview', label: '概览' },
                   { key: 'qa', label: 'QA' },
                   { key: 'scene', label: '场景' },
-                  { key: 'template', label: '模板' }
+                  { key: 'template', label: '模板' },
+                  // 当任务状态为completed时才显示结果选项
+                  ...(task.status === 'running' || task.status === 'completed' ? [{ key: 'result', label: '结果' }] : [])
                 ].map((item) => (
                   <Timeline.Item
                     key={item.key}
@@ -1356,12 +1526,24 @@ const TaskDetailPage = () => {
         /* 步骤导航样式 */
         .steps-navigation {
           position: relative;
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: 16px;
         }
         
         .step {
           transition: all 0.3s ease;
           position: relative;
           z-index: 1;
+          padding: 8px 10px;
+          margin: 0 2px;
+          border-radius: 8px;
+        }
+        .step:hover {
+          background-color: ${isTaskStarted ? 'var(--color-primary-bg)' : 'transparent'};
+        }
+        .step.has-data:hover {
+          background-color: ${isTaskStarted ? 'var(--color-success-bg)' : 'transparent'};
         }
         .step-icon {
           transition: all 0.3s ease;
@@ -1373,13 +1555,26 @@ const TaskDetailPage = () => {
           transform: ${isTaskStarted ? 'scale(1.1)' : 'none'};
           box-shadow: 0 0 0 4px rgba(var(--color-primary-rgb), 0.3);
         }
+        .step.has-data:hover .step-icon {
+          transform: ${isTaskStarted ? 'scale(1.1)' : 'none'};
+          box-shadow: 0 0 0 4px rgba(var(--color-success-rgb), 0.3);
+        }
         .step-label {
           transition: all 0.3s ease;
           margin-top: 4px;
         }
+        .step:hover .step-label {
+          color: ${isTaskStarted ? 'var(--color-primary)' : ''};
+        }
+        .step.has-data:hover .step-label {
+          color: ${isTaskStarted ? 'var(--color-success)' : ''};
+        }
         
         .current-step .step-icon {
           animation: pulse 1.5s infinite;
+        }
+        .current-step.has-data .step-icon {
+          animation: pulseSuccess 1.5s infinite;
         }
         
         @keyframes pulse {
@@ -1391,6 +1586,18 @@ const TaskDetailPage = () => {
           }
           100% {
             box-shadow: 0 0 0 0 rgba(var(--color-primary-rgb), 0);
+          }
+        }
+        
+        @keyframes pulseSuccess {
+          0% {
+            box-shadow: 0 0 0 0 rgba(var(--color-success-rgb), 0.4);
+          }
+          70% {
+            box-shadow: 0 0 0 6px rgba(var(--color-success-rgb), 0);
+          }
+          100% {
+            box-shadow: 0 0 0 0 rgba(var(--color-success-rgb), 0);
           }
         }
         

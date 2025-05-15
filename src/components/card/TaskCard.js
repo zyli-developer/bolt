@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Avatar, Tag, Checkbox } from "antd"
+import { Avatar, Tag, Checkbox, Button, message, Modal } from "antd"
 import { useNavigate } from "react-router-dom"
 import {
   LineChart,
@@ -19,10 +19,14 @@ import {
   Area,
   AreaChart
 } from "recharts"
-import { FileTextOutlined, PlusOutlined } from "@ant-design/icons"
+import { FileTextOutlined, PlusOutlined, CheckCircleOutlined } from "@ant-design/icons"
 import CreateTaskModal from "../modals/CreateTaskModal"
+import taskService from "../../services/taskService"
+import SceneSection from "../scene/SceneSection" 
+import QASection from "../qa/QASection"
+import TemplateSection from "../template/TemplateSection"
 
-const TaskCard = ({ task }) => {
+const TaskCard = ({ task, onTaskUpdate }) => {
   const navigate = useNavigate()
   const [showRadarChart, setShowRadarChart] = useState(false)
   const [selectedAgents, setSelectedAgents] = useState({
@@ -31,6 +35,13 @@ const TaskCard = ({ task }) => {
     agent2: false,
   })
   const [isCreateTaskModalVisible, setIsCreateTaskModalVisible] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [taskStatus, setTaskStatus] = useState(task.status || "pending")
+  
+  // 添加控制三个模态框显示的状态
+  const [isSceneModalVisible, setIsSceneModalVisible] = useState(false)
+  const [isQAModalVisible, setIsQAModalVisible] = useState(false)
+  const [isTemplateModalVisible, setIsTemplateModalVisible] = useState(false)
 
   const toggleRadarChart = () => {
     setShowRadarChart(!showRadarChart)
@@ -43,13 +54,73 @@ const TaskCard = ({ task }) => {
     })
   }
 
-  // Update the handleTitleClick function in TaskCard.js
+  // 处理标题点击
   const handleTitleClick = () => {
-    // 提取任务ID的数字部分，如果ID是"task101"格式，则提取"101"
-    const numericId = task.id.toString().replace(/^task/i, "");
-    // Navigate to the task detail page with state to track where we came from
-    navigate(`/tasks/detail/${numericId}`, { state: { from: "tasks" } })
+    // 直接使用任务ID导航到详情页
+    navigate(`/tasks/detail/${task.id}`, { state: { from: "tasks" } })
   }
+  
+  // 添加模态框控制函数
+  const showSceneModal = (e) => {
+    e.stopPropagation(); // 阻止事件冒泡
+    setIsSceneModalVisible(true);
+  }
+  
+  const showQAModal = (e) => {
+    e.stopPropagation(); // 阻止事件冒泡
+    setIsQAModalVisible(true);
+  }
+  
+  const showTemplateModal = (e) => {
+    e.stopPropagation(); // 阻止事件冒泡
+    setIsTemplateModalVisible(true);
+  }
+  
+  const handleModalClose = () => {
+    setIsSceneModalVisible(false);
+    setIsQAModalVisible(false);
+    setIsTemplateModalVisible(false);
+  }
+  
+  // 处理提交结果按钮点击
+  const handleSubmitResult = async (e) => {
+    e.stopPropagation(); // 阻止事件冒泡
+    
+    try {
+      setSubmitting(true);
+      
+      // 创建更新后的任务对象
+      const updatedTask = {
+        ...task,
+        status: "completed"
+      };
+      
+      // 调用API更新任务状态为completed
+      await taskService.updateTask(task.id, updatedTask);
+      
+      // 更新本地状态
+      setTaskStatus("completed");
+      
+      // 显示成功消息
+      message.success("任务已成功完成！");
+      
+      // 如果父组件提供了onTaskUpdate回调，则调用它
+      if (typeof onTaskUpdate === 'function') {
+        onTaskUpdate(task.id, updatedTask);
+      } else {
+        // 否则，尝试通过CustomEvent触发列表刷新
+        const refreshEvent = new CustomEvent('taskStatusUpdated', { 
+          detail: { taskId: task.id, status: "completed" }
+        });
+        window.dispatchEvent(refreshEvent);
+      }
+    } catch (error) {
+      console.error("提交结果失败:", error);
+      message.error("提交结果失败，请重试");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   // Filter radar data based on selected agents
   const filteredRadarData = task.chartData?.radar || [
@@ -66,28 +137,48 @@ const TaskCard = ({ task }) => {
   }
 
   return (
-    <div className="task-card">
+    <div className={`task-card`}>
       {/* Card title */}
       <div className="task-card-header">
         <h2 className="task-card-title" onClick={handleTitleClick}>
           {task.title}
         </h2>
+        
+        {/* 提交结果按钮 - 仅在任务状态为running时显示 */}
+        { task.status === "running" && 
+          (
+          <Button
+            type="primary"
+            size="small"
+            icon={<CheckCircleOutlined />}
+            onClick={handleSubmitResult}
+            loading={submitting}
+            style={{ marginLeft: 'auto', borderRadius: '10px' }}
+          >
+            提交结果
+          </Button>
+        )}
       </div>
 
       {/* Author info and tags */}
       <div className="task-card-meta">
         <div className="task-author-info">
           <Avatar size={32} src={task.author.avatar} className="task-author-avatar">
-            {task.author.name.charAt(0)}
+            {task.author?.name?.charAt(0)}
           </Avatar>
-          <span className="task-assigned-text">Assigned by</span>
-          <span className="task-author-name">{task.author.name}</span>
+          <span className="task-assigned-text">
+            Assigned by
+          </span>
+          <span className="task-author-name">{task.author?.name}</span>
           <span className="task-from-text">from</span>
           <span className="task-source-name">{task.source}</span>
         </div>
         <div className="task-card-tags">
           {task.tags.map((tag, index) => (
-            <Tag key={index} className="task-tag">
+            <Tag 
+              key={index} 
+              className="task-tag"
+            >
               {tag}
             </Tag>
           ))}
@@ -103,13 +194,30 @@ const TaskCard = ({ task }) => {
           <div className="task-details">
             <div className="task-detail-item">
               <span className="task-detail-label">状态：</span>
-              <span className="task-detail-value">待启动</span>
+              <span className="task-detail-value">
+                {(() => {
+                  // 使用本地状态变量显示状态
+                  const currentStatus = taskStatus || task.status || "pending";
+                  
+                  // 格式化状态显示
+                  switch (currentStatus) {
+                    case "pending":
+                      return "待启动";
+                    case "running":
+                      return "进行中";
+                    case "completed":
+                      return "已完成";
+                    default:
+                      return currentStatus;
+                  }
+                })()}
+              </span>
             </div>
 
             <div className="task-detail-item">
-              <span className="task-detail-label">目标：</span>
+              <span className="task-detail-label">描述：</span>
               <span className="task-detail-value">
-                {task.description || "目标目标目标目标目标目标目标目标目标目标目标目标目标目标目标目标目标目标"}
+                {task.response_summary || "暂无描述"}
               </span>
             </div>
           </div>
@@ -117,26 +225,40 @@ const TaskCard = ({ task }) => {
           {/* Action buttons */}
           <div className="task-actions">
             <div className="task-action-buttons">
-              <div className="task-action-item active">
+              <div 
+                className={`task-action-item ${task.scenario ? 'active' : 'add-item'}`}
+                onClick={showSceneModal}
+                style={{ cursor: 'pointer' }}
+              >
                 <div className="task-action-icon">
-                  <FileTextOutlined />
+                  {task.scenario ? <FileTextOutlined /> : <PlusOutlined />}
                 </div>
                 <div className="task-action-text">场景</div>
-                <button className="task-action-close">×</button>
+                {task.scenario && <button className="task-action-close" onClick={(e) => { e.stopPropagation(); }}>×</button>}
               </div>
 
-              <div className="task-action-item add-item">
+              <div 
+                className={`task-action-item ${(task.prompt && task.response_summary) ? 'active' : 'add-item'}`}
+                onClick={showQAModal}
+                style={{ cursor: 'pointer' }}
+              >
                 <div className="task-action-icon">
-                  <PlusOutlined />
+                  {(task.prompt && task.response_summary) ? <FileTextOutlined /> : <PlusOutlined />}
                 </div>
                 <div className="task-action-text">添加QA</div>
+                {(task.prompt && task.response_summary) && <button className="task-action-close" onClick={(e) => { e.stopPropagation(); }}>×</button>}
               </div>
 
-              <div className="task-action-item add-item">
+              <div 
+                className={`task-action-item ${task.step && task.step.length > 0 ? 'active' : 'add-item'}`}
+                onClick={showTemplateModal}
+                style={{ cursor: 'pointer' }}
+              >
                 <div className="task-action-icon">
-                  <PlusOutlined />
+                  {task.step && task.step.length > 0 ? <FileTextOutlined /> : <PlusOutlined />}
                 </div>
                 <div className="task-action-text">添模板</div>
+                {task.step && task.step.length > 0 && <button className="task-action-close" onClick={(e) => { e.stopPropagation(); }}>×</button>}
               </div>
             </div>
             
@@ -253,6 +375,36 @@ const TaskCard = ({ task }) => {
           </div>
         </div>
       </div>
+
+      {/* 场景 Modal */}
+      <Modal
+        open={isSceneModalVisible}
+        onCancel={handleModalClose}
+        footer={null}
+        width={800}
+      >
+        <SceneSection taskId={task.id} scenario={task.scenario} />
+      </Modal>
+
+      {/* QA Modal */}
+      <Modal
+        open={isQAModalVisible}
+        onCancel={handleModalClose}
+        footer={null}
+        width={800}
+      >
+        <QASection taskId={task.id} prompt={task.prompt} response={task.response_summary} />
+      </Modal>
+
+      {/* 模板 Modal */}
+      <Modal
+        open={isTemplateModalVisible}
+        onCancel={handleModalClose}
+        footer={null}
+        width={800}
+      >
+        <TemplateSection taskId={task.id} steps={task.templateData ? { templateData: task.templateData, ...task.step } : task.step} />
+      </Modal>
 
       {/* Create Task Modal */}
       <CreateTaskModal visible={isCreateTaskModalVisible} onCancel={handleModalCancel} cardData={task} />

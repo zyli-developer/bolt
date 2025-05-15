@@ -179,6 +179,18 @@ const useStyles = createStyles(({ token, css }) => {
     gridItem: css`
       margin-bottom: 0;
     `,
+    // 添加表单行布局样式
+    formRow: css`
+      display: flex;
+      flex-direction: row;
+      gap: 16px;
+      width: 100%;
+      margin-bottom: 8px;
+    `,
+    formRowItem: css`
+      flex: 1;
+      margin-bottom: 8px;
+    `,
     // QA特有样式
     qaContainer: css`
       display: flex;
@@ -296,7 +308,7 @@ const useStyles = createStyles(({ token, css }) => {
     confirmSidebar: css`
       flex: 0 0 120px;
       border-right: 1px solid ${token.colorBorderSecondary};
-      padding-right: 16px;
+      padding: 16px;
       
       .ant-timeline-item-tail {
         left: 11px;

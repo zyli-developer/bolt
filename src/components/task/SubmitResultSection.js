@@ -7,6 +7,7 @@ import {
   Checkbox,
   Spin
 } from 'antd';
+import colorToken from '../../styles/utils/colorToken';
 import {
   PlusOutlined,
   MinusOutlined
@@ -167,20 +168,20 @@ const SubmitResultSection = ({ task }) => {
   const enhancedChartData = getEnhancedChartData();
 
   const getModelColor = (modelKey) => {
-    // 根据模型确定颜色
+    // 根据模型确定颜色，使用主题色
     switch (modelKey) {
       case 'claude3.5':
-        return '#3ac0a0';
+        return colorToken.colorPrimary;
       case 'claude3.6':
-        return '#006ffd';
+        return colorToken.colorPrimaryHover;
       case 'claude3.7':
-        return '#722ed1';
+        return colorToken.colorPrimaryActive;
       case 'agent2':
-        return '#FFB140';
+        return colorToken.colorAssist1;
       case 'deepseek':
-        return '#722ed1';
+        return colorToken.colorAssist2;
       default:
-        return '#8f9098';
+        return colorToken.colorTextTertiary;
     }
   };
 
@@ -188,9 +189,9 @@ const SubmitResultSection = ({ task }) => {
 
   return (
     <div className="evaluation-charts-wrapper" style={{ display: 'flex', flexDirection: 'column', width: '100%', gap: '12px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+      {/* <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
         <h2 style={{ fontSize: '16px', margin: 0 }}>提交结果</h2>
-      </div>
+      </div> */}
       
       <div style={{ display: 'flex', gap: '12px' }}>
         {/* 左侧评估区域 */}
@@ -298,13 +299,13 @@ const SubmitResultSection = ({ task }) => {
                   <CartesianGrid 
                     vertical={false} 
                     horizontal={true}
-                    stroke="#f0f0f0"
+                    stroke={colorToken.colorBorderSecondary}
                   />
                   <XAxis 
                     dataKey="month" 
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fontSize: 10, fill: '#8f9098' }}
+                    tick={{ fontSize: 10, fill: colorToken.colorTextTertiary }}
                   />
                   <YAxis 
                     hide={true}
@@ -313,7 +314,7 @@ const SubmitResultSection = ({ task }) => {
                   <RechartsTooltip 
                     cursor={false}
                     contentStyle={{
-                      background: '#fff',
+                      background: colorToken.colorBgContainer,
                       border: 'none',
                       boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
                       borderRadius: '4px',
@@ -361,9 +362,9 @@ const SubmitResultSection = ({ task }) => {
             <div className="radar-chart-content" style={{ height: "220px" }}>
               <ResponsiveContainer width="100%" height="100%">
                 <RadarChart data={enhancedChartData.radar}>
-                  <PolarGrid stroke="#e0e0e0" />
-                  <PolarAngleAxis dataKey="name" tick={{ fontSize: 10, fill: "#8f9098" }} />
-                  <PolarRadiusAxis domain={[0, 100]} tick={{ fontSize: 9, fill: "#8f9098" }} axisLine={false} />
+                  <PolarGrid stroke={colorToken.colorBorderSecondary} />
+                  <PolarAngleAxis dataKey="name" tick={{ fontSize: 10, fill: colorToken.colorTextTertiary }} />
+                  <PolarRadiusAxis domain={[0, 100]} tick={{ fontSize: 9, fill: colorToken.colorTextTertiary }} axisLine={false} />
                   {selectedModels.map(modelKey => (
                     <Radar 
                       key={modelKey}
@@ -379,16 +380,7 @@ const SubmitResultSection = ({ task }) => {
             </div>
           </div>
 
-          {/* 历史记录区域 */}
-          <div className="history-section-wrapper" style={{ padding: "8px" }}>
-            <div className="history-section" style={{ gap: "4px" }}>
-              <div className="history-time" style={{ fontSize: "12px" }}>{currentEvaluation.updatedAt}</div>
-              <div className="history-author" style={{ fontSize: "12px" }}>
-                by <span>{currentEvaluation.updatedBy}</span>
-              </div>
-              <div className="history-content" style={{ fontSize: "12px", lineHeight: "1.4", marginTop: "4px" }}>{currentEvaluation.history}</div>
-            </div>
-          </div>
+          {/* 历史记录区域已删除 */}
         </div>
       </div>
     </div>

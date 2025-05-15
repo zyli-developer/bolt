@@ -88,7 +88,7 @@ const useTaskDetailStyles = createStyles(({ css }) => {
       background: var(--color-bg-container);
       border-radius: 16px;
       max-height: calc(892px - 120px); // 减去上方区域的高度
-      overflow-y: auto;
+      // overflow-y: auto;
     `,
     // Steps Navigation
     stepsNavigation: css`
@@ -430,10 +430,144 @@ const useTaskDetailStyles = createStyles(({ css }) => {
     // 添加主内容区域样式
     mainContent: css`
       display: flex;
-      min-height: calc(892px - 200px); // 减去其他区域的高度
       max-height: calc(892px - 200px);
       border-radius: 0 0 16px 16px;
       overflow-y: auto;
+    `,
+    // 结果部分样式
+    resultSection: css`
+      padding: 16px;
+      margin-top: 8px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    `,
+    sectionTitle: css`
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 14px;
+    `,
+    scorePanel: css`
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 12px;
+      background: #f9f9f9;
+      border-radius: 8px;
+      margin-bottom: 16px;
+    `,
+    totalScore: css`
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 12px 20px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    `,
+    scoreValue: css`
+      font-size: 28px;
+      font-weight: bold;
+      color: var(--color-primary);
+    `,
+    scoreLabel: css`
+      font-size: 13px;
+      color: #666;
+    `,
+    dimensionScores: css`
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      flex: 1;
+      margin-left: 16px;
+    `,
+    dimensionItem: css`
+      padding: 8px 12px;
+      background: #fff;
+      border-radius: 6px;
+      width: calc(50% - 4px);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    `,
+    dimensionName: css`
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 4px;
+    `,
+    dimensionValue: css`
+      font-size: 14px;
+      font-weight: 600;
+    `,
+    agentEvaluation: css`
+      margin-top: 16px;
+      padding: 12px;
+      background: #f9f9f9;
+      border-radius: 8px;
+    `,
+    agentsList: css`
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    `,
+    agentItem: css`
+      padding: 12px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    `,
+    agentName: css`
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    `,
+    agentScore: css`
+      font-size: 13px;
+      line-height: 1.5;
+      color: #444;
+    `,
+    scoreDescription: css`
+      margin-top: 4px;
+      padding: 6px;
+      background: #f0f9ff;
+      border-radius: 4px;
+      font-size: 12px;
+      color: #555;
+    `,
+    optimizationResults: css`
+      margin-top: 16px;
+      padding: 12px;
+      background: #f0f9ff;
+      border-radius: 8px;
+      border: 1px solid #e1f0ff;
+    `,
+    beforeAfterScore: css`
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 14px;
+      padding: 8px;
+      background: #fff;
+      border-radius: 6px;
+      margin-top: 8px;
+    `,
+    arrow: css`
+      color: #999;
+      font-size: 16px;
+      margin: 0 4px;
+    `,
+    improvedScore: css`
+      color: var(--color-success);
+      font-weight: bold;
+    `,
+    improvementRate: css`
+      margin-left: auto;
+      background: var(--color-success-bg);
+      color: var(--color-success);
+      padding: 3px 6px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
     `,
   };
 });

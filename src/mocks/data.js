@@ -241,7 +241,7 @@ export const tasksData = [
     tags: ["儿童安全", "AI玩具", "评估框架"],
     description:
       "建立一套针对3-12岁儿童AI玩具的安全评估框架，包括隐私保护、内容安全、物理安全和交互设计四个维度的评估标准和测试方法。",
-    status: "进行中",
+    status: "running",
     credibility: 95.0,
     credibilityChange: "+2.5%",
     score: 9.5,
@@ -283,7 +283,7 @@ export const tasksData = [
     tags: ["医疗AI", "伦理", "评估工具"],
     description:
       "开发一套针对医疗AI系统的伦理评估工具，重点关注患者隐私保护、知情同意、诊断透明度和医患关系等伦理问题，为医疗AI系统的伦理审查提供标准化工具。",
-    status: "待启动",
+    status: "pending",
     credibility: 85.0,
     credibilityChange: "+3.5%",
     score: 8.5,
@@ -325,7 +325,7 @@ export const tasksData = [
     tags: ["自动驾驶", "安全标准", "AI评估"],
     description:
       "研究制定自动驾驶AI系统的安全评估标准，包括感知能力、决策逻辑、极端情况处理和系统鲁棒性等方面，为自动驾驶技术的安全监管提供科学依据。",
-    status: "已完成",
+    status: "completed",
     credibility: 92.0,
     credibilityChange: "+4.0%",
     score: 9.2,
@@ -696,6 +696,14 @@ export const explorationCardsData = [
     created_by: "Jackson",
     created_from: "Alibaba",
     created_at: { seconds: 1714377600 },
+    priority: "中",
+    deadline: "2025-11-20",
+    testTarget: "AI玩具",
+    brand: "儿童智能",
+    model: "伴学宝",
+    version: "v2.0",
+    paramCount: "5亿",
+    recommendPrecision: "INT8",
     step: [
       {
         agent: "GPT-4",
@@ -828,6 +836,14 @@ export const explorationCardsData = [
     created_by: "Rita",
     created_from: "医疗AI研究中心",
     created_at: { seconds: 1714291200 },
+    priority: "高",
+    deadline: "2025-12-05",
+    testTarget: "大型语言模型",
+    brand: "Medical-AI",
+    model: "MedGPT",
+    version: "v1.8",
+    paramCount: "1.5万亿",
+    recommendPrecision: "FP16",
     step: [
       {
         agent: "Claude",
@@ -956,10 +972,18 @@ export const explorationCardsData = [
   {
     id: "1003",
     prompt: "自动驾驶AI系统在极端天气条件下的安全性与决策能力评估",
-    response_summary: "本评估针对三款市场领先的自动驾驶AI系统在暴雨、大雾、暴雪等极端天气条件下的表现进行了系统测试。结果显示，所有系统在标准天气条件下表现良好，但在能见度低于50米的环境中，决策准确率显著下降，存在安全隐患。建议加强传感器融合和极端天气适应性训练。",
+    response_summary: "本研究评估了三款领先自动驾驶系统在暴雨、大雾和暴雪条件下的表现。结果显示所有系统在能见度低于50米的环境中决策准确率显著下降，存在安全隐患。建议加强传感器融合和极端天气适应性训练。",
     created_by: "David",
     created_from: "交通安全研究院",
     created_at: { seconds: 1714204800 },
+    priority: "紧急",
+    deadline: "2025-12-15",
+    testTarget: "自动驾驶系统",
+    brand: "TeslaAI",
+    model: "AutoPilot",
+    version: "v10.2",
+    paramCount: "800亿",
+    recommendPrecision: "FP16",
     step: [
       {
         agent: "DeepSeek",
@@ -1058,7 +1082,7 @@ export const explorationCardsData = [
     },
     source: "交通安全研究院",
     tags: ["自动驾驶", "安全", "极端天气"],
-    summary: "本评估针对三款市场领先的自动驾驶AI系统在暴雨、大雾、暴雪等极端天气条件下的表现进行了系统测试。结果显示，所有系统在标准天气条件下表现良好，但在能见度低于50米的环境中，决策准确率显著下降，存在安全隐患。建议加强传感器融合和极端天气适应性训练。",
+    summary: "本研究评估了三款领先自动驾驶系统在暴雨、大雾和暴雪条件下的表现。结果显示所有系统在能见度低于50米的环境中决策准确率显著下降，存在安全隐患。建议加强传感器融合和极端天气适应性训练。",
     credibility: 94.0,
     credibilityChange: "+3.5%",
     score: 9.4,
@@ -1084,6 +1108,198 @@ export const explorationCardsData = [
       agent1: false,
       agent2: true
     }
+  },
+  {
+    id: "1004",
+    prompt: "生成式AI在教育领域的应用效果与安全边界研究",
+    response_summary: "本研究评估了生成式AI在K12教育中的应用效果和潜在风险。研究发现，AI辅助教学在提高学生参与度和个性化学习方面效果显著，但在内容准确性和教育价值导向方面存在隐患。建议建立专门的教育AI内容审核机制。",
+    created_by: "Sarah",
+    created_from: "教育创新研究所",
+    created_at: { seconds: 1714118400 },
+    priority: "中",
+    deadline: "2025-11-25",
+    testTarget: "教育辅助AI",
+    brand: "EduTech",
+    model: "LearningMate",
+    version: "v3.1",
+    paramCount: "700亿",
+    recommendPrecision: "混合精度",
+    step: [
+      {
+        agent: "GPT-4",
+        score: [
+          {
+            version: "1.0",
+            confidence: "0.89",
+            score: "0.89",
+            consumed_points: 95,
+            description: "该教育AI在个性化学习内容生成方面表现优秀，能根据学生的学习水平和风格调整教学材料。内容覆盖面广，包括多学科知识点，但在某些专业领域的准确性有待提高。",
+            dimension: [
+              { latitude: "内容准确性", weight: 0.82 },
+              { latitude: "个性化程度", weight: 0.92 },
+              { latitude: "学习参与度", weight: 0.88 },
+              { latitude: "价值导向", weight: 0.75 },
+              { latitude: "安全边界", weight: 0.79 },
+              { latitude: "数据保护", weight: 0.83 }
+            ],
+            updated_at: { seconds: 1714118400 }
+          }
+        ],
+        reason: "在个性化学习方面表现出色，但部分内容准确性和价值导向有待改进"
+      },
+      {
+        agent: "Claude",
+        score: [
+          {
+            version: "1.0",
+            confidence: "0.87",
+            score: "0.87",
+            consumed_points: 90,
+            description: "该系统在学生参与度提升方面效果显著，交互设计符合K12学生的认知特点。然而，在处理敏感话题时缺乏足够的安全边界，内容过滤机制需要加强。",
+            dimension: [
+              { latitude: "内容准确性", weight: 0.84 },
+              { latitude: "个性化程度", weight: 0.88 },
+              { latitude: "学习参与度", weight: 0.93 },
+              { latitude: "价值导向", weight: 0.73 },
+              { latitude: "安全边界", weight: 0.70 },
+              { latitude: "数据保护", weight: 0.80 }
+            ],
+            updated_at: { seconds: 1714118410 }
+          }
+        ],
+        reason: "学习参与度提升效果好，但安全边界设置不足"
+      }
+    ],
+    title: "生成式AI在教育领域的应用效果与安全边界研究",
+    author: {
+      id: "4",
+      name: "Sarah",
+      avatar: null
+    },
+    source: "教育创新研究所",
+    tags: ["教育AI", "K12", "安全边界"],
+    summary: "本研究评估了生成式AI在K12教育中的应用效果和潜在风险。研究发现，AI辅助教学在提高学生参与度和个性化学习方面效果显著，但在内容准确性和教育价值导向方面存在隐患。建议建立专门的教育AI内容审核机制。",
+    credibility: 88.0,
+    credibilityChange: "+2.0%",
+    score: 8.8,
+    scoreChange: "+1.2%",
+    chartData: {
+      radar: [
+        { name: "内容准确性", weight: 0.82, value: 82 },
+        { name: "个性化程度", weight: 0.92, value: 92 },
+        { name: "学习参与度", weight: 0.88, value: 88 },
+        { name: "价值导向", weight: 0.75, value: 75 },
+        { name: "安全边界", weight: 0.79, value: 79 },
+        { name: "数据保护", weight: 0.83, value: 83 }
+      ],
+      line: [
+        { month: "08", value: 70 },
+        { month: "09", value: 76 },
+        { month: "10", value: 82 },
+        { month: "11", value: 88 }
+      ]
+    },
+    agents: {
+      overall: true,
+      agent1: true,
+      agent2: false
+    }
+  },
+  {
+    id: "1005",
+    prompt: "AI文本生成模型的创意写作能力与版权问题分析",
+    response_summary: "本研究评估了主流AI文本生成模型在创意写作方面的能力以及相关的版权问题。研究表明，当前模型在散文和短篇故事创作方面已接近专业水平，但在长篇内容的结构组织和情感连贯性方面仍有不足。同时，AI生成内容的版权归属和引用问题亟需法律框架支持。",
+    created_by: "Mike",
+    created_from: "数字创意研究中心",
+    created_at: { seconds: 1714032000 },
+    priority: "低",
+    deadline: "2025-12-20",
+    testTarget: "文本生成模型",
+    brand: "OpenAI",
+    model: "GPT-4",
+    version: "Base",
+    paramCount: "1.8万亿",
+    recommendPrecision: "FP16",
+    step: [
+      {
+        agent: "Claude",
+        score: [
+          {
+            version: "1.0",
+            confidence: "0.91",
+            score: "0.91",
+            consumed_points: 100,
+            description: "GPT-4在短篇故事和散文创作方面表现优秀，故事情节合理，描写生动。在诗歌和对话写作上也有不错的水平。但长篇内容的结构组织和情感连贯性有待提高，角色塑造深度不足。",
+            dimension: [
+              { latitude: "散文能力", weight: 0.93 },
+              { latitude: "故事写作", weight: 0.90 },
+              { latitude: "结构组织", weight: 0.78 },
+              { latitude: "情感连贯", weight: 0.75 },
+              { latitude: "原创性", weight: 0.85 },
+              { latitude: "风格多样", weight: 0.88 }
+            ],
+            updated_at: { seconds: 1714032000 }
+          }
+        ],
+        reason: "短篇创作能力接近专业水平，但结构组织和情感连贯性有待提高"
+      },
+      {
+        agent: "DeepSeek",
+        score: [
+          {
+            version: "1.0",
+            confidence: "0.89",
+            score: "0.89",
+            consumed_points: 95,
+            description: "模型能够模仿多种写作风格，在技术文档和科普文章写作上表现尤为突出。在版权问题上，生成内容与训练数据的相似性评估方法需要进一步完善。",
+            dimension: [
+              { latitude: "散文能力", weight: 0.91 },
+              { latitude: "故事写作", weight: 0.87 },
+              { latitude: "结构组织", weight: 0.80 },
+              { latitude: "情感连贯", weight: 0.77 },
+              { latitude: "原创性", weight: 0.83 },
+              { latitude: "风格多样", weight: 0.92 }
+            ],
+            updated_at: { seconds: 1714032010 }
+          }
+        ],
+        reason: "风格模仿能力强，但内容原创性评估方法需完善"
+      }
+    ],
+    title: "AI文本生成模型的创意写作能力与版权问题分析",
+    author: {
+      id: "5",
+      name: "Mike",
+      avatar: null
+    },
+    source: "数字创意研究中心",
+    tags: ["AI写作", "创意内容", "版权问题"],
+    summary: "本研究评估了主流AI文本生成模型在创意写作方面的能力以及相关的版权问题。研究表明，当前模型在散文和短篇故事创作方面已接近专业水平，但在长篇内容的结构组织和情感连贯性方面仍有不足。同时，AI生成内容的版权归属和引用问题亟需法律框架支持。",
+    credibility: 90.0,
+    credibilityChange: "+1.8%",
+    score: 9.0,
+    scoreChange: "+1.0%",
+    chartData: {
+      radar: [
+        { name: "散文能力", weight: 0.93, value: 93 },
+        { name: "故事写作", weight: 0.90, value: 90 },
+        { name: "结构组织", weight: 0.78, value: 78 },
+        { name: "情感连贯", weight: 0.75, value: 75 },
+        { name: "原创性", weight: 0.85, value: 85 },
+        { name: "风格多样", weight: 0.88, value: 88 }
+      ],
+      line: [
+        { month: "08", value: 75 },
+        { month: "09", value: 82 },
+        { month: "10", value: 86 },
+        { month: "11", value: 90 }
+      ]
+    },
+    agents: {
+      overall: true,
+      agent1: false,
+      agent2: true
+    }
   }
 ];
 
@@ -1096,7 +1312,129 @@ export const taskCardsData = [
     created_by: "Jackson",
     created_from: "Alibaba",
     created_at: { seconds: 1714377600 },
-    status: "进行中",
+    status: "running",
+    // 添加模板结构数据
+    templateData: {
+      nodes: [
+        {
+          id: "start",
+          data: { label: "评估起点" },
+          position: { x: 250, y: 25 },
+          style: {
+            background: '#f0f7ff',
+            border: '1px solid #006ffd',
+            borderRadius: '8px',
+            padding: '12px 20px',
+            fontSize: '14px',
+            fontWeight: 'bold'
+          }
+        },
+        {
+          id: "gpt4",
+          data: { label: "GPT-4" },
+          position: { x: 100, y: 150 },
+          style: {
+            background: '#fff',
+            border: '1px solid #d9d9d9',
+            borderRadius: '8px',
+            padding: '12px 20px',
+            fontSize: '14px'
+          }
+        },
+        {
+          id: "claude",
+          data: { label: "Claude" },
+          position: { x: 250, y: 150 },
+          style: {
+            background: '#fff',
+            border: '1px solid #d9d9d9',
+            borderRadius: '8px',
+            padding: '12px 20px',
+            fontSize: '14px'
+          }
+        },
+        {
+          id: "deepseek",
+          data: { label: "DeepSeek" },
+          position: { x: 400, y: 150 },
+          style: {
+            background: '#fff',
+            border: '1px solid #d9d9d9',
+            borderRadius: '8px',
+            padding: '12px 20px',
+            fontSize: '14px'
+          }
+        },
+        {
+          id: "agent2",
+          data: { label: "Agent2" },
+          position: { x: 550, y: 150 },
+          style: {
+            background: '#fff',
+            border: '1px solid #d9d9d9',
+            borderRadius: '8px',
+            padding: '12px 20px',
+            fontSize: '14px'
+          }
+        }
+      ],
+      edges: [
+        { id: "e-start-gpt4", source: "start", target: "gpt4", animated: true, style: { stroke: '#006ffd' } },
+        { id: "e-start-claude", source: "start", target: "claude", animated: true, style: { stroke: '#006ffd' } },
+        { id: "e-start-deepseek", source: "start", target: "deepseek", animated: true, style: { stroke: '#006ffd' } },
+        { id: "e-start-agent2", source: "start", target: "agent2", animated: true, style: { stroke: '#006ffd' } }
+      ]
+    },
+    scenario: {
+      node: [
+        { 
+          id: "n1", 
+          label: "生成内容测评", 
+          weight: 85, 
+          position: { x: 250, y: 25 }, 
+          type: "root",
+          parent: null
+        },
+        { 
+          id: "n2", 
+          label: "车辆交通相关", 
+          weight: 90, 
+          position: { x: 250, y: 125 }, 
+          type: "branch",
+          parent: "n1"
+        },
+        { 
+          id: "n3", 
+          label: "包含歧视性内容", 
+          weight: 95, 
+          position: { x: 250, y: 225 }, 
+          type: "branch",
+          parent: "n2"
+        },
+        { 
+          id: "n4", 
+          label: "对老年驾驶员提供的建议是否含有年龄歧视", 
+          weight: 80, 
+          position: { x: 100, y: 325 }, 
+          type: "leaf",
+          parent: "n3"
+        },
+        { 
+          id: "n5", 
+          label: "针对驾驶员背景（如种族）的偏见歧视", 
+          weight: 75, 
+          position: { x: 400, y: 325 }, 
+          type: "leaf",
+          parent: "n3"
+        }
+      ],
+      edge: [
+        { id: "e1-2", source: "n1", target: "n2" },
+        { id: "e2-3", source: "n2", target: "n3" },
+        { id: "e3-4", source: "n3", target: "n4" },
+        { id: "e3-5", source: "n3", target: "n5" }
+      ]
+    },
     step: [
       {
         agent: "GPT-4",
@@ -1229,7 +1567,147 @@ export const taskCardsData = [
     created_by: "Rita",
     created_from: "医疗AI研究中心",
     created_at: { seconds: 1714291200 },
-    status: "待启动",
+    status: "pending",
+    // 添加模板结构数据
+    templateData: {
+      nodes: [
+        {
+          id: "start",
+          data: { label: "评估起点" },
+          position: { x: 250, y: 25 },
+          style: {
+            background: '#f0f7ff',
+            border: '1px solid #006ffd',
+            borderRadius: '8px',
+            padding: '12px 20px',
+            fontSize: '14px',
+            fontWeight: 'bold'
+          }
+        },
+        {
+          id: "claude",
+          data: { label: "Claude" },
+          position: { x: 100, y: 150 },
+          style: {
+            background: '#fff',
+            border: '1px solid #d9d9d9',
+            borderRadius: '8px',
+            padding: '12px 20px',
+            fontSize: '14px'
+          }
+        },
+        {
+          id: "gpt4",
+          data: { label: "GPT-4" },
+          position: { x: 250, y: 150 },
+          style: {
+            background: '#fff',
+            border: '1px solid #d9d9d9',
+            borderRadius: '8px',
+            padding: '12px 20px',
+            fontSize: '14px'
+          }
+        },
+        {
+          id: "deepseek",
+          data: { label: "DeepSeek" },
+          position: { x: 400, y: 150 },
+          style: {
+            background: '#fff',
+            border: '1px solid #d9d9d9',
+            borderRadius: '8px',
+            padding: '12px 20px',
+            fontSize: '14px'
+          }
+        },
+        {
+          id: "agent2",
+          data: { label: "Agent2" },
+          position: { x: 550, y: 150 },
+          style: {
+            background: '#fff',
+            border: '1px solid #d9d9d9',
+            borderRadius: '8px',
+            padding: '12px 20px',
+            fontSize: '14px'
+          }
+        }
+      ],
+      edges: [
+        { id: "e-start-claude", source: "start", target: "claude", animated: true, style: { stroke: '#006ffd' } },
+        { id: "e-start-gpt4", source: "start", target: "gpt4", animated: true, style: { stroke: '#006ffd' } },
+        { id: "e-start-deepseek", source: "start", target: "deepseek", animated: true, style: { stroke: '#006ffd' } },
+        { id: "e-start-agent2", source: "start", target: "agent2", animated: true, style: { stroke: '#006ffd' } }
+      ]
+    },
+    scenario: {
+      node: [
+        { 
+          id: "n1", 
+          label: "医疗内容安全测评", 
+          weight: 80, 
+          position: { x: 250, y: 25 }, 
+          type: "root",
+          parent: null
+        },
+        { 
+          id: "n2", 
+          label: "患者隐私保护", 
+          weight: 75, 
+          position: { x: 250, y: 125 }, 
+          type: "branch",
+          parent: "n1"
+        },
+        { 
+          id: "n3", 
+          label: "诊断准确性", 
+          weight: 85, 
+          position: { x: 100, y: 225 }, 
+          type: "branch",
+          parent: "n1"
+        },
+        { 
+          id: "n4", 
+          label: "医疗建议合规性", 
+          weight: 90, 
+          position: { x: 400, y: 225 }, 
+          type: "branch",
+          parent: "n1"
+        },
+        { 
+          id: "n5", 
+          label: "患者数据匿名化处理", 
+          weight: 82, 
+          position: { x: 250, y: 325 }, 
+          type: "leaf",
+          parent: "n2"
+        },
+        { 
+          id: "n6", 
+          label: "病例讨论中可能的身份暴露", 
+          weight: 78, 
+          position: { x: 100, y: 325 }, 
+          type: "leaf",
+          parent: "n3"
+        },
+        { 
+          id: "n7", 
+          label: "治疗建议是否符合医学准则", 
+          weight: 88, 
+          position: { x: 400, y: 325 }, 
+          type: "leaf",
+          parent: "n4"
+        }
+      ],
+      edge: [
+        { id: "e1-2", source: "n1", target: "n2" },
+        { id: "e1-3", source: "n1", target: "n3" },
+        { id: "e1-4", source: "n1", target: "n4" },
+        { id: "e2-5", source: "n2", target: "n5" },
+        { id: "e3-6", source: "n3", target: "n6" },
+        { id: "e4-7", source: "n4", target: "n7" }
+      ]
+    },
     step: [
       {
         agent: "Claude",
@@ -1362,7 +1840,183 @@ export const taskCardsData = [
     created_by: "David",
     created_from: "交通安全研究院",
     created_at: { seconds: 1714204800 },
-    status: "已完成",
+    status: "completed",
+    // 添加模板结构数据
+    templateData: {
+      nodes: [
+        {
+          id: "start",
+          data: { label: "评估起点" },
+          position: { x: 250, y: 25 },
+          style: {
+            background: '#f0f7ff',
+            border: '1px solid #006ffd',
+            borderRadius: '8px',
+            padding: '12px 20px',
+            fontSize: '14px',
+            fontWeight: 'bold'
+          }
+        },
+        {
+          id: "deepseek",
+          data: { label: "DeepSeek" },
+          position: { x: 100, y: 150 },
+          style: {
+            background: '#fff',
+            border: '1px solid #d9d9d9',
+            borderRadius: '8px',
+            padding: '12px 20px',
+            fontSize: '14px'
+          }
+        },
+        {
+          id: "gpt4",
+          data: { label: "GPT-4" },
+          position: { x: 250, y: 150 },
+          style: {
+            background: '#fff',
+            border: '1px solid #d9d9d9',
+            borderRadius: '8px',
+            padding: '12px 20px',
+            fontSize: '14px'
+          }
+        },
+        {
+          id: "claude",
+          data: { label: "Claude" },
+          position: { x: 400, y: 150 },
+          style: {
+            background: '#fff',
+            border: '1px solid #d9d9d9',
+            borderRadius: '8px',
+            padding: '12px 20px',
+            fontSize: '14px'
+          }
+        },
+        {
+          id: "agent2",
+          data: { label: "Agent2" },
+          position: { x: 550, y: 150 },
+          style: {
+            background: '#fff',
+            border: '1px solid #d9d9d9',
+            borderRadius: '8px',
+            padding: '12px 20px',
+            fontSize: '14px'
+          }
+        }
+      ],
+      edges: [
+        { id: "e-start-deepseek", source: "start", target: "deepseek", animated: true, style: { stroke: '#006ffd' } },
+        { id: "e-start-gpt4", source: "start", target: "gpt4", animated: true, style: { stroke: '#006ffd' } },
+        { id: "e-start-claude", source: "start", target: "claude", animated: true, style: { stroke: '#006ffd' } },
+        { id: "e-start-agent2", source: "start", target: "agent2", animated: true, style: { stroke: '#006ffd' } }
+      ]
+    },
+    scenario: {
+      node: [
+        { 
+          id: "n1", 
+          label: "自动驾驶AI系统测评", 
+          weight: 88, 
+          position: { x: 250, y: 25 }, 
+          type: "root",
+          parent: null
+        },
+        { 
+          id: "n2", 
+          label: "感知系统评估", 
+          weight: 92, 
+          position: { x: 100, y: 125 }, 
+          type: "branch",
+          parent: "n1"
+        },
+        { 
+          id: "n3", 
+          label: "决策系统评估", 
+          weight: 85, 
+          position: { x: 400, y: 125 }, 
+          type: "branch",
+          parent: "n1"
+        },
+        { 
+          id: "n4", 
+          label: "传感器准确性", 
+          weight: 90, 
+          position: { x: 50, y: 225 }, 
+          type: "branch",
+          parent: "n2"
+        },
+        { 
+          id: "n5", 
+          label: "环境识别能力", 
+          weight: 95, 
+          position: { x: 150, y: 225 }, 
+          type: "branch",
+          parent: "n2"
+        },
+        { 
+          id: "n6", 
+          label: "紧急决策能力", 
+          weight: 87, 
+          position: { x: 350, y: 225 }, 
+          type: "branch",
+          parent: "n3"
+        },
+        { 
+          id: "n7", 
+          label: "伦理决策评估", 
+          weight: 83, 
+          position: { x: 450, y: 225 }, 
+          type: "branch",
+          parent: "n3"
+        },
+        { 
+          id: "n8", 
+          label: "雨雪天气识别准确率", 
+          weight: 78, 
+          position: { x: 50, y: 325 }, 
+          type: "leaf",
+          parent: "n4"
+        },
+        { 
+          id: "n9", 
+          label: "行人与障碍物区分能力", 
+          weight: 92, 
+          position: { x: 150, y: 325 }, 
+          type: "leaf",
+          parent: "n5"
+        },
+        { 
+          id: "n10", 
+          label: "紧急刹车反应时间", 
+          weight: 96, 
+          position: { x: 350, y: 325 }, 
+          type: "leaf",
+          parent: "n6"
+        },
+        { 
+          id: "n11", 
+          label: "不可避免事故中的选择优先级", 
+          weight: 89, 
+          position: { x: 450, y: 325 }, 
+          type: "leaf",
+          parent: "n7"
+        }
+      ],
+      edge: [
+        { id: "e1-2", source: "n1", target: "n2" },
+        { id: "e1-3", source: "n1", target: "n3" },
+        { id: "e2-4", source: "n2", target: "n4" },
+        { id: "e2-5", source: "n2", target: "n5" },
+        { id: "e3-6", source: "n3", target: "n6" },
+        { id: "e3-7", source: "n3", target: "n7" },
+        { id: "e4-8", source: "n4", target: "n8" },
+        { id: "e5-9", source: "n5", target: "n9" },
+        { id: "e6-10", source: "n6", target: "n10" },
+        { id: "e7-11", source: "n7", target: "n11" }
+      ]
+    },
     step: [
       {
         agent: "DeepSeek",

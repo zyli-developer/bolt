@@ -18,6 +18,8 @@ const AssetsPage = () => {
   const { isChatOpen } = useChatContext()
   const [loading, setLoading] = useState(false)
   const [assets, setAssets] = useState([])
+  const [reports, setReports] = useState([])
+  const [refreshTrigger, setRefreshTrigger] = useState(0)
   const [pagination, setPagination] = useState({
     total: 0,
     page: 1,
@@ -34,6 +36,117 @@ const AssetsPage = () => {
     sort: { field: "created_at", desc: true },
     pagination: pagination
   })
+  
+  // 监听报告更新事件
+  useEffect(() => {
+    const handleReportsUpdated = (event) => {
+      console.log('AssetsPage: 收到报告更新事件，详情:', event.detail);
+      
+      // 如果事件中包含报告数据，直接更新
+      if (event.detail && event.detail.reports && Array.isArray(event.detail.reports)) {
+        console.log('从事件中直接获取报告数据:', event.detail.reports.length);
+        
+        // 更新报告数据
+        setReports(prev => {
+          // 避免重复添加
+          const newReports = event.detail.reports.filter(newReport => 
+            !prev.some(existingReport => existingReport.id === newReport.id)
+          );
+          
+          if (newReports.length > 0) {
+            console.log(`添加 ${newReports.length} 个新报告`);
+            return [...prev, ...newReports];
+          }
+          
+          return prev;
+        });
+      } else {
+        // 否则重新加载报告数据
+        console.log('从localStorage加载报告数据');
+        loadLocalReports();
+      }
+      
+      // 增加刷新触发器的值，触发AssetList组件刷新
+      setRefreshTrigger(prev => prev + 1);
+    };
+    
+    // 添加事件监听
+    window.addEventListener('reportsUpdated', handleReportsUpdated);
+    
+    // 组件卸载时移除事件监听
+    return () => {
+      window.removeEventListener('reportsUpdated', handleReportsUpdated);
+    };
+  }, []);
+  
+  // 监听localStorage变化
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      // 监听报告相关的存储变化
+      if (e.key === 'task_reports' || e.key === 'reports_last_updated' || e.key === 'reports_force_update') {
+        console.log(`AssetsPage: 检测到localStorage变化: ${e.key}`);
+        loadLocalReports();
+        setRefreshTrigger(prev => prev + 1);
+      }
+    };
+    
+    // 添加事件监听
+    window.addEventListener('storage', handleStorageChange);
+    
+    // 组件卸载时移除事件监听
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
+  
+  // 加载本地报告数据
+  const loadLocalReports = () => {
+    try {
+      // 从localStorage获取报告数据
+      const reportsJson = localStorage.getItem('task_reports');
+      if (reportsJson) {
+        const reportData = JSON.parse(reportsJson);
+        if (Array.isArray(reportData) && reportData.length > 0) {
+          console.log('加载到本地报告数据:', reportData.length);
+          
+          // 确保报告数据格式正确
+          const formattedReports = reportData.map(report => ({
+            ...report,
+            type: 'report', // 确保type字段设置为report
+            id: report.id || `report-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+          }));
+          
+          setReports(formattedReports);
+          console.log('报告数据详情:', formattedReports);
+        } else {
+          console.log('未找到报告数据或数据为空数组');
+          setReports([]);
+        }
+      } else {
+        console.log('localStorage中不存在task_reports键');
+        setReports([]);
+      }
+    } catch (error) {
+      console.error('加载本地报告数据失败:', error);
+      setReports([]);
+    }
+  };
+  
+  // 初始加载本地报告数据
+  useEffect(() => {
+    loadLocalReports();
+  }, []);
+  
+  // 定期检查报告更新
+  useEffect(() => {
+    const checkReportsInterval = setInterval(() => {
+      loadLocalReports();
+    }, 60000); // 每分钟检查一次
+    
+    return () => {
+      clearInterval(checkReportsInterval);
+    };
+  }, []);
   
   // 获取本地备份数据
   const getFallbackData = () => {
@@ -209,7 +322,7 @@ const AssetsPage = () => {
         
         <div className={styles.assetPageBackground}>
           <AssetList 
-            assets={assets}
+            assets={[...assets, ...reports]}
             loading={loading}
             total={pagination.total}
             currentPage={pagination.page}
@@ -217,6 +330,7 @@ const AssetsPage = () => {
             onSearch={handleSearch}
             onPageChange={handlePageChange}
             isChatOpen={isChatOpen}
+            refreshTrigger={refreshTrigger}
           />
         </div>
       </div>
