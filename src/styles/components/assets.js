@@ -77,6 +77,28 @@ export const useAssetStyles = createStyles(({ token, css }) => {
       color: #18371D;
     `,
     
+    // 分组标题按钮容器
+    sectionHeaderButtons: css`
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    `,
+    
+    // 下载按钮
+    downloadButton: css`
+      font-size: 14px;
+      padding: 0 8px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      color: var(--color-success);
+      
+      &:hover {
+        color: ${token.colorSuccess};
+        opacity: 0.85;
+      }
+    `,
+    
     // 展开/收起按钮
     expandButton: css`
       font-size: 14px;
@@ -95,7 +117,7 @@ export const useAssetStyles = createStyles(({ token, css }) => {
     sectionBackground: css`
       border-radius: 16px;
       padding: 0 24px;
-      min-height: 200px;
+ 
     
     `,
     

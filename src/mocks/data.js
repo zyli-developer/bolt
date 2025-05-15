@@ -2371,3 +2371,292 @@ export const assetData = [
     score: 0.82
   }
 ];
+
+// 报告下载相关模拟数据
+export const reportsData = [
+  {
+    id: "report-101",
+    name: "AI玩具安全性评估报告",
+    title: "AI玩具安全性评估报告",
+    prompt: "评估面向儿童的智能语音交互玩具的安全性",
+    response_summary: "本评估针对面向3-8岁儿童的AI语音交互玩具进行全面安全性分析，重点关注隐私保护、内容过滤和数据安全。评估发现该产品在语音识别准确性和响应速度方面表现优秀，但在数据存储加密和家长控制功能方面存在不足。",
+    created_by: "Jackson",
+    created_from: "Alibaba",
+    created_at: { seconds: 1714377600 },
+    status: "completed",
+    agent: "Claude",
+    reason: "该产品整体安全性表现良好，但需加强数据加密和家长控制模块",
+    score: 8.5,
+    credibility: 85,
+    credibilityChange: "+2.5%",
+    scoreChange: "+0.8%",
+    tags: ["玩具", "儿童", "安全评估"],
+    chartData: {
+      radar: [
+        { name: "语音识别", value: 85 },
+        { name: "内容安全", value: 78 },
+        { name: "隐私保护", value: 65 },
+        { name: "数据加密", value: 70 },
+        { name: "家长控制", value: 60 },
+        { name: "系统稳定", value: 88 }
+      ],
+      line: [
+        { month: "08", value: 65 },
+        { month: "09", value: 72 },
+        { month: "10", value: 80 },
+        { month: "11", value: 85 }
+      ]
+    },
+    step: [
+      {
+        agent: "Claude",
+        score: [
+          {
+            version: "1.0",
+            confidence: "0.85",
+            score: "0.85",
+            consumed_points: 75,
+            description: "该AI玩具在语音识别和系统稳定性方面表现优秀，但在数据安全和隐私保护方面有改进空间。",
+            dimension: [
+              { latitude: "语音识别", weight: 0.85 },
+              { latitude: "内容安全", weight: 0.78 },
+              { latitude: "隐私保护", weight: 0.65 },
+              { latitude: "数据加密", weight: 0.70 },
+              { latitude: "家长控制", weight: 0.60 },
+              { latitude: "系统稳定", weight: 0.88 }
+            ]
+          }
+        ],
+        reason: "该产品整体安全性表现良好，但需加强数据加密和家长控制模块"
+      }
+    ]
+  },
+  {
+    id: "report-102",
+    name: "医疗诊断模型评估报告",
+    title: "大型语言模型在医疗诊断辅助中的可靠性评估",
+    prompt: "评估大型语言模型在医疗辅助诊断中的可靠性与伦理问题",
+    response_summary: "本研究评估了大型语言模型在医疗诊断辅助中的可靠性和伦理问题。研究表明，当前模型在常见疾病诊断建议方面准确率达到87%，但在罕见病识别和紧急情况处理方面存在明显不足。同时，模型在医疗隐私保护和知情同意等伦理方面需要进一步完善。",
+    created_by: "Rita",
+    created_from: "医疗AI研究中心",
+    created_at: { seconds: 1714291200 },
+    status: "completed",
+    agent: "GPT-4",
+    reason: "模型在常见疾病诊断方面表现良好，但罕见病识别和紧急情况处理能力需提升",
+    score: 8.7,
+    credibility: 87,
+    credibilityChange: "+2.3%",
+    scoreChange: "+1.2%",
+    tags: ["医疗", "诊断", "伦理"],
+    chartData: {
+      radar: [
+        { name: "诊断准确", value: 87 },
+        { name: "罕见病识别", value: 62 },
+        { name: "紧急处理", value: 58 },
+        { name: "隐私保护", value: 75 },
+        { name: "知情同意", value: 70 },
+        { name: "医患沟通", value: 82 }
+      ],
+      line: [
+        { month: "08", value: 70 },
+        { month: "09", value: 75 },
+        { month: "10", value: 82 },
+        { month: "11", value: 87 }
+      ]
+    },
+    step: [
+      {
+        agent: "GPT-4",
+        score: [
+          {
+            version: "1.0",
+            confidence: "0.87",
+            score: "0.87",
+            consumed_points: 95,
+            description: "该医疗AI模型在常见疾病诊断方面准确率高，但罕见病识别和紧急情况处理存在明显不足。",
+            dimension: [
+              { latitude: "诊断准确", weight: 0.87 },
+              { latitude: "罕见病识别", weight: 0.62 },
+              { latitude: "紧急处理", weight: 0.58 },
+              { latitude: "隐私保护", weight: 0.75 },
+              { latitude: "知情同意", weight: 0.70 },
+              { latitude: "医患沟通", weight: 0.82 }
+            ]
+          }
+        ],
+        reason: "模型在常见疾病诊断方面表现良好，但罕见病识别和紧急情况处理能力需提升"
+      }
+    ]
+  },
+  {
+    id: "report-103",
+    name: "自动驾驶安全评估报告",
+    title: "自动驾驶AI系统在极端天气条件下的安全性评估",
+    prompt: "评估自动驾驶AI系统在恶劣天气条件下的安全性能",
+    response_summary: "本评估针对三款市场领先的自动驾驶AI系统在暴雨、大雾、暴雪等极端天气条件下的表现进行了系统测试。结果显示，所有系统在标准天气条件下表现良好，但在能见度低于50米的环境中，决策准确率显著下降，存在安全隐患。建议加强传感器融合和极端天气适应性训练。",
+    created_by: "David",
+    created_from: "交通安全研究院",
+    created_at: { seconds: 1714204800 },
+    status: "completed",
+    agent: "DeepSeek",
+    reason: "自动驾驶系统在极端天气条件下表现不佳，需加强传感器融合和恶劣环境适应性",
+    score: 9.4,
+    credibility: 94,
+    credibilityChange: "+3.5%",
+    scoreChange: "+1.8%",
+    tags: ["自动驾驶", "安全", "极端天气"],
+    chartData: {
+      radar: [
+        { name: "标准天气", value: 95 },
+        { name: "暴雨条件", value: 78 },
+        { name: "大雾条件", value: 65 },
+        { name: "暴雪条件", value: 62 },
+        { name: "夜间行驶", value: 85 },
+        { name: "紧急制动", value: 90 }
+      ],
+      line: [
+        { month: "08", value: 75 },
+        { month: "09", value: 82 },
+        { month: "10", value: 88 },
+        { month: "11", value: 94 }
+      ]
+    },
+    step: [
+      {
+        agent: "DeepSeek",
+        score: [
+          {
+            version: "1.0",
+            confidence: "0.94",
+            score: "0.94",
+            consumed_points: 110,
+            description: "该自动驾驶系统在标准天气条件下表现优秀，但在极端天气条件下性能显著下降。",
+            dimension: [
+              { latitude: "标准天气", weight: 0.95 },
+              { latitude: "暴雨条件", weight: 0.78 },
+              { latitude: "大雾条件", weight: 0.65 },
+              { latitude: "暴雪条件", weight: 0.62 },
+              { latitude: "夜间行驶", weight: 0.85 },
+              { latitude: "紧急制动", weight: 0.90 }
+            ]
+          }
+        ],
+        reason: "自动驾驶系统在极端天气条件下表现不佳，需加强传感器融合和恶劣环境适应性"
+      }
+    ]
+  },
+  {
+    id: "report-104",
+    name: "文本生成模型创意写作评估报告",
+    title: "AI文本生成模型的创意写作能力评估",
+    prompt: "评估AI文本生成模型在创意写作方面的能力与版权问题",
+    response_summary: "本研究评估了主流AI文本生成模型在创意写作方面的能力以及相关的版权问题。研究表明，当前模型在散文和短篇故事创作方面已接近专业水平，但在长篇内容的结构组织和情感连贯性方面仍有不足。同时，AI生成内容的版权归属和引用问题亟需法律框架支持。",
+    created_by: "Mike",
+    created_from: "数字创意研究中心",
+    created_at: { seconds: 1714118400 },
+    status: "completed",
+    agent: "Claude",
+    reason: "创意写作能力接近专业水平，但长篇内容结构性和情感连贯性有待提高",
+    score: 9.0,
+    credibility: 90,
+    credibilityChange: "+1.8%",
+    scoreChange: "+1.0%",
+    tags: ["AI写作", "创意内容", "版权问题"],
+    chartData: {
+      radar: [
+        { name: "散文能力", value: 93 },
+        { name: "故事写作", value: 90 },
+        { name: "结构组织", value: 78 },
+        { name: "情感连贯", value: 75 },
+        { name: "原创性", value: 85 },
+        { name: "风格多样", value: 88 }
+      ],
+      line: [
+        { month: "08", value: 75 },
+        { month: "09", value: 82 },
+        { month: "10", value: 86 },
+        { month: "11", value: 90 }
+      ]
+    },
+    step: [
+      {
+        agent: "Claude",
+        score: [
+          {
+            version: "1.0",
+            confidence: "0.90",
+            score: "0.90",
+            consumed_points: 85,
+            description: "该文本生成模型在短篇创意写作方面表现优秀，但长篇结构和情感连贯性有待提高。",
+            dimension: [
+              { latitude: "散文能力", weight: 0.93 },
+              { latitude: "故事写作", weight: 0.90 },
+              { latitude: "结构组织", weight: 0.78 },
+              { latitude: "情感连贯", weight: 0.75 },
+              { latitude: "原创性", weight: 0.85 },
+              { latitude: "风格多样", weight: 0.88 }
+            ]
+          }
+        ],
+        reason: "创意写作能力接近专业水平，但长篇内容结构性和情感连贯性有待提高"
+      }
+    ]
+  },
+  {
+    id: "report-105",
+    name: "金融分析模型准确性评估报告",
+    title: "金融市场预测模型准确性与可靠性评估",
+    prompt: "评估金融AI模型在市场预测和风险评估方面的准确性",
+    response_summary: "本评估对当前主流金融市场预测AI模型进行了全面分析，涵盖短期价格波动、长期市场趋势和风险评估三个维度。结果显示，模型在短期市场波动预测方面准确率达到65%，长期趋势判断准确率为72%，但在极端市场事件预测方面表现不佳，准确率仅为43%。",
+    created_by: "Sarah",
+    created_from: "金融科技研究所",
+    created_at: { seconds: 1714032000 },
+    status: "completed",
+    agent: "GPT-4",
+    reason: "金融预测模型在常规市场条件下表现可接受，但极端情况预测能力有限",
+    score: 7.8,
+    credibility: 78,
+    credibilityChange: "+1.2%",
+    scoreChange: "+0.6%",
+    tags: ["金融", "市场预测", "风险评估"],
+    chartData: {
+      radar: [
+        { name: "短期预测", value: 65 },
+        { name: "长期趋势", value: 72 },
+        { name: "风险评估", value: 68 },
+        { name: "极端事件", value: 43 },
+        { name: "数据利用", value: 80 },
+        { name: "适应性", value: 75 }
+      ],
+      line: [
+        { month: "08", value: 65 },
+        { month: "09", value: 70 },
+        { month: "10", value: 74 },
+        { month: "11", value: 78 }
+      ]
+    },
+    step: [
+      {
+        agent: "GPT-4",
+        score: [
+          {
+            version: "1.0",
+            confidence: "0.78",
+            score: "0.78",
+            consumed_points: 90,
+            description: "该金融AI模型在常规市场条件下预测表现可接受，但对极端市场事件的预测准确率较低。",
+            dimension: [
+              { latitude: "短期预测", weight: 0.65 },
+              { latitude: "长期趋势", weight: 0.72 },
+              { latitude: "风险评估", weight: 0.68 },
+              { latitude: "极端事件", weight: 0.43 },
+              { latitude: "数据利用", weight: 0.80 },
+              { latitude: "适应性", weight: 0.75 }
+            ]
+          }
+        ],
+        reason: "金融预测模型在常规市场条件下表现可接受，但极端情况预测能力有限"
+      }
+    ]
+  }
+];

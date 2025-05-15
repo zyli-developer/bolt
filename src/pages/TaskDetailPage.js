@@ -995,16 +995,6 @@ const TaskDetailPage = () => {
             </div>
           </div>
 
-          {/* 历史记录区域 */}
-          <div className="history-section-wrapper" style={{ padding: "8px" }}>
-            <div className="history-section" style={{ gap: "4px" }}>
-              <div className="history-time" style={{ fontSize: "12px" }}>{currentEvaluation?.updatedAt || '未知时间'}</div>
-              <div className="history-author" style={{ fontSize: "12px" }}>
-                by <span>{currentEvaluation?.updatedBy || '未知用户'}</span>
-              </div>
-              <div className="history-content" style={{ fontSize: "12px", lineHeight: "1.4", marginTop: "4px" }}>{currentEvaluation?.history || '暂无历史记录'}</div>
-            </div>
-          </div>
         </div>
       </div>
     );
