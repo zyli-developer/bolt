@@ -448,10 +448,19 @@ const AppSidebar = () => {
         collapsed={isCollapsed}
         trigger={null}
       >
+        <div className={`sidebar-top-container ${isCollapsed ? "collapsed" : ""}`}>
+            <div className="logo-company-icon">S</div>
+            {!isCollapsed && (
+              <div className="logo-company-text">
+                <span>可信</span>
+                <span>Syntrust.agenent.cloud</span>
+              </div>
+            )}
+        </div>
 
         {/* 工作区标志和名称 */}
         <div className={`sidebar-logo ${isCollapsed ? "collapsed" : ""}`}>
-          <div className="logo-icon">S</div>
+          <div className="logo-icon"></div>
           {!isCollapsed && (
             <div className="logo-text">
               {workspaceLoading ? "加载中..." : currentWorkspace ? currentWorkspace.name : "Syntrust"}
