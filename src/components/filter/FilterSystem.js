@@ -492,8 +492,8 @@ const FilterSystem = ({ onFilterChange, onSortChange, onViewChange, onImportSucc
       message.success(`视图已保存为"${result.menuItem.title}"`);
       closePopover();
       
-      // 刷新菜单，不刷新整个页面
-      refreshMenuData();
+      // 不需要刷新整个菜单，菜单变更事件会自动触发菜单刷新
+      // 原有的refreshMenuData()方法不再需要调用
     } catch (error) {
       console.error("保存视图失败:", error)
       message.error(error.message || "保存视图配置失败，请重试")
