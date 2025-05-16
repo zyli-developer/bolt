@@ -74,7 +74,9 @@ const DownloadReportModal = ({
           createdAt: report.created_at ? 
                      (typeof report.created_at === 'object' && report.created_at.seconds ? 
                       new Date(report.created_at.seconds * 1000).toLocaleString() : 
-                      new Date(report.created_at).toLocaleString()) : 
+                      typeof report.created_at === 'string' ? 
+                      new Date(report.created_at).toLocaleString() : 
+                      '未知日期') : 
                      new Date().toLocaleString(),
           creator: report.created_by || defaultValues.creator,
           source: report.created_from || defaultValues.source,
@@ -258,7 +260,10 @@ const DownloadReportModal = ({
               <th>序号</th>
               <th>报告标题</th>
               <th>代理</th>
+              <th>问题</th>
+              <th>答案</th>
               <th>评分</th>
+              <th>原因</th>
               <th>可信度</th>
               <th>创建时间</th>
               <th>创建者</th>
@@ -271,7 +276,10 @@ const DownloadReportModal = ({
               <td>${report.index}</td>
               <td>${report.title}</td>
               <td>${report.agent}</td>
+              <td style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${report.prompt}">${report.prompt}</td>
+              <td style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${report.response}">${report.response}</td>
               <td class="score-cell" style="color: var(--color-success);">${report.score}</td>
+              <td style="max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${report.reason}">${report.reason}</td>
               <td>${report.credibility}%</td>
               <td>${report.createdAt}</td>
               <td>${report.creator}</td>
