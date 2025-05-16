@@ -160,28 +160,9 @@ code {
   background-color: var(--color-bg-container);
 }
 
-/* Logo样式 */
-.sidebar-logo {
-  display: flex;
-  align-items: flex-start;
-  height: auto;
-  min-height: 60px;
-  padding: 12px 16px;
-  border-bottom: 1px solid #e8e9f1;
-}
 
-.logo-icon {
-  width: 32px;
-  height: 32px;
-  background-color: var(--color-primary);
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  margin-right: 12px;
-  flex-shrink: 0;
-}
+
+
 
 .logo-text-container {
   display: flex;
@@ -189,11 +170,7 @@ code {
   align-items: flex-start;
 }
 
-.logo-text {
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 1.2;
-}
+
 
 .logo-domain {
   font-size: 12px;
@@ -289,13 +266,13 @@ code {
   transition: background-color 0.2s;
 }
 
-.menu-item:hover {
-  background-color: #f8f9fe;
+/* .menu-item:hover {
+  background-color: #E7F0F5;
 }
 
 .menu-item.active {
-  background-color: #f0f7ff;
-}
+  background-color: #E7F0F5;
+} */
 
 .menu-item-content {
   display: flex;

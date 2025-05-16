@@ -1,15 +1,15 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Layout, Button, Avatar } from "antd"
-import { SearchOutlined, FileOutlined, AppstoreOutlined, ThunderboltOutlined, DownOutlined, RightOutlined } from "@ant-design/icons"
+import { Layout, Button, Avatar, Dropdown, Modal, Input, message } from "antd"
+import { SearchOutlined, FileOutlined, AppstoreOutlined, ThunderboltOutlined, DownOutlined, RightOutlined, EllipsisOutlined, EditOutlined } from "@ant-design/icons"
 import { useNavigate, useLocation } from "react-router-dom"
 import menuService from "../../services/menuService"
 import ExploreIcon from "../icons/ExploreIcon"
 import TaskIcon from "../icons/TaskIcon"
 import UserInfoArea from "./UserInfoArea"
 import workspaceService from "../../services/workspaceService"
-import { getMenuData, getSavedViewData } from "../../utils/menuManager"
+import { getMenuData, getSavedViewData, saveMenuData, registerMenuChangeListener, unregisterMenuChangeListener } from "../../utils/menuManager"
 import "./sidebar-styles.css"
 
 const { Sider } = Layout
@@ -29,57 +29,80 @@ const AppSidebar = () => {
   const [activeItemId, setActiveItemId] = useState(null);
   // 当前激活的子菜单项ID
   const [activeSubItemId, setActiveSubItemId] = useState(null);
+  // 重命名相关状态
+  const [renameModalVisible, setRenameModalVisible] = useState(false);
+  const [currentRenameItem, setCurrentRenameItem] = useState(null);
+  const [newMenuName, setNewMenuName] = useState("");
 
-  useEffect(() => {
-    const fetchMenuItems = async () => {
-      try {
-        setLoading(true)
+  // 加载菜单数据的函数
+  const loadMenuData = async () => {
+    try {
+      setLoading(true)
+      
+      // 先从本地存储加载自定义菜单
+      const customMenuData = getMenuData();
+      
+      if (customMenuData) {
+        setMenuItems(customMenuData);
         
-        // 先从本地存储加载自定义菜单
-        const customMenuData = getMenuData();
+        // 初始化展开状态 - 有子菜单的项默认不展开
+        const initialExpandState = {};
+        customMenuData.forEach(item => {
+          if (item.children && item.children.length > 0) {
+            initialExpandState[item.id] = false;
+          }
+        });
+        setExpandedItems(initialExpandState);
         
-        if (customMenuData) {
-          setMenuItems(customMenuData);
-          
-          // 初始化展开状态 - 有子菜单的项默认不展开
-          const initialExpandState = {};
-          customMenuData.forEach(item => {
-            if (item.children && item.children.length > 0) {
-              initialExpandState[item.id] = false;
-            }
-          });
-          setExpandedItems(initialExpandState);
-          
-          // 根据当前路径设置初始激活状态
-          initializeActiveState(customMenuData);
-        } else {
-          // 如果没有自定义菜单，则从API加载默认菜单
+        // 根据当前路径设置初始激活状态
+        initializeActiveState(customMenuData);
+      } else {
+        // 如果没有自定义菜单，则从API加载默认菜单
         const data = await menuService.getMenuItems()
         setMenuItems(data)
-          
-          // 根据当前路径设置初始激活状态
-          initializeActiveState(data);
-        }
-      } catch (error) {
-        console.error("获取菜单数据失败:", error)
         
-        // 出错时尝试从API加载默认菜单
-        try {
-          const data = await menuService.getMenuItems()
-          setMenuItems(data)
-          
-          // 根据当前路径设置初始激活状态
-          initializeActiveState(data);
-        } catch (err) {
-          console.error("无法加载默认菜单:", err)
-        }
-      } finally {
-        setLoading(false)
+        // 根据当前路径设置初始激活状态
+        initializeActiveState(data);
       }
+    } catch (error) {
+      console.error("获取菜单数据失败:", error)
+      
+      // 出错时尝试从API加载默认菜单
+      try {
+        const data = await menuService.getMenuItems()
+        setMenuItems(data)
+        
+        // 根据当前路径设置初始激活状态
+        initializeActiveState(data);
+      } catch (err) {
+        console.error("无法加载默认菜单:", err)
+      }
+    } finally {
+      setLoading(false)
     }
+  }
 
-    fetchMenuItems()
+  // 初始加载时获取菜单数据
+  useEffect(() => {
+    loadMenuData();
   }, [])
+  
+  // 添加菜单变更监听器
+  useEffect(() => {
+    // 监听菜单变化的处理函数
+    const handleMenuChange = () => {
+      console.log("检测到菜单变化，重新加载菜单数据");
+      loadMenuData();
+    };
+    
+    // 注册菜单变化监听器
+    registerMenuChangeListener(handleMenuChange);
+    
+    // 组件卸载时移除监听器
+    return () => {
+      unregisterMenuChangeListener(handleMenuChange);
+    };
+  }, []);
   
   // 根据当前路径初始化激活状态
   const initializeActiveState = (items) => {
@@ -279,8 +302,59 @@ const AppSidebar = () => {
     });
   }
 
+  // 处理菜单项重命名
+  const handleRenameClick = (e, item, parentId) => {
+    // 在Ant Design的Dropdown菜单项点击事件中，e是{key, keyPath, domEvent}
+    // 如果e有domEvent属性，则使用它，否则直接使用e
+    if (e && e.domEvent && e.domEvent.stopPropagation) {
+      e.domEvent.stopPropagation();
+    } else if (e && e.stopPropagation) {
+      e.stopPropagation(); // 原始事件对象直接使用
+    }
+    
+    setCurrentRenameItem({...item, parentId});
+    setNewMenuName(item.title);
+    setRenameModalVisible(true);
+  };
+
+  // 处理重命名确认
+  const handleRenameConfirm = () => {
+    if (!newMenuName.trim()) {
+      message.error("菜单名称不能为空");
+      return;
+    }
+
+    // 更新菜单数据
+    const updatedMenuItems = menuItems.map(item => {
+      if (item.id === currentRenameItem.parentId) {
+        return {
+          ...item,
+          children: item.children.map(child => 
+            child.id === currentRenameItem.id 
+              ? {...child, title: newMenuName} 
+              : child
+          )
+        };
+      }
+      return item;
+    });
+
+    setMenuItems(updatedMenuItems);
+    
+    // 保存更新后的菜单数据
+    saveMenuData(updatedMenuItems);
+    
+    message.success("重命名成功");
+    setRenameModalVisible(false);
+  };
+
+  // 处理重命名取消
+  const handleRenameCancel = () => {
+    setRenameModalVisible(false);
+  };
+
   // 渲染子菜单项
-  const renderSubMenuItems = (children) => {
+  const renderSubMenuItems = (children, parentId) => {
     if (!children || children.length === 0) return null;
     
     return (
@@ -289,12 +363,38 @@ const AppSidebar = () => {
           <div
             key={child.id}
             className={`submenu-item ${activeSubItemId === child.id ? "active" : ""}`}
-            onClick={(e) => handleMenuItemClick(e, child)}
           >
-            <span className="submenu-item-icon">
-              {child.icon && getIconComponent(child.icon)}
-            </span>
-            <span className="submenu-item-title">{child.title}</span>
+            <div 
+              className="submenu-item-content" 
+              onClick={(e) => handleMenuItemClick(e, child)}
+            >
+              <span className="submenu-item-icon">
+                {child.icon && getIconComponent(child.icon)}
+              </span>
+              <span className="submenu-item-title">{child.title}</span>
+            </div>
+            
+            <Dropdown
+              menu={{ 
+                items: [
+                  {
+                    key: 'rename',
+                    icon: <EditOutlined />,
+                    label: '重命名',
+                    onClick: (info) => handleRenameClick(info, child, parentId)
+                  }
+                ]
+              }}
+              trigger={['click']}
+              placement="bottomRight"
+            >
+              <button 
+                className="submenu-more-btn"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <EllipsisOutlined />
+              </button>
+            </Dropdown>
           </div>
         ))}
       </div>
@@ -334,40 +434,69 @@ const AppSidebar = () => {
         </div>
         
         {/* 仅当不折叠且有子菜单且手动展开或有激活的子项时渲染子菜单 */}
-        {!isCollapsed && hasChildren && isExpanded && renderSubMenuItems(item.children)}
+        {!isCollapsed && hasChildren && isExpanded && renderSubMenuItems(item.children, item.id)}
       </div>
     )
   }
 
   return (
-    <Sider
-      className={`app-sidebar ${isCollapsed ? "collapsed" : ""}`}
-      width={220}
-      collapsible
-      collapsed={isCollapsed}
-      trigger={null}
-    >
-      {/* 工作区标志和名称 */}
-      <div className={`sidebar-logo ${isCollapsed ? "collapsed" : ""}`}>
-        <div className="logo-icon">S</div>
-        {!isCollapsed && (
-          <div className="logo-text">
-            {workspaceLoading ? "加载中..." : currentWorkspace ? currentWorkspace.name : "Syntrust"}
-          </div>
-        )}
-      </div>
+    <>
+      <Sider
+        className={`app-sidebar ${isCollapsed ? "collapsed" : ""}`}
+        width={220}
+        collapsible
+        collapsed={isCollapsed}
+        trigger={null}
+      >
+        <div className={`sidebar-top-container ${isCollapsed ? "collapsed" : ""}`}>
+            <div className="logo-company-icon">S</div>
+            {!isCollapsed && (
+              <div className="logo-company-text">
+                <span>可信</span>
+                <span>Syntrust.agenent.cloud</span>
+              </div>
+            )}
+        </div>
 
-      <div className={`sidebar-menu-container ${isCollapsed ? "collapsed" : ""}`}>
-        {loading ? (
-          <div style={{ padding: "16px", textAlign: "center" }}>加载中...</div>
-        ) : (
-          menuItems.map(renderMenuItem)
-        )}
-      </div>
+        {/* 工作区标志和名称 */}
+        <div className={`sidebar-logo ${isCollapsed ? "collapsed" : ""}`}>
+          <div className="logo-icon"></div>
+          {!isCollapsed && (
+            <div className="logo-text">
+              {workspaceLoading ? "加载中..." : currentWorkspace ? currentWorkspace.name : "Syntrust"}
+            </div>
+          )}
+        </div>
 
-      {/* 个人信息区域 - 固定在底部 */}
-      <UserInfoArea isCollapsed={isCollapsed} />
-    </Sider>
+        <div className={`sidebar-menu-container ${isCollapsed ? "collapsed" : ""}`}>
+          {loading ? (
+            <div style={{ padding: "16px", textAlign: "center" }}>加载中...</div>
+          ) : (
+            menuItems.map(renderMenuItem)
+          )}
+        </div>
+
+        {/* 个人信息区域 - 固定在底部 */}
+        <UserInfoArea isCollapsed={isCollapsed} />
+      </Sider>
+
+      {/* 重命名菜单项的Modal */}
+      <Modal
+        title="重命名菜单"
+        open={renameModalVisible}
+        onOk={handleRenameConfirm}
+        onCancel={handleRenameCancel}
+        okText="确认"
+        cancelText="取消"
+      >
+        <Input
+          placeholder="请输入新的菜单名称"
+          value={newMenuName}
+          onChange={(e) => setNewMenuName(e.target.value)}
+          style={{ marginTop: '16px' }}
+        />
+      </Modal>
+    </>
   )
 }
 

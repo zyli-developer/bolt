@@ -53,7 +53,7 @@ const CardItem = ({ card }) => {
       },
       source: card.source || card.created_from || '未知来源',
       tags: card.tags || [],
-      credibility: parseFloat(card.credibility || card.step?.[0]?.score?.[0]?.confidence || 0) * 100 || 0,
+      credibility: parseFloat(card.credibility || card.step?.[0]?.score?.[0]?.confidence || 0) || 0,
       credibilityChange: card.credibilityChange || '+0%',
       score: parseFloat(card.score || card.step?.[0]?.score?.[0]?.score || 0) * 10 || 0,
       scoreChange: card.scoreChange || '+0%',
