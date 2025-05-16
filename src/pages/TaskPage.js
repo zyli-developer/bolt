@@ -338,38 +338,105 @@ const TaskPage = () => {
   const handleGenerateReport = (selectedTaskIds) => {
     console.log('生成报告的任务ID:', selectedTaskIds);
     
-    // 如果选中的任务ID为空（开发测试时），创建一个演示报告
-    if (selectedTaskIds.length === 0) {
-      console.log('创建演示报告...');
-      // 创建一个演示报告对象
-      const demoReport = {
-        id: `report-demo-${Date.now()}`,
-        taskId: 'demo-task',
-        title: '演示报告 - 任务评估',
-        type: 'report',
-        content: '这是一个演示报告，展示报告功能的样式和布局。实际报告将基于任务评估数据生成。',
-        createdAt: new Date().toISOString(),
-        sourceTask: {
-          id: 'demo-task',
-          title: '演示任务',
-          status: 'completed'
+    // 设置加载状态
+    setLoading(true);
+    
+    // 添加5秒延迟模拟报告生成过程
+    setTimeout(() => {
+      // 如果选中的任务ID为空（开发测试时），创建一个演示报告
+      if (selectedTaskIds.length === 0) {
+        console.log('创建演示报告...');
+        // 创建一个演示报告对象
+        const demoReport = {
+          id: `report-demo-${Date.now()}`,
+          taskId: 'demo-task',
+          title: '演示报告 - 任务评估',
+          type: 'report',
+          content: '这是一个演示报告，展示报告功能的样式和布局。实际报告将基于任务评估数据生成。',
+          createdAt: new Date().toISOString(),
+          sourceTask: {
+            id: 'demo-task',
+            title: '演示任务',
+            status: 'completed'
+          }
+        };
+        
+        try {
+          // 获取现有报告数据
+          const existingReportsJson = localStorage.getItem('task_reports') || '[]';
+          const existingReports = JSON.parse(existingReportsJson);
+          
+          // 添加演示报告
+          existingReports.push(demoReport);
+          
+          // 保存回localStorage
+          localStorage.setItem('task_reports', JSON.stringify(existingReports));
+          
+          console.log('已创建演示报告并保存');
+          
+          // 触发自定义事件，通知所有相关组件刷新报告数据
+          const reportEvent = new CustomEvent('reportsUpdated', {
+            detail: { timestamp: Date.now() }
+          });
+          window.dispatchEvent(reportEvent);
+          
+          // 同时更新localStorage中的一个特殊标记，以触发Storage事件
+          localStorage.setItem('reports_last_updated', Date.now().toString());
+          
+          // 关闭加载状态
+          setLoading(false);
+          
+          return;
+        } catch (error) {
+          console.error('保存演示报告失败:', error);
+          setLoading(false);
         }
-      };
+      }
       
+      // 为每个选中的任务生成报告
+      selectedTaskIds.forEach(taskId => {
+        // 这里应该是调用实际的API生成报告
+        console.log(`正在为任务 ${taskId} 生成报告...`);
+        
+        // 创建一个报告对象，包含任务信息和报告数据
+        const taskData = tasks.find(task => task.id === taskId);
+        if (!taskData) {
+          console.error(`找不到任务数据: ${taskId}`);
+          return;
+        }
+        
+        const reportData = {
+          id: `report-${Date.now()}-${taskId}`,
+          taskId: taskId,
+          title: `${taskData.title} - 报告`,
+          type: 'report',
+          content: `这是任务 "${taskData.title}" 的报告内容`,
+          createdAt: new Date().toISOString(),
+          sourceTask: taskData
+        };
+        
+        // 保存报告数据到localStorage
+        try {
+          // 获取现有报告数据
+          const existingReportsJson = localStorage.getItem('task_reports') || '[]';
+          const existingReports = JSON.parse(existingReportsJson);
+          
+          // 添加新报告
+          existingReports.push(reportData);
+          
+          // 保存回localStorage
+          localStorage.setItem('task_reports', JSON.stringify(existingReports));
+          
+          console.log(`已为任务 ${taskId} 生成报告并保存`);
+        } catch (error) {
+          console.error(`保存报告数据失败:`, error);
+          message.error('保存报告数据失败');
+        }
+      });
+      
+      // 触发自定义事件，通知所有相关组件刷新报告数据
       try {
-        // 获取现有报告数据
-        const existingReportsJson = localStorage.getItem('task_reports') || '[]';
-        const existingReports = JSON.parse(existingReportsJson);
-        
-        // 添加演示报告
-        existingReports.push(demoReport);
-        
-        // 保存回localStorage
-        localStorage.setItem('task_reports', JSON.stringify(existingReports));
-        
-        console.log('已创建演示报告并保存');
-        
-        // 触发自定义事件，通知所有相关组件刷新报告数据
+        // 创建并分发自定义事件
         const reportEvent = new CustomEvent('reportsUpdated', {
           detail: { timestamp: Date.now() }
         });
@@ -378,70 +445,16 @@ const TaskPage = () => {
         // 同时更新localStorage中的一个特殊标记，以触发Storage事件
         localStorage.setItem('reports_last_updated', Date.now().toString());
         
-        return;
+        console.log('已触发报告更新事件');
       } catch (error) {
-        console.error('保存演示报告失败:', error);
-      }
-    }
-    
-    // 为每个选中的任务生成报告
-    selectedTaskIds.forEach(taskId => {
-      // 这里应该是调用实际的API生成报告
-      console.log(`正在为任务 ${taskId} 生成报告...`);
-      
-      // 创建一个报告对象，包含任务信息和报告数据
-      const taskData = tasks.find(task => task.id === taskId);
-      if (!taskData) {
-        console.error(`找不到任务数据: ${taskId}`);
-        return;
+        console.error('触发报告更新事件失败:', error);
       }
       
-      const reportData = {
-        id: `report-${Date.now()}-${taskId}`,
-        taskId: taskId,
-        title: `${taskData.title} - 报告`,
-        type: 'report',
-        content: `这是任务 "${taskData.title}" 的报告内容`,
-        createdAt: new Date().toISOString(),
-        sourceTask: taskData
-      };
+      // 关闭加载状态
+      setLoading(false);
       
-      // 保存报告数据到localStorage
-      try {
-        // 获取现有报告数据
-        const existingReportsJson = localStorage.getItem('task_reports') || '[]';
-        const existingReports = JSON.parse(existingReportsJson);
-        
-        // 添加新报告
-        existingReports.push(reportData);
-        
-        // 保存回localStorage
-        localStorage.setItem('task_reports', JSON.stringify(existingReports));
-        
-        console.log(`已为任务 ${taskId} 生成报告并保存`);
-      } catch (error) {
-        console.error(`保存报告数据失败:`, error);
-        message.error('保存报告数据失败');
-      }
-    });
-    
-    // 触发自定义事件，通知所有相关组件刷新报告数据
-    try {
-      // 创建并分发自定义事件
-      const reportEvent = new CustomEvent('reportsUpdated', {
-        detail: { timestamp: Date.now() }
-      });
-      window.dispatchEvent(reportEvent);
-      
-      // 同时更新localStorage中的一个特殊标记，以触发Storage事件
-      localStorage.setItem('reports_last_updated', Date.now().toString());
-      
-      console.log('已触发报告更新事件');
-    } catch (error) {
-      console.error('触发报告更新事件失败:', error);
-    }
-    
-    // 提示用户报告已生成 - 由FilterSystem组件处理，这里不需要显示
+      // 提示用户报告已生成 - 由FilterSystem组件处理，这里不需要显示
+    }, 5000); // 5秒延迟，模拟报告生成过程
   };
 
   // 处理任务状态更新
