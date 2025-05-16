@@ -16,10 +16,11 @@ import {
   CheckOutlined,
 } from "@ant-design/icons"
 import userService from "../../services/userService"
+import workspaceService from "../../services/workspaceService"
+import authService from "../../services/authService"
 import DiamondIcon from "../icons/DiamondIcon"
 import CommandIcon from "../icons/CommandIcon"
 import ShiftIcon from "../icons/ShiftIcon"
-import workspaceService from "../../services/workspaceService"
 
 const UserInfoArea = ({ isCollapsed }) => {
   const [user, setUser] = useState(null)
@@ -75,7 +76,7 @@ const UserInfoArea = ({ isCollapsed }) => {
 
   const handleLogout = () => {
     console.log("Logging out...")
-    // Implement logout functionality
+    authService.logout()
   }
 
   const handleDarkModeToggle = (checked) => {
@@ -186,7 +187,7 @@ const UserInfoArea = ({ isCollapsed }) => {
       <div className="user-popover-item" onClick={handleLogout}>
         <div className="user-popover-item-content">
           <LogoutOutlined className="user-popover-item-icon" />
-          <span className="user-popover-item-text">Log out</span>
+          <span className="user-popover-item-text">退出登录</span>
         </div>
         <div className="user-popover-shortcut">
           <CommandIcon style={{ fontSize: "12px" }} />

@@ -6,6 +6,7 @@
 // Token存储键名
 const TOKEN_KEY = 'syntrust_auth_token';
 const USER_KEY = 'syntrust_user';
+const AUTH_STATUS = 'syntrust_login_status';
 
 /**
  * 保存认证信息
@@ -19,6 +20,9 @@ export const saveAuth = (authData) => {
   if (authData.user) {
     localStorage.setItem(USER_KEY, JSON.stringify(authData.user));
   }
+  
+  // 设置登录状态
+  localStorage.setItem(AUTH_STATUS, 'true');
 };
 
 /**
@@ -50,7 +54,7 @@ export const getCurrentUser = () => {
  * @returns {boolean} - 是否已认证
  */
 export const isAuthenticated = () => {
-  return !!getToken();
+  return localStorage.getItem(AUTH_STATUS) === 'true';
 };
 
 /**
@@ -59,25 +63,26 @@ export const isAuthenticated = () => {
 export const clearAuth = () => {
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
+  localStorage.removeItem(AUTH_STATUS);
 };
 
 /**
  * 登录
- * @param {Object} credentials - 登录凭证
+ * @param {Object} credentials - 登录凭证，包含username和password
  * @returns {Promise} - 登录结果
  */
 export const login = async (credentials) => {
-  // 这里应该调用实际的登录API
-  // 示例实现
-  return new Promise((resolve) => {
-    setTimeout(() => {
+  return new Promise((resolve, reject) => {
+    // 检查用户名和密码
+    if (credentials.username === 'admin' && credentials.password === '123456') {
+      // 登录成功
       const mockResponse = {
         token: 'mock_jwt_token',
         user: {
           id: 'user123',
-          name: '测试用户',
-          email: 'test@example.com',
-          role: 'user'
+          name: 'Admin',
+          email: 'admin@example.com',
+          role: 'admin'
         },
         sidebar_list: {},
         user_signature: 'signature',
@@ -86,7 +91,10 @@ export const login = async (credentials) => {
       
       saveAuth(mockResponse);
       resolve(mockResponse);
-    }, 500);
+    } else {
+      // 登录失败
+      reject(new Error('用户名或密码错误'));
+    }
   });
 };
 
@@ -96,6 +104,7 @@ export const login = async (credentials) => {
 export const logout = () => {
   clearAuth();
   // 可以在这里添加其他登出逻辑，如重定向到登录页
+  window.location.href = '/login';
 };
 
 /**
