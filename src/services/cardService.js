@@ -7,6 +7,11 @@ import api from "./api"
 import endpoints from "./endpoints"
 import { getCurrentUser } from "./authService"
 import { processExplorationCard, processExplorationsResponse } from "../utils/dataTransformer"
+import { explorationCardsData, taskCardsData } from "../mocks/data"
+import { filterCardsByConditions } from "../mocks/filterData"
+
+// 判断是否使用本地模拟数据
+const USE_MOCK_DATA = true;
 
 const cardService = {
   /**
@@ -53,6 +58,101 @@ const cardService = {
    */
   getExplorations: async (params = {}) => {
     try {
+      // 如果使用本地模拟数据
+      if (USE_MOCK_DATA) {
+        console.log("使用本地模拟数据...");
+        // 获取分页参数
+        const page = params.pagination?.page || 1;
+        const perPage = params.pagination?.per_page || 10;
+        
+        // 获取筛选和排序条件
+        const filterParams = params.filter;
+        const sortParams = params.sort;
+        
+        // 复制一份探索卡片数据，避免修改原始数据
+        let data = JSON.parse(JSON.stringify(explorationCardsData));
+        
+        // 应用筛选条件 - 如果有筛选参数
+        if (filterParams) {
+          console.log("应用筛选条件:", filterParams);
+          
+          // 将API筛选格式转换为UI筛选格式
+          const filterConfig = {
+            conditions: []
+          };
+          
+          // 处理不同格式的筛选条件
+          if (Array.isArray(filterParams)) {
+            // 处理数组格式的筛选条件 [{exprs:[...]}, {exprs:[...]}]
+            filterParams.forEach(filter => {
+              if (filter.exprs && Array.isArray(filter.exprs)) {
+                filter.exprs.forEach(expr => {
+                  filterConfig.conditions.push({
+                    field: expr.field,
+                    operator: convertApiOperatorToUi(expr.op),
+                    values: expr.values
+                  });
+                });
+              }
+            });
+          } else if (filterParams.exprs && Array.isArray(filterParams.exprs)) {
+            // 处理单个对象格式的筛选条件 {exprs:[...]}
+            filterParams.exprs.forEach(expr => {
+              filterConfig.conditions.push({
+                field: expr.field,
+                operator: convertApiOperatorToUi(expr.op),
+                values: expr.values
+              });
+            });
+          }
+          
+          console.log("转换后的筛选配置:", filterConfig);
+          
+          // 使用filter函数筛选数据
+          data = filterCardsByConditions(data, filterConfig);
+          console.log("筛选后的数据量:", data.length);
+        }
+        
+        // 应用排序条件 - 如果有排序参数
+        if (sortParams) {
+          console.log("应用排序条件:", sortParams);
+          data.sort((a, b) => {
+            const fieldA = a[sortParams.field];
+            const fieldB = b[sortParams.field];
+            
+            // 检查字段是否存在且可比较
+            if (fieldA !== undefined && fieldB !== undefined) {
+              // 数值比较
+              if (typeof fieldA === 'number' && typeof fieldB === 'number') {
+                return sortParams.desc ? (fieldB - fieldA) : (fieldA - fieldB);
+              }
+              // 字符串比较
+              else {
+                const compareResult = String(fieldA).localeCompare(String(fieldB));
+                return sortParams.desc ? -compareResult : compareResult;
+              }
+            }
+            return 0;
+          });
+        }
+        
+        // 分页处理
+        const startIndex = (page - 1) * perPage;
+        const endIndex = startIndex + perPage;
+        const paginatedData = data.slice(startIndex, endIndex);
+        
+        // 构建响应结构
+        return {
+          card: paginatedData,
+          pagination: {
+            total: data.length,
+            page: page,
+            per_page: perPage
+          }
+        };
+      }
+      
+      // 以下是原始的API调用逻辑
       // 获取当前用户
       const currentUser = getCurrentUser();
       
@@ -205,6 +305,180 @@ const cardService = {
       throw error
     }
   },
+
+  /**
+   * 获取任务列表
+   * @param {Object} params - 查询参数，包括tab, pagination, filter, sort
+   * @returns {Promise} - 任务列表数据，包含card和pagination
+   */
+  getTasks: async (params = {}) => {
+    try {
+      // 如果使用本地模拟数据
+      if (USE_MOCK_DATA) {
+        console.log("使用本地模拟数据...");
+        // 获取分页参数
+        const page = params.pagination?.page || 1;
+        const perPage = params.pagination?.per_page || 10;
+        
+        // 获取筛选和排序条件
+        const filterParams = params.filter;
+        const sortParams = params.sort;
+        
+        // 复制一份任务卡片数据，避免修改原始数据
+        let data = JSON.parse(JSON.stringify(taskCardsData));
+        
+        // 应用筛选条件 - 如果有筛选参数
+        if (filterParams) {
+          console.log("应用筛选条件:", filterParams);
+          
+          // 将API筛选格式转换为UI筛选格式
+          const filterConfig = {
+            conditions: []
+          };
+          
+          // 处理不同格式的筛选条件
+          if (Array.isArray(filterParams)) {
+            // 处理数组格式的筛选条件 [{exprs:[...]}, {exprs:[...]}]
+            filterParams.forEach(filter => {
+              if (filter.exprs && Array.isArray(filter.exprs)) {
+                filter.exprs.forEach(expr => {
+                  filterConfig.conditions.push({
+                    field: expr.field,
+                    operator: convertApiOperatorToUi(expr.op),
+                    values: expr.values
+                  });
+                });
+              }
+            });
+          } else if (filterParams.exprs && Array.isArray(filterParams.exprs)) {
+            // 处理单个对象格式的筛选条件 {exprs:[...]}
+            filterParams.exprs.forEach(expr => {
+              filterConfig.conditions.push({
+                field: expr.field,
+                operator: convertApiOperatorToUi(expr.op),
+                values: expr.values
+              });
+            });
+          }
+          
+          console.log("转换后的筛选配置:", filterConfig);
+          
+          // 使用filter函数筛选数据
+          data = filterCardsByConditions(data, filterConfig);
+          console.log("筛选后的数据量:", data.length);
+        }
+        
+        // 应用排序条件 - 如果有排序参数
+        if (sortParams) {
+          console.log("应用排序条件:", sortParams);
+          data.sort((a, b) => {
+            const fieldA = a[sortParams.field];
+            const fieldB = b[sortParams.field];
+            
+            // 检查字段是否存在且可比较
+            if (fieldA !== undefined && fieldB !== undefined) {
+              // 数值比较
+              if (typeof fieldA === 'number' && typeof fieldB === 'number') {
+                return sortParams.desc ? (fieldB - fieldA) : (fieldA - fieldB);
+              }
+              // 字符串比较
+              else {
+                const compareResult = String(fieldA).localeCompare(String(fieldB));
+                return sortParams.desc ? -compareResult : compareResult;
+              }
+            }
+            return 0;
+          });
+        }
+        
+        // 分页处理
+        const startIndex = (page - 1) * perPage;
+        const endIndex = startIndex + perPage;
+        const paginatedData = data.slice(startIndex, endIndex);
+        
+        // 构建响应结构
+        return {
+          card: paginatedData,
+          pagination: {
+            total: data.length,
+            page: page,
+            per_page: perPage
+          }
+        };
+      }
+      
+      // 以下是原始的API调用逻辑
+      // 获取当前用户
+      const currentUser = getCurrentUser();
+      
+      // 构建符合API规范的请求参数
+      const requestParams = {
+        tab: params.tab || "all", // 默认为all
+        user_id: currentUser?.id || "",
+        pagination: params.pagination || {
+          page: 1,
+          per_page: 10
+        }
+      };
+
+      // 如果有筛选条件，添加到搜索请求中
+      if (params.filter || params.sort) {
+        // 使用搜索接口
+        const searchParams = {
+          tab: requestParams.tab,
+          filter: params.filter,
+          sort: params.sort,
+          pagination: requestParams.pagination
+        };
+        
+        // 调用搜索接口
+        const response = await api.post(
+          endpoints.tasks.search, 
+          searchParams,
+          'TaskSearchRequest',
+          'TaskSearchResponse'
+        );
+        
+        return response;
+      }
+      
+      // 调用列表接口
+      const response = await api.get(
+        endpoints.tasks.list, 
+        { params: requestParams },
+        'GetTasksResponse'
+      );
+      
+      return response;
+    } catch (error) {
+      console.error("获取任务列表失败:", error);
+      // 返回一个空的响应结构，避免前端报错
+      return {
+        card: [],
+        pagination: {
+          total: 0,
+          page: 1,
+          per_page: 10
+        }
+      };
+    }
+  },
+}
+
+// 辅助函数：将API操作符转换为UI操作符
+function convertApiOperatorToUi(apiOp) {
+  switch(apiOp) {
+    case "EQ": return "等于";
+    case "NEQ": return "不等于";
+    case "GT": return "大于";
+    case "GTE": return "大于等于";
+    case "LT": return "小于";
+    case "LTE": return "小于等于";
+    case "LIKE": return "包含";
+    case "NOT_IN": return "不包含";
+    case "RANGE": return "在范围内";
+    default: return "等于";
+  }
 }
 
 export default cardService

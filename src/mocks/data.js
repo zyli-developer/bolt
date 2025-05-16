@@ -476,7 +476,7 @@ export const workspacesData = [
 // 当前工作区数据
 export const currentWorkspace = {
   id: "1",
-  name: "Alibaba",
+  name: "tester-1yahoo.com",
   icon: "A",
   role: "Owner",
   current: true,
@@ -484,7 +484,7 @@ export const currentWorkspace = {
   members: 12,
   projects: 8,
   createdAt: { seconds: "1704067200" },
-  description: "阿里巴巴集团工作区",
+  description: "可信集团工作区",
   settings: {
     allowPublicSharing: true,
     defaultPermission: "private",

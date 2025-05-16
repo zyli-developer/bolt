@@ -50,13 +50,11 @@ const AssetCard = ({ asset }) => {
 
   // 处理点击卡片事件
   const handleCardClick = () => {
-    // 如果是报告类型，显示报告详情模态框
+    // 只有报告类型响应点击事件，显示报告详情模态框
     if (safeAsset.type === 'report') {
       setReportModalVisible(true)
-    } else {
-      // 其他类型导航到详情页面
-      navigate(`/assets/detail/${safeAsset.id}`)
     }
+    // 移除其他类型卡片的点击导航
   }
 
   // 处理收藏按钮点击
@@ -108,12 +106,15 @@ const AssetCard = ({ asset }) => {
   const displayTags = allTags.slice(0, 5)
   const hasMoreTags = allTags.length > 5
 
+  // 根据卡片类型决定是否可悬停和点击
+  const isReport = safeAsset.type === 'report'
+
   return (
     <>
       <Card 
         className={styles.assetCard} 
-        hoverable 
-        onClick={handleCardClick}
+        hoverable={isReport} 
+        onClick={isReport ? handleCardClick : undefined}
       >
         <div className={styles.cardContainer}>
           {/* 头部信息 */}

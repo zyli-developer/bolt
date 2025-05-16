@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Form, Input, Button, Card, message, Typography, Spin } from "antd";
+import { Form, Input, Button, Card, message, Typography, Spin, Alert } from "antd";
 import { UserOutlined, LockOutlined } from "@ant-design/icons";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
@@ -11,6 +11,7 @@ const LoginPage = () => {
   const location = useLocation();
   const { login, isAuthenticated } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [loginError, setLoginError] = useState("");
 
   // 如果已经登录，重定向到首页或之前尝试访问的页面
   useEffect(() => {
@@ -23,6 +24,8 @@ const LoginPage = () => {
   const onFinish = async (values) => {
     try {
       setLoading(true);
+      setLoginError(""); // 清除之前的错误提示
+      
       const success = await login({
         username: values.username,
         password: values.password,
@@ -31,10 +34,10 @@ const LoginPage = () => {
       if (success) {
         message.success("登录成功");
       } else {
-        message.error("登录失败，请检查用户名和密码");
+        setLoginError("账号/密码错误，请检查并修改");
       }
     } catch (error) {
-      message.error(error.message || "登录失败，请检查用户名和密码");
+      setLoginError("账号/密码错误，请检查并修改");
     } finally {
       setLoading(false);
     }
@@ -57,6 +60,15 @@ const LoginPage = () => {
             <Title level={2} className="login-title">SynTrust</Title>
             <p className="login-subtitle">请输入您的账号和密码</p>
           </div>
+          
+          {loginError && (
+            <Alert
+              message={loginError}
+              type="error"
+              showIcon
+              style={{ marginBottom: 16 }}
+            />
+          )}
           
           <Form
             name="login-form"
@@ -97,6 +109,7 @@ const LoginPage = () => {
                 登录
               </Button>
             </Form.Item>
+            
             
           </Form>
         </Card>

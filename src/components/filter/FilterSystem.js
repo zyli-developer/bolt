@@ -9,7 +9,7 @@ import SortCard from "./SortCard"
 import SortIcon from "../icons/SortIcon"
 import { VIEW_TYPES } from "../../utils/viewManager"
 import { addViewToMenu, getMenuData } from "../../utils/menuManager"
-import { initialFilterState, normalizeFieldName } from "../../mocks/filterData"
+import { initialFilterState, normalizeFieldName, filterCardsByConditions, processCardFieldValue } from "../../mocks/filterData"
 import { useLocation, useNavigate } from "react-router-dom"
 import { useRef } from "react"
 import CreateTaskModal from "../modals/CreateTaskModal"
@@ -580,9 +580,9 @@ const FilterSystem = ({ onFilterChange, onSortChange, onViewChange, onImportSucc
         const newProgress = prev + 10;
         return newProgress >= 99 ? 99 : newProgress;
       });
-    }, 1000);
+    }, 500); // 从1000毫秒改为500毫秒，使进度条更新更快
     
-    // 添加10秒延迟，模拟报告生成过程
+    // 添加5秒延迟，模拟报告生成过程
     setTimeout(() => {
       clearInterval(progressInterval);
       setReportProgress(100);
@@ -740,7 +740,7 @@ const FilterSystem = ({ onFilterChange, onSortChange, onViewChange, onImportSucc
         setReportProgress(0);
         message.error('生成报告失败: ' + error.message);
       }
-    }, 10000); // 延迟10秒
+    }, 5000); // 从10000毫秒改为5000毫秒，使总时间为5秒
   };
   
   // 全选/取消全选

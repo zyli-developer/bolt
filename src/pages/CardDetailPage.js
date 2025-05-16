@@ -676,7 +676,7 @@ const CardDetailPage = () => {
           }
           return next;
         });
-      }, 100);
+      }, 50); // 将间隔从100毫秒改为50毫秒，使总测试时间为5秒
     }
     return () => timer && clearInterval(timer);
   }, [isTesting, testProgress]);
