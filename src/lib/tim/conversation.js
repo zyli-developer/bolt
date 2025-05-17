@@ -158,24 +158,58 @@ export async function createGroupConversation(groupID) {
   }
 
   try {
+    // 处理特殊格式的群组ID
+    let processedGroupID = groupID;
+    
+    // 检查是否是@TGS#格式的群组ID
+    const hasTGSFormat = typeof groupID === 'string' && groupID.includes('@TGS#');
+    
+    // 如果是@TGS#格式但有其他前缀，提取纯群组ID
+    if (hasTGSFormat && !groupID.startsWith('@TGS#')) {
+      const tgsIndex = groupID.indexOf('@TGS#');
+      processedGroupID = groupID.substring(tgsIndex);
+      console.log(`检测到TGS格式群组ID: ${processedGroupID}，原ID: ${groupID}`);
+    }
+    
     // 构建会话ID
-    const conversationID = `GROUP${groupID}`;
+    const conversationID = `GROUP${processedGroupID}`;
+    let conversation;
     
     // 尝试获取已有会话
     try {
-      const conversation = await getConversationProfile(conversationID);
+      conversation = await getConversationProfile(conversationID);
       console.log('群会话已存在，直接返回', conversation);
-      return conversation;
     } catch (e) {
       console.log('群会话不存在，将创建新会话');
+      // 如果会话不存在，继续执行后续加入群组的逻辑
+      conversation = null;
     }
     
-    // 加入群组
-    const joinGroupResult = await tim.joinGroup({ groupID });
-    console.log('加入群组结果', joinGroupResult);
+    // 无论会话是否存在，都尝试加入群组
+    // 这样可以确保用户真正加入了群组，而不只是获取了会话信息
+    try {
+      const joinGroupResult = await tim.joinGroup({ groupID: processedGroupID });
+      console.log('加入群组结果', joinGroupResult);
+      
+      // 加入群组可能有不同的结果状态
+      if (joinGroupResult.data.status === 'JoinedSuccess') {
+        console.log('成功加入群组');
+      } else if (joinGroupResult.data.status === 'AlreadyInGroup') {
+        console.log('已经在群组中');
+      }
+    } catch (joinError) {
+      // 如果加入失败但不是因为已经在群中，则抛出错误
+      if (joinError.code !== 10013) { // 10013 是"已经是群成员"的错误码
+        throw joinError;
+      }
+      console.log('已经是群成员，无需重复加入');
+    }
     
-    // 获取创建的会话
-    const conversation = await getConversationProfile(conversationID);
+    // 如果之前找不到会话，在加入后重新获取
+    if (!conversation) {
+      conversation = await getConversationProfile(conversationID);
+    }
+    
     return conversation;
   } catch (error) {
     console.error(`创建群会话失败: ${groupID}`, error);

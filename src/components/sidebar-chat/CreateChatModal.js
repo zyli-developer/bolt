@@ -1,11 +1,12 @@
 "use client"
 
 import { useState } from "react"
-import { CloseOutlined, SearchOutlined } from "@ant-design/icons"
+import { CloseOutlined, SearchOutlined, PlusOutlined, UserAddOutlined } from "@ant-design/icons"
 import "./CreateChatModal.css"
 
 const CreateChatModal = ({ onClose, onCreate }) => {
   const [activeTab, setActiveTab] = useState("single") // 'single' or 'group'
+  const [groupAction, setGroupAction] = useState("create") // 'create' or 'join'
 
   // Single chat state
   const [userId, setUserId] = useState("")
@@ -15,6 +16,9 @@ const CreateChatModal = ({ onClose, onCreate }) => {
   const [groupType, setGroupType] = useState("work") // 'work', 'public', or 'meeting'
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedMembers, setSelectedMembers] = useState([])
+  
+  // Join group state
+  const [groupId, setGroupId] = useState("")
 
   const handleCreateSingleChat = () => {
     if (!userId.trim()) return
@@ -39,12 +43,25 @@ const CreateChatModal = ({ onClose, onCreate }) => {
       memberList: selectedMembers,
     })
   }
+  
+  const handleJoinGroupChat = () => {
+    if (!groupId.trim()) return
+    
+    onCreate("GROUP", {
+      groupID: groupId,
+      isJoin: true
+    })
+  }
 
   const handleCreate = () => {
     if (activeTab === "single") {
       handleCreateSingleChat()
     } else {
+      if (groupAction === "create") {
       handleCreateGroupChat()
+      } else {
+        handleJoinGroupChat()
+      }
     }
   }
 
@@ -100,6 +117,23 @@ const CreateChatModal = ({ onClose, onCreate }) => {
               </div>
             </div>
           ) : (
+            <>
+              <div className="group-action-tabs">
+                <button 
+                  className={`action-tab ${groupAction === "create" ? "active" : ""}`}
+                  onClick={() => setGroupAction("create")}
+                >
+                  <PlusOutlined /> 创建群聊
+                </button>
+                <button 
+                  className={`action-tab ${groupAction === "join" ? "active" : ""}`}
+                  onClick={() => setGroupAction("join")}
+                >
+                  <UserAddOutlined /> 加入群聊
+                </button>
+              </div>
+              
+              {groupAction === "create" ? (
             <div className="group-chat-form">
               <div className="form-group">
                 <label htmlFor="groupName">群组名称</label>
@@ -149,33 +183,34 @@ const CreateChatModal = ({ onClose, onCreate }) => {
               </div>
 
               <div className="form-group">
-                <label>添加成员</label>
+                    <label>添加群成员</label>
                 <div className="search-container">
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="搜索用户"
+                        onKeyPress={(e) => e.key === "Enter" && handleSearch()}
                   />
                   <button className="search-button" onClick={handleSearch}>
                     <SearchOutlined />
                   </button>
                 </div>
 
+                    <div className="search-results">
                 {selectedMembers.length === 0 ? (
-                  <div className="search-results">
-                    <p className="search-placeholder">搜索结果将显示在这里</p>
-                  </div>
+                        <p className="search-placeholder">搜索并添加群成员</p>
                 ) : (
                   <div className="selected-members">
-                    <h4>已选成员 ({selectedMembers.length})</h4>
                     <div className="member-list">
                       {selectedMembers.map((member) => (
                         <div key={member.userID} className="member-item">
-                          <span>{member.nick || member.userID}</span>
+                                {member.nick}
                           <button
                             className="remove-member"
-                            onClick={() => setSelectedMembers((prev) => prev.filter((m) => m.userID !== member.userID))}
+                                  onClick={() =>
+                                    setSelectedMembers(selectedMembers.filter((m) => m.userID !== member.userID))
+                                  }
                           >
                             ×
                           </button>
@@ -186,6 +221,23 @@ const CreateChatModal = ({ onClose, onCreate }) => {
                 )}
               </div>
             </div>
+                </div>
+              ) : (
+                <div className="join-group-form">
+                  <div className="form-group">
+                    <label htmlFor="groupId">群组ID</label>
+                    <input
+                      id="groupId"
+                      type="text"
+                      value={groupId}
+                      onChange={(e) => setGroupId(e.target.value)}
+                      placeholder="输入要加入的群组ID"
+                    />
+                  </div>
+                  <p className="form-tip">加入群聊需要知道群组ID，您可以向群组管理员获取。</p>
+                </div>
+              )}
+            </>
           )}
         </div>
 
@@ -196,9 +248,13 @@ const CreateChatModal = ({ onClose, onCreate }) => {
           <button
             className="create-button"
             onClick={handleCreate}
-            disabled={(activeTab === "single" && !userId.trim()) || (activeTab === "group" && !groupName.trim())}
+            disabled={
+              (activeTab === "single" && !userId.trim()) || 
+              (activeTab === "group" && groupAction === "create" && !groupName.trim()) ||
+              (activeTab === "group" && groupAction === "join" && !groupId.trim())
+            }
           >
-            创建
+            {activeTab === "single" ? "创建" : groupAction === "create" ? "创建" : "加入"}
           </button>
         </div>
       </div>

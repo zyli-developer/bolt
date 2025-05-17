@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Layout, Button, Avatar, Dropdown, Modal, Input, message } from "antd"
-import { SearchOutlined, FileOutlined, AppstoreOutlined, ThunderboltOutlined, DownOutlined, RightOutlined, EllipsisOutlined, EditOutlined } from "@ant-design/icons"
+import { SearchOutlined, FileOutlined, AppstoreOutlined, ThunderboltOutlined, DownOutlined, RightOutlined, EllipsisOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons"
 import { useNavigate, useLocation } from "react-router-dom"
 import menuService from "../../services/menuService"
 import ExploreIcon from "../icons/ExploreIcon"
@@ -33,6 +33,10 @@ const AppSidebar = () => {
   const [renameModalVisible, setRenameModalVisible] = useState(false);
   const [currentRenameItem, setCurrentRenameItem] = useState(null);
   const [newMenuName, setNewMenuName] = useState("");
+  
+  // 删除相关状态
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
 
   // 加载菜单数据的函数
   const loadMenuData = async () => {
@@ -352,6 +356,54 @@ const AppSidebar = () => {
   const handleRenameCancel = () => {
     setRenameModalVisible(false);
   };
+  
+  // 处理菜单项删除点击
+  const handleDeleteClick = (e, item, parentId) => {
+    // 在Ant Design的Dropdown菜单项点击事件中，e是{key, keyPath, domEvent}
+    // 如果e有domEvent属性，则使用它，否则直接使用e
+    if (e && e.domEvent && e.domEvent.stopPropagation) {
+      e.domEvent.stopPropagation();
+    } else if (e && e.stopPropagation) {
+      e.stopPropagation(); // 原始事件对象直接使用
+    }
+    
+    setItemToDelete({...item, parentId});
+    setDeleteModalVisible(true);
+  };
+  
+  // 处理删除确认
+  const handleDeleteConfirm = () => {
+    if (!itemToDelete) return;
+    
+    // 更新菜单数据，过滤掉要删除的子菜单项
+    const updatedMenuItems = menuItems.map(item => {
+      if (item.id === itemToDelete.parentId) {
+        return {
+          ...item,
+          children: item.children.filter(child => child.id !== itemToDelete.id)
+        };
+      }
+      return item;
+    });
+    
+    setMenuItems(updatedMenuItems);
+    
+    // 保存更新后的菜单数据
+    saveMenuData(updatedMenuItems);
+    
+    message.success("删除成功");
+    setDeleteModalVisible(false);
+    
+    // 如果删除的是当前激活的子菜单项，清除激活状态
+    if (activeSubItemId === itemToDelete.id) {
+      setActiveSubItemId(null);
+    }
+  };
+  
+  // 处理删除取消
+  const handleDeleteCancel = () => {
+    setDeleteModalVisible(false);
+  };
 
   // 渲染子菜单项
   const renderSubMenuItems = (children, parentId) => {
@@ -382,6 +434,13 @@ const AppSidebar = () => {
                     icon: <EditOutlined />,
                     label: '重命名',
                     onClick: (info) => handleRenameClick(info, child, parentId)
+                  },
+                  {
+                    key: 'delete',
+                    icon: <DeleteOutlined />,
+                    label: '删除',
+                    onClick: (info) => handleDeleteClick(info, child, parentId),
+                    danger: true
                   }
                 ]
               }}
@@ -495,6 +554,19 @@ const AppSidebar = () => {
           onChange={(e) => setNewMenuName(e.target.value)}
           style={{ marginTop: '16px' }}
         />
+      </Modal>
+      
+      {/* 删除菜单项的确认Modal */}
+      <Modal
+        title="删除菜单"
+        open={deleteModalVisible}
+        onOk={handleDeleteConfirm}
+        onCancel={handleDeleteCancel}
+        okText="确认删除"
+        cancelText="取消"
+        okButtonProps={{ danger: true }}
+      >
+        <p>确定要删除菜单"{itemToDelete?.title}"吗？此操作不可撤销。</p>
       </Modal>
     </>
   )

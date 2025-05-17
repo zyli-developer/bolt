@@ -242,4 +242,45 @@ export async function setMessageRead(conversationID) {
  */
 export function extractSessionData(message) {
   return extractSessionDataUtil(message);
-} 
+}
+
+/**
+ * 发送@文本消息 (仅群聊)
+ * @param {string} text 文本内容
+ * @param {string} to 群ID（纯ID，不含GROUP前缀）
+ * @param {Array<{userID:string,nick?:string}>} atList 被@的用户
+ * @returns {Promise<Object>} 消息对象
+ */
+export async function sendTextAtMessage(text, to, atList = []) {
+  const tim = getTIMInstance();
+  if (!tim) {
+    console.error('TIM SDK未初始化，无法发送@消息');
+    throw new Error('TIM SDK未初始化');
+  }
+
+  if (!Array.isArray(atList) || atList.length === 0) {
+    // 如果没有@对象则退回普通文本发送
+    return sendTextMessage(text, to, true);
+  }
+
+  // 仅取userID数组
+  const atUserIDList = atList.map(u => (typeof u === 'string' ? u : u.userID));
+
+  try {
+    const message = tim.createTextAtMessage({
+      to,
+      conversationType: TencentCloudChat.TYPES.CONV_GROUP,
+      payload: {
+        text,
+        atUserList: atUserIDList
+      }
+    });
+    console.log('创建@文本消息成功，开始发送', { to, atUserIDList });
+    const imResponse = await tim.sendMessage(message);
+    console.log('发送@文本消息成功', imResponse.data.message);
+    return imResponse.data.message;
+  } catch (error) {
+    console.error('发送@文本消息失败', error);
+    throw error;
+  }
+}

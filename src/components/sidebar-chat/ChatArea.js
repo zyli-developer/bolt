@@ -17,6 +17,8 @@ import CreateChatModal from "./CreateChatModal"
 import ChatMessage from "./ChatMessage"
 import { OptimizationContext } from "../../contexts/OptimizationContext"
 import "./sidebar-chat.css"
+import { notification } from "antd"
+import { getGroupMembers } from "../../services/timService"
 
 // 引用类型定义
 const QUOTE_TYPES = {
@@ -52,6 +54,10 @@ const ChatArea = () => {
   const messagesContainerRef = useRef(null)
   const [showScrollTop, setShowScrollTop] = useState(false)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [groupMembers, setGroupMembers] = useState([]);
+  const [mentionVisible, setMentionVisible] = useState(false);
+  const [mentionCandidates, setMentionCandidates] = useState([]);
+  const [mentionList, setMentionList] = useState([]); // 已选择@用户列表
   
   // 从全局上下文获取优化模式状态
   const { isOptimizationMode, currentOptimizationStep, setComments } = useContext(OptimizationContext);
@@ -127,6 +133,34 @@ const ChatArea = () => {
     }
   }, [showScrollTop])
 
+  // 当活跃用户切换到群聊时加载群成员
+  useEffect(() => {
+    if (activeUser && activeUser.type === 'group' && activeUser.id) {
+      (async () => {
+        const members = await getGroupMembers(activeUser.id, 200);
+        const formatted = members.map(m => ({ userID: m.userID, nick: m.nick || m.userID }));
+        setGroupMembers(formatted);
+      })();
+    } else {
+      setGroupMembers([]);
+    }
+  }, [activeUser?.id]);
+
+  // 监听输入内容以触发@提示
+  const handleInputChange = (value) => {
+    setInputValue(value);
+    // 检查最后一个@及其后面的文本
+    const atMatch = value.match(/@([\u4e00-\u9fa5\w\-]*)$/);
+    if (activeUser?.type === 'group' && atMatch) {
+      const keyword = atMatch[1] || '';
+      const candidates = groupMembers.filter(m => m.nick.includes(keyword));
+      setMentionCandidates(candidates);
+      setMentionVisible(true);
+    } else {
+      setMentionVisible(false);
+    }
+  };
+
   // 发送消息
   const handleSendMessage = () => {
     if (inputValue.trim()) {
@@ -136,9 +170,9 @@ const ChatArea = () => {
         ).join('\n');
         
         const formattedMessage = `${quotesFormatted}\n${inputValue}`;
-        sendMessage(formattedMessage);
+        sendChatMessage(formattedMessage);
       } else {
-        sendMessage(inputValue);
+        sendChatMessage(inputValue);
       }
       
       setInputValue("");
@@ -146,36 +180,40 @@ const ChatArea = () => {
     }
   }
 
-  // 处理Sender组件提交事件
+  // 选择@成员
+  const handleSelectMention = (member) => {
+    // 替换输入框中最后的@关键字
+    const newValue = inputValue.replace(/@([\u4e00-\u9fa5\w\-]*)$/, `@${member.nick} `);
+    setInputValue(newValue);
+    setMentionVisible(false);
+    // 保存到mentionList，避免重复
+    setMentionList(prev => {
+      if (prev.find(m => m.userID === member.userID)) return prev;
+      return [...prev, member];
+    });
+  };
+
+  // 处理Sender组件提交事件  (修改mentions)
   const handleSubmit = (value) => {
     if (value.trim()) {
-      // 根据是否有引用内容，使用不同的格式发送消息
-      if (isQuoteEnabled) {
-        // 有引用内容时，使用自定义格式
-        const quotesFormatted = quotes.map(quote => 
-          `【引用:${quote.type}】${quote.content}【/引用】`
-        ).join('\n');
-        
-        const formattedMessage = `${quotesFormatted}\n${value}`;
-        sendMessage(formattedMessage);
-      } else {
-        // 没有引用内容，正常发送
-        sendMessage(value);
+      // 根据是否有引用内容和mentions，使用不同方式
+      const options = {};
+      if (mentionList.length > 0) {
+        options.mentions = mentionList;
       }
-      
-      setInputValue("");
-      // 清空引用内容
-      setQuotes([]);
-    }
-  }
+      if (isQuoteEnabled) {
+        const quotesFormatted = quotes.map(quote => `【引用:${quote.type}】${quote.content}【/引用】`).join('\n');
+        const formattedMessage = `${quotesFormatted}\n${value}`;
+        sendChatMessage(formattedMessage, options);
+      } else {
+        sendChatMessage(value, options);
+      }
 
-  // 处理Sender组件输入变化
-  const handleInputChange = (value) => {
-    setInputValue(value)
-    
-    // 可以在这里添加额外的逻辑，比如检测输入中是否包含引用标记等
-    // 如果需要更复杂的实时分析，可以在这里添加
-  }
+      setInputValue("");
+      setQuotes([]);
+      setMentionList([]);
+    }
+  };
 
   // 清除指定引用内容
   const handleClearQuote = (quoteId) => {
@@ -196,9 +234,44 @@ const ChatArea = () => {
   }
 
   // 处理创建新会话
-  const handleCreateChat = (type, params) => {
-    createNewChat(type, params)
-    setIsCreateModalOpen(false)
+  const handleCreateChat = async (type, params) => {
+    try {
+      const newChat = await createNewChat(type, params);
+      setIsCreateModalOpen(false);
+      
+      // 如果创建/加入成功，自动切换到新的聊天
+      if (newChat) {
+        console.log('创建/加入聊天成功，自动切换到新的会话:', newChat);
+        // 确保群聊类型正确设置
+        if (type === 'GROUP') {
+          newChat.type = 'group';
+        }
+        switchActiveUser(newChat);
+        
+        // 如果是加入群组，立即刷新会话列表
+        if (type === 'GROUP' && params.isJoin) {
+          // 添加500ms延迟确保服务器响应
+          setTimeout(async () => {
+            try {
+              await refreshMessages();
+              // 显示成功提示
+              notification.success({
+                message: '成功加入群聊',
+                description: `已成功加入群聊 ${newChat.name || newChat.id}`
+              });
+            } catch (error) {
+              console.error('刷新消息失败:', error);
+            }
+          }, 500);
+        }
+      }
+    } catch (error) {
+      console.error('创建/加入聊天失败:', error);
+      notification.error({
+        message: '操作失败',
+        description: error.message || '创建或加入聊天失败，请重试'
+      });
+    }
   }
 
   // 处理切换会话 - 使用新的 switchActiveUser 函数
@@ -209,10 +282,20 @@ const ChatArea = () => {
       
       // 如果没有id但有conversationID，从conversationID中提取
       if (!userToSwitch.id && userToSwitch.conversationID) {
-        const prefix = userToSwitch.conversationID.startsWith('C2C') ? 'C2C' : 'GROUP';
-        userToSwitch.id = userToSwitch.conversationID.substring(prefix.length);
-        userToSwitch.type = prefix === 'C2C' ? 'user' : 'group';
-        console.log(`本地提取用户ID: ${userToSwitch.id}，来自conversationID: ${userToSwitch.conversationID}`);
+        // 检查conversationID是否包含@TGS#格式的群组ID
+        if (userToSwitch.conversationID.includes('@TGS#')) {
+          // 从conversationID中提取群组ID
+          const tgsIndex = userToSwitch.conversationID.indexOf('@TGS#');
+          userToSwitch.id = userToSwitch.conversationID.substring(tgsIndex);
+          userToSwitch.type = 'group';
+          console.log(`检测到TGS格式群组ID: ${userToSwitch.id}，来自conversationID: ${userToSwitch.conversationID}`);
+        } else {
+          // 常规处理C2C或GROUP前缀
+          const prefix = userToSwitch.conversationID.startsWith('C2C') ? 'C2C' : 'GROUP';
+          userToSwitch.id = userToSwitch.conversationID.substring(prefix.length);
+          userToSwitch.type = prefix === 'C2C' ? 'user' : 'group';
+          console.log(`本地提取用户ID: ${userToSwitch.id}，来自conversationID: ${userToSwitch.conversationID}`);
+        }
       }
       
       switchActiveUser(userToSwitch);
@@ -238,9 +321,17 @@ const ChatArea = () => {
     
     // 如果有conversationID，从中提取id
     if (user.conversationID) {
-      const prefix = user.conversationID.startsWith('C2C') ? 'C2C' : 'GROUP';
-      const extractedId = user.conversationID.substring(prefix.length);
-      return `user-${prefix}-${extractedId}`;
+      // 检查conversationID是否包含@TGS#格式的群组ID
+      if (user.conversationID.includes('@TGS#')) {
+        const tgsIndex = user.conversationID.indexOf('@TGS#');
+        const extractedId = user.conversationID.substring(tgsIndex);
+        return `user-GROUP-${extractedId}`;
+      } else {
+        // 常规处理C2C或GROUP前缀
+        const prefix = user.conversationID.startsWith('C2C') ? 'C2C' : 'GROUP';
+        const extractedId = user.conversationID.substring(prefix.length);
+        return `user-${prefix}-${extractedId}`;
+      }
     }
     
     // 最后的备选方案
@@ -312,6 +403,8 @@ const ChatArea = () => {
     };
   }, [activeUser?.id]);
 
+  // 直接使用上下文的 sendMessage
+  const sendChatMessage = sendMessage;
 
   return (
     <div className="chat-container">
@@ -453,6 +546,15 @@ const ChatArea = () => {
           submitType="enter"
           disabled={!activeUser}
         />
+        {mentionVisible && mentionCandidates.length > 0 && (
+          <div className="mention-dropdown">
+            {mentionCandidates.map(member => (
+              <div key={member.userID} className="mention-item" onClick={() => handleSelectMention(member)}>
+                {member.nick}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* 创建新会话模态窗口 */}

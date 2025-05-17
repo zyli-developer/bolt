@@ -52,7 +52,7 @@ const RadarChartSection = ({
 
         <div className={styles.metricItem}>
           <div className={styles.metricLabel}>各维度得分</div>
-          <div className={styles.metricValue}>{currentEvaluation?.credibility || 'N/A'}%</div>
+          <div className={styles.metricValue}>{currentEvaluation?.credibility || 'N/A'}</div>
           {currentEvaluation?.credibilityChange && (
             <div className={`${styles.metricChange} ${currentEvaluation.credibilityChange.startsWith("+") ? styles.positive : styles.negative}`}>
               {currentEvaluation.credibilityChange}

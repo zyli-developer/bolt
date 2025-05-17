@@ -69,10 +69,16 @@ const FilterCard = ({ config, onConfigChange, onNext }) => {
       id: Date.now().toString(),
     }
 
+    console.log("添加新条件:", newCondition);
+    
+    // 确保条件被添加到数组中
+    const updatedConditions = [...config.conditions, newCondition];
+    console.log("更新后的条件数组:", updatedConditions);
+    
     onConfigChange({
       ...config,
-      conditions: [...config.conditions, newCondition],
-    })
+      conditions: updatedConditions,
+    });
   }
 
   // 移除条件
@@ -86,10 +92,16 @@ const FilterCard = ({ config, onConfigChange, onNext }) => {
   // 更新条件字段
   const updateConditionField = (id, field) => {
     console.log(`更新条件 ${id} 的字段为:`, field);
+    // 修改字段时，保留现有操作符，只清空values
     onConfigChange({
       ...config,
       conditions: config.conditions.map((condition) =>
-        condition.id === id ? { ...condition, field, values: [], value: undefined } : condition,
+        condition.id === id ? { 
+          ...condition, 
+          field: field,
+          values: [], // 清空值
+          value: undefined // 清空旧值
+        } : condition
       ),
     })
   }
@@ -106,13 +118,14 @@ const FilterCard = ({ config, onConfigChange, onNext }) => {
   // 更新条件值
   const updateConditionValues = (id, values) => {
     console.log(`更新条件 ${id} 的值为:`, values);
+    // 即使清空值也保留该条件，不再清空整行
     onConfigChange({
       ...config,
       conditions: config.conditions.map((condition) => (
         condition.id === id ? { 
           ...condition, 
-          values: values,
-          value: values.length === 1 ? values[0] : values // 同时更新value属性以保持兼容性
+          values: values || [], // 确保values始终是数组，即使是空数组
+          value: values && values.length === 1 ? values[0] : values // 同时更新value属性以保持兼容性
         } : condition
       )),
     })
@@ -163,26 +176,39 @@ const FilterCard = ({ config, onConfigChange, onNext }) => {
               </Select>
             </div>
             <div className="filter-condition-value">
-              <Select
-                mode="multiple"
-                value={condition.values || []} // 使用values，并提供默认空数组
-                onChange={(values) => updateConditionValues(condition.id, values)}
-                style={{ width: "100%" }}
-                placeholder="请选择值"
-                optionFilterProp="children"
-                showSearch
-                tagRender={(props) => (
-                  <Tag color="blue" closable={props.closable} onClose={props.onClose} style={{ marginRight: 3 }}>
-                    {props.value}
-                  </Tag>
-                )}
-              >
-                {getValueOptions(condition.field).map((option) => (
-                  <Option key={option} value={option}>
-                    {option}
-                  </Option>
-                ))}
-              </Select>
+              {condition.operator !== "为空" && condition.operator !== "不为空" ? (
+                <Select
+                  mode="multiple"
+                  value={condition.values || []} // 使用values，并提供默认空数组
+                  onChange={(values) => updateConditionValues(condition.id, values)}
+                  style={{ width: "100%" }}
+                  placeholder="请选择值"
+                  optionFilterProp="children"
+                  showSearch
+                  tagRender={(props) => (
+                    <Tag color="blue" closable={props.closable} onClose={props.onClose} style={{ marginRight: 3 }}>
+                      {props.value}
+                    </Tag>
+                  )}
+                >
+                  {getValueOptions(condition.field).map((option) => (
+                    <Option key={option} value={option}>
+                      {option}
+                    </Option>
+                  ))}
+                </Select>
+              ) : (
+                <div style={{ 
+                  height: "32px", 
+                  lineHeight: "32px", 
+                  color: "#999", 
+                  padding: "0 11px", 
+                  background: "#f5f5f5",
+                  borderRadius: "2px" 
+                }}>
+                  无需选择值
+                </div>
+              )}
             </div>
             <div className="filter-condition-remove" onClick={() => removeCondition(condition.id)}>
               <CloseIcon />

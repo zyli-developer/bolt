@@ -41,7 +41,7 @@ export const useAssetStyles = createStyles(({ token, css }) => {
     
     // 资产页面整体背景
     assetPageBackground: css`
-      background-color: #E7F0EC;
+      background-color: var(--color-chat-bg);
       border-radius: 28px;
       padding: 24px;
       min-height: 500px;
@@ -272,7 +272,7 @@ export const useAssetStyles = createStyles(({ token, css }) => {
     
     // 资产卡片创建者头像
     authorAvatar: css`
-      background-color: #E7F0EC;
+      background-color: var(--color-chat-bg);
       border: 1px solid #fff;
       color: #446F48;
     `,
@@ -286,7 +286,7 @@ export const useAssetStyles = createStyles(({ token, css }) => {
     
     // 标签样式
     tagStyle: css`
-      background-color: #E7F0EC;
+      background-color: var(--color-chat-bg);
       border-radius: 16px;
       padding: 0px 8px;
       font-size: 12px;

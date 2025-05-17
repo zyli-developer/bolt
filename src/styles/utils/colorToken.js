@@ -4,6 +4,7 @@ const colorToken = {
   colorPrimaryHover: '#4CA75E',
   colorPrimaryActive: '#3E8C4C',
   colorPrimaryRgb: '88, 189, 109', // RGB值，用于rgba函数
+  colorChatBg: 'var(--color-chat-bg)',
   // 重色
   colorHeavy: '#00474A',
   // 辅助色
@@ -39,6 +40,7 @@ const colorToken = {
 // 导出CSS变量版本，用于生成CSS样式表
 export const cssColorVariables = `:root {
   --color-primary: ${colorToken.colorPrimary};
+  --color-chat-bg: ${colorToken.colorChatBg};
   --color-primary-hover: ${colorToken.colorPrimaryHover};
   --color-primary-active: ${colorToken.colorPrimaryActive};
   --color-primary-rgb: ${colorToken.colorPrimaryRgb};

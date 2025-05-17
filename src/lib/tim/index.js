@@ -6,7 +6,7 @@
 // 导入核心功能
 import * as core from './core';
 // 导入消息相关
-import { sendTextMessage, getMessageList, setMessageRead } from './message';
+import { sendTextMessage, getMessageList, setMessageRead, sendTextAtMessage } from './message';
 // 导入会话相关
 import {
   getConversationList,
@@ -30,6 +30,7 @@ export * from './auth';
 // 导出消息相关
 export {
   sendTextMessage,
+  sendTextAtMessage,
   getMessageList,
   setMessageRead
 };
