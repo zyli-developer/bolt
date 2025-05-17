@@ -147,8 +147,26 @@ export async function getChatMessages(userId) {
   
   try {
     // 根据userId构建会话ID
-    const isGroup = typeof userId === 'string' && userId.startsWith('GROUP');
-    const pureId = String(userId).replace(/^(GROUP|C2C)/, '');
+    // 检查是否是群组ID - 除了以GROUP开头，也要检查是否包含@TGS#这种格式的群组ID
+    const isGroup = typeof userId === 'string' && (
+      userId.startsWith('GROUP') || 
+      userId.includes('@TGS#') ||
+      userId.startsWith('@TGS#')
+    );
+    
+    // 对包含@TGS#的群组ID进行特殊处理
+    let pureId;
+    if (typeof userId === 'string' && userId.includes('@TGS#')) {
+      // 如果包含@TGS#，确保移除任何前缀，只保留@TGS#开始的部分
+      const tgsIndex = userId.indexOf('@TGS#');
+      pureId = userId.substring(tgsIndex);
+      console.log(`检测到TGS格式群组ID: ${pureId}`);
+    } else {
+      // 其他情况正常移除前缀
+      pureId = String(userId).replace(/^(GROUP|C2C)/, '');
+    }
+    
+    // 构建正确的会话ID
     const conversationID = isGroup ? `GROUP${pureId}` : `C2C${pureId}`;
     
     console.log(`构建会话ID: ${conversationID}`, { isGroup, pureId });
@@ -307,9 +325,10 @@ export async function getChatMessages(userId) {
  * 发送聊天消息
  * @param {string|number} userId 用户ID
  * @param {string} text 消息内容
+ * @param {Object} options 选项
  * @returns {Promise} 发送结果
  */
-export async function sendMessage(userId, text) {
+export async function sendMessage(userId, text, options = {}) {
   if (!userId) {
     console.error('发送消息失败: userId不能为空');
     throw new Error('发送消息失败: userId不能为空');
@@ -343,8 +362,24 @@ export async function sendMessage(userId, text) {
     }, 5000);
     
     // 根据userId构建会话ID和类型
-    const isGroup = typeof userId === 'string' && userId.startsWith('GROUP');
-    const pureId = String(userId).replace(/^(GROUP|C2C)/, '');
+    // 检查是否是群组ID - 除了以GROUP开头，也要检查是否包含@TGS#这种格式的群组ID
+    const isGroup = typeof userId === 'string' && (
+      userId.startsWith('GROUP') || 
+      userId.includes('@TGS#') ||
+      userId.startsWith('@TGS#')
+    );
+    
+    // 对包含@TGS#的群组ID进行特殊处理
+    let pureId;
+    if (typeof userId === 'string' && userId.includes('@TGS#')) {
+      // 如果包含@TGS#，确保移除任何前缀，只保留@TGS#开始的部分
+      const tgsIndex = userId.indexOf('@TGS#');
+      pureId = userId.substring(tgsIndex);
+      console.log(`检测到TGS格式群组ID: ${pureId}`);
+    } else {
+      // 其他情况正常移除前缀
+      pureId = String(userId).replace(/^(GROUP|C2C)/, '');
+    }
     
     console.log(`准备发送消息, 目标ID: ${pureId}, 是否群聊: ${isGroup}`);
     
@@ -355,7 +390,15 @@ export async function sendMessage(userId, text) {
     }
     
     // 发送文本消息
-    const message = await TIM.sendTextMessage(text, pureId, isGroup);
+    let message;
+    const mentions = Array.isArray(options.mentions) ? options.mentions : [];
+    if (isGroup && mentions.length > 0) {
+      // 发送@文本消息
+      message = await TIM.sendTextAtMessage(text, pureId, mentions);
+    } else {
+      // 普通文本消息
+      message = await TIM.sendTextMessage(text, pureId, isGroup);
+    }
     
     console.log('消息发送成功', message);
     
@@ -385,7 +428,15 @@ export async function createNewChat(type, params) {
     if (type === 'C2C') {
       conversation = await TIM.createC2CConversation(params.userID);
     } else if (type === 'GROUP') {
-      conversation = await TIM.createGroupConversation(params.groupID);
+      // 判断是创建群聊还是加入群聊
+      if (params.isJoin && params.groupID) {
+        conversation = await TIM.createGroupConversation(params.groupID);
+      } else if (params.name) {
+        // 以后可实现创建群组功能
+        throw new Error("创建新群组功能尚未实现");
+      } else {
+        throw new Error("群组参数不正确");
+      }
     } else {
       throw new Error(`不支持的会话类型: ${type}`);
     }
@@ -394,10 +445,11 @@ export async function createNewChat(type, params) {
     const isGroup = type === 'GROUP';
     const profile = isGroup ? conversation.groupProfile : conversation.userProfile;
     
+    // 确保返回正确的conversationID
     return {
       id: isGroup ? conversation.groupID : conversation.userID,
-      name: isGroup ? profile.name : profile.nick,
-      avatar: profile.avatar,
+      name: isGroup ? profile?.name || `群聊 ${conversation.groupID}` : profile?.nick || conversation.userID,
+      avatar: profile?.avatar || null,
       status: 'active',
       conversationID: conversation.conversationID,
       type: isGroup ? 'group' : 'user'
@@ -435,5 +487,36 @@ export function removeEventListener(eventName, callback) {
     console.log(`已移除事件监听: ${eventName}`);
   } catch (error) {
     console.error(`移除事件监听失败: ${eventName}`, error);
+  }
+}
+
+/**
+ * 获取群组成员列表
+ * @param {string} groupID 群组ID (纯ID或@TGS#格式)
+ * @param {number} count 获取数量，默认100
+ * @returns {Promise<Array>} 群成员列表
+ */
+export async function getGroupMembers(groupID, count = 100) {
+  try {
+    if (!groupID) throw new Error('groupID不能为空');
+
+    // 处理@TGS#前缀
+    let pureGroupID = groupID;
+    if (groupID.startsWith('GROUP')) {
+      pureGroupID = groupID.replace(/^GROUP/, '');
+    }
+    const tim = TIM.getTIMInstance();
+    if (!tim) throw new Error('TIM SDK未初始化');
+
+    const imResponse = await tim.getGroupMemberList({
+      groupID: pureGroupID,
+      count,
+      offset: 0
+    });
+    // 返回成员数组
+    return imResponse.data.memberList || [];
+  } catch (error) {
+    console.error('获取群成员列表失败', error);
+    return [];
   }
 } 

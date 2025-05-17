@@ -21,13 +21,10 @@ export const fieldOptions = [
 export const operatorOptions = [
   "等于",
   "不等于",
-  "大于",
-  "大于等于",
-  "小于",
-  "小于等于",
   "包含",
   "不包含",
-  "在范围内"
+  "为空",
+  "不为空"
 ]
 
 // 值选项 - 基于真实数据
@@ -171,8 +168,8 @@ export const normalizeFieldName = (fieldName) => {
     case "可信度":
       return "credibility";
     default:
-      // 如果在valueOptions中找不到这个字段，返回关键词搜索
-      return valueOptions[normalizedName] ? normalizedName : "keyword";
+      // 保留原始字段名，不再默认转为keyword
+      return normalizedName;
   }
 };
 
@@ -264,9 +261,26 @@ export const filterCardsByConditions = (cards, filterConfig) => {
     return filterConfig.conditions.every(condition => {
       // 获取卡片中对应字段的值
       const cardValue = processCardFieldValue(card, condition.field);
+      
+      // 为空和不为空操作符特殊处理，不需要条件值
+      if (condition.operator === "为空") {
+        if (Array.isArray(cardValue)) {
+          return cardValue.length === 0;
+        }
+        return cardValue === null || cardValue === undefined || cardValue === "";
+      }
+      
+      if (condition.operator === "不为空") {
+        if (Array.isArray(cardValue)) {
+          return cardValue.length > 0;
+        }
+        return cardValue !== null && cardValue !== undefined && cardValue !== "";
+      }
+      
+      // 其他操作符需要条件值
       const conditionValue = condition.value || (condition.values && condition.values.length > 0 ? condition.values[0] : null);
       
-      // 如果条件值为空或未定义，则返回true
+      // 如果条件值为空或未定义，则返回true（跳过此条件）
       if (conditionValue === null || conditionValue === undefined) {
         return true;
       }
@@ -276,6 +290,7 @@ export const filterCardsByConditions = (cards, filterConfig) => {
       // 根据操作符进行比较
       switch (condition.operator) {
         case "等于":
+        case "EQ":
           if (Array.isArray(cardValue)) {
             return cardValue.some(val => 
               val.toString().toLowerCase() === conditionValue.toString().toLowerCase()
@@ -284,6 +299,7 @@ export const filterCardsByConditions = (cards, filterConfig) => {
           return cardValue.toString().toLowerCase() === conditionValue.toString().toLowerCase();
           
         case "不等于":
+        case "NEQ":
           if (Array.isArray(cardValue)) {
             return !cardValue.some(val => 
               val.toString().toLowerCase() === conditionValue.toString().toLowerCase()
@@ -291,19 +307,8 @@ export const filterCardsByConditions = (cards, filterConfig) => {
           }
           return cardValue.toString().toLowerCase() !== conditionValue.toString().toLowerCase();
           
-        case "大于":
-          return parseFloat(cardValue) > parseFloat(conditionValue);
-          
-        case "大于等于":
-          return parseFloat(cardValue) >= parseFloat(conditionValue);
-          
-        case "小于":
-          return parseFloat(cardValue) < parseFloat(conditionValue);
-          
-        case "小于等于":
-          return parseFloat(cardValue) <= parseFloat(conditionValue);
-          
         case "包含":
+        case "LIKE":
           if (Array.isArray(cardValue)) {
             return cardValue.some(val => 
               val.toString().toLowerCase().includes(conditionValue.toString().toLowerCase())
@@ -312,20 +317,25 @@ export const filterCardsByConditions = (cards, filterConfig) => {
           return cardValue.toString().toLowerCase().includes(conditionValue.toString().toLowerCase());
           
         case "不包含":
+        case "NOT_IN":
           if (Array.isArray(cardValue)) {
             return !cardValue.some(val => 
               val.toString().toLowerCase().includes(conditionValue.toString().toLowerCase())
             );
           }
           return !cardValue.toString().toLowerCase().includes(conditionValue.toString().toLowerCase());
-          
-        case "在范围内":
-          if (Array.isArray(condition.values) && condition.values.length === 2) {
-            const numValue = parseFloat(cardValue);
-            const [min, max] = condition.values.map(parseFloat);
-            return numValue >= min && numValue <= max;
+
+        case "IS_NULL":
+          if (Array.isArray(cardValue)) {
+            return cardValue.length === 0;
           }
-          return false;
+          return cardValue === null || cardValue === undefined || cardValue === "";
+
+        case "IS_NOT_NULL":
+          if (Array.isArray(cardValue)) {
+            return cardValue.length > 0;
+          }
+          return cardValue !== null && cardValue !== undefined && cardValue !== "";
           
         default:
           return true;

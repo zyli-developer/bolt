@@ -6,7 +6,6 @@ import * as timService from "../services/timService"
 import { notification } from "antd"
 import { TIM_EVENT } from "../lib/tim/constants"
 import { 
-  sendTextMessage,
   sendSessionStartMessage,
   sendSessionEndMessage,
   extractSessionData
@@ -375,7 +374,7 @@ export const ChatProvider = ({ children }) => {
   };
 
   // 发送消息
-  const sendMessage = async (text) => {
+  const sendMessage = async (text, options = {}) => {
     if (!text || !activeUser) return;
     
     try {
@@ -448,7 +447,7 @@ export const ChatProvider = ({ children }) => {
         }
         
         // 4. 发送普通文本消息
-        const textMessage = await sendTextMessage(text, activeUser.id, isGroup);
+        const textMessage = await timService.sendMessage(activeUser.id, text, options);
         
         // 5. 将发送的文本消息添加到UI
         const newUIMessage = {
@@ -466,7 +465,7 @@ export const ChatProvider = ({ children }) => {
       } else {
         // 正常发送文本消息
         const isGroup = activeUser.type === 'group';
-        const textMessage = await sendTextMessage(text, activeUser.id, isGroup);
+        const textMessage = await timService.sendMessage(activeUser.id, text, options);
         
         // 将发送的文本消息添加到UI
         const newUIMessage = {

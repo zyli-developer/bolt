@@ -477,17 +477,6 @@ code {
   word-break: break-word;
 }
 
-.message-user {
-  background-color: #006ffd;
-  color: #fff;
-  border-top-right-radius: 4px;
-}
-
-.message-other {
-  background-color: var(--color-bg-base);
-  color: var(--color-text-base);
-  border-top-left-radius: 4px;
-}
 
 .message-time {
   font-size: 12px;
@@ -725,7 +714,7 @@ code {
 .card-item {
   border-radius: 16px;
   padding: 16px; /* 减小内边距 */
-  background-color: #E7F0EC;
+  background-color: var(--color-chat-bg);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
   position: relative;
   border: 1px solid var(--color-border-secondary);

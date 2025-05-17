@@ -8,6 +8,27 @@ import endpoints from "./endpoints"
 import { getCurrentUser } from "./authService"
 import { processTaskCard, processTasksResponse } from "../utils/dataTransformer"
 import { modelEvaluationData } from "../mocks/data"
+import { taskCardsData } from "../mocks/data"
+import { filterCardsByConditions } from "../mocks/filterData"
+
+// 判断是否使用本地模拟数据
+const USE_MOCK_DATA = true;
+
+// 辅助函数：将API操作符转换为UI操作符
+function convertApiOperatorToUi(apiOp) {
+  switch(apiOp) {
+    case "EQ": return "等于";
+    case "NEQ": return "不等于";
+    case "GT": return "大于";
+    case "GTE": return "大于等于";
+    case "LT": return "小于";
+    case "LTE": return "小于等于";
+    case "LIKE": return "包含";
+    case "NOT_IN": return "不包含";
+    case "RANGE": return "在范围内";
+    default: return "等于";
+  }
+}
 
 const taskService = {
   /**
@@ -18,6 +39,100 @@ const taskService = {
   getTasks: async (params = {}) => {
     try {
       console.log("获取任务列表，参数:", params);
+      
+      // 如果使用本地模拟数据
+      if (USE_MOCK_DATA) {
+        console.log("使用本地模拟数据...");
+        // 获取分页参数
+        const page = params.pagination?.page || 1;
+        const perPage = params.pagination?.per_page || 10;
+        
+        // 获取筛选和排序条件
+        const filterParams = params.filter;
+        const sortParams = params.sort;
+        
+        // 复制一份任务卡片数据，避免修改原始数据
+        let data = JSON.parse(JSON.stringify(taskCardsData));
+        
+        // 应用筛选条件 - 如果有筛选参数
+        if (filterParams) {
+          console.log("应用筛选条件:", filterParams);
+          
+          // 将API筛选格式转换为UI筛选格式
+          const filterConfig = {
+            conditions: []
+          };
+          
+          // 处理不同格式的筛选条件
+          if (Array.isArray(filterParams)) {
+            // 处理数组格式的筛选条件 [{exprs:[...]}, {exprs:[...]}]
+            filterParams.forEach(filter => {
+              if (filter.exprs && Array.isArray(filter.exprs)) {
+                filter.exprs.forEach(expr => {
+                  filterConfig.conditions.push({
+                    field: expr.field,
+                    operator: convertApiOperatorToUi(expr.op),
+                    values: expr.values
+                  });
+                });
+              }
+            });
+          } else if (filterParams.exprs && Array.isArray(filterParams.exprs)) {
+            // 处理单个对象格式的筛选条件 {exprs:[...]}
+            filterParams.exprs.forEach(expr => {
+              filterConfig.conditions.push({
+                field: expr.field,
+                operator: convertApiOperatorToUi(expr.op),
+                values: expr.values
+              });
+            });
+          }
+          
+          console.log("转换后的筛选配置:", filterConfig);
+          
+          // 使用filter函数筛选数据
+          data = filterCardsByConditions(data, filterConfig);
+          console.log("筛选后的数据量:", data.length);
+        }
+        
+        // 应用排序条件 - 如果有排序参数
+        if (sortParams) {
+          console.log("应用排序条件:", sortParams);
+          data.sort((a, b) => {
+            const fieldA = a[sortParams.field];
+            const fieldB = b[sortParams.field];
+            
+            // 检查字段是否存在且可比较
+            if (fieldA !== undefined && fieldB !== undefined) {
+              // 数值比较
+              if (typeof fieldA === 'number' && typeof fieldB === 'number') {
+                return sortParams.desc ? (fieldB - fieldA) : (fieldA - fieldB);
+              }
+              // 字符串比较
+              else {
+                const compareResult = String(fieldA).localeCompare(String(fieldB));
+                return sortParams.desc ? -compareResult : compareResult;
+              }
+            }
+            return 0;
+          });
+        }
+        
+        // 分页处理
+        const startIndex = (page - 1) * perPage;
+        const endIndex = startIndex + perPage;
+        const paginatedData = data.slice(startIndex, endIndex);
+        
+        // 构建响应结构
+        return {
+          card: paginatedData,
+          pagination: {
+            total: data.length,
+            page: page,
+            per_page: perPage
+          }
+        };
+      }
       
       // 获取当前用户
       const currentUser = getCurrentUser();

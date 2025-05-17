@@ -571,33 +571,9 @@ const ChatMessage = ({ message }) => {
         data-session-id={sessionId}
         onClick={handleToggleExpand}
       >
-        <div className="session-divider-line"></div>
-        <div className="session-divider-content">
-          {isStart ? (
-            <>
-              <span className="divider-text">引用会话开始</span>
-              <div className="divider-quote">{quoteContent}</div>
-            </>
-          ) : (
-            <span className="divider-text">引用会话结束</span>
-          )}
-          <button 
-            className="toggle-expand-btn" 
-            onClick={(e) => {
-              e.stopPropagation(); // 阻止冒泡，避免触发外层div的onClick
-              handleToggleExpand();
-            }}
-            title={isExpanded ? "收起会话" : "展开会话"}
-            aria-label={isExpanded ? "收起会话" : "展开会话"}
-          >
-            {isExpanded ? <UpOutlined /> : <DownOutlined />}
-          </button>
+        <div className="session-divider-line">
+          <span className="divider-text">{isExpanded ? "引用会话收起" : "引用会话展开"}</span>
         </div>
-        {isStart && (
-          <div className="session-divider-footer">
-            <span className="session-id-info">会话ID: {sessionId.substring(0, 8)}...</span>
-          </div>
-        )}
       </div>
     );
   };

@@ -1809,7 +1809,7 @@ export const taskCardsData = [
       agent1: false,
       agent2: true
     }
-},
+  },
   {
     id: "103",
     prompt: "我可以关闭安全气囊吗？",

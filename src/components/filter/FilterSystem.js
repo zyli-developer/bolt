@@ -225,12 +225,15 @@ const FilterSystem = ({ onFilterChange, onSortChange, onViewChange, onImportSucc
         case "LIKE": operator = "包含"; break;
         case "NOT_IN": operator = "不包含"; break;
         case "RANGE": operator = "在范围内"; break;
+        case "IS_NULL": operator = "为空"; break;
+        case "IS_NOT_NULL": operator = "不为空"; break;
         default: operator = "等于";
       }
 
-      // 确保values是数组且有值
-      const values = Array.isArray(expr.values) ? expr.values : 
-                    (expr.values ? [expr.values] : []);
+      // 确保values是数组且有值，但"为空"和"不为空"操作符不需要值
+      const values = operator === "为空" || operator === "不为空" ? [] : 
+                     (Array.isArray(expr.values) ? expr.values : 
+                     (expr.values ? [expr.values] : []));
       
       console.log(`筛选条件 ${index + 1}: 原字段=${expr.field}, 标准化字段=${normalizedField}, 操作符=${operator}, 值=`, values);
       
@@ -256,6 +259,21 @@ const FilterSystem = ({ onFilterChange, onSortChange, onViewChange, onImportSucc
 
     // 将UI筛选条件转换为API筛选表达式
     uiFilter.forEach(condition => {
+      // 标准化字段名称
+      const fieldName = normalizeFieldName(condition.field);
+      
+      // 特殊处理"为空"和"不为空"操作符
+      if (condition.operator === "为空" || condition.operator === "不为空") {
+        // 这两个操作符不需要值，可以直接创建表达式
+        const op = condition.operator === "为空" ? "IS_NULL" : "IS_NOT_NULL";
+        filterList.exprs.push({
+          field: fieldName,
+          op,
+          values: [] // 为空操作符不需要值
+        });
+        return; // 处理完当前条件，继续下一个
+      }
+      
       // 确定操作符类型
       let op;
       switch(condition.operator) {
@@ -271,14 +289,11 @@ const FilterSystem = ({ onFilterChange, onSortChange, onViewChange, onImportSucc
         default: op = "EQ";
       }
 
-      // 标准化字段名称
-      const fieldName = normalizeFieldName(condition.field);
+      // 确保有值（除了"为空"和"不为空"操作符外，其他操作符需要值）
+      const values = Array.isArray(condition.values) ? condition.values : 
+                     (condition.value !== undefined ? [condition.value] : []);
       
-      // 确保有值
-      const values = condition.values || [];
-      if (values.length === 0) return; // 跳过没有值的条件
-      
-      // 创建筛选表达式并添加到列表
+      // 即使没有值也添加筛选条件，避免条件丢失
       filterList.exprs.push({
         field: fieldName,
         op,

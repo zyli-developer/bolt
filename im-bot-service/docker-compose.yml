@@ -8,7 +8,7 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=production
-      - IM_SDKAPPID=1400000000  # 替换为您的SDKAppID
+      - IM_SDKAPPID=1600079965  # 替换为您的SDKAppID
       - IM_SECRET_KEY=           # 替换为您的密钥
       - IM_ADMIN_USER_ID=administrator
       - IM_BOT_USER_ID=@RBT#001

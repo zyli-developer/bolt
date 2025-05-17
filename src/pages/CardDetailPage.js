@@ -392,6 +392,18 @@ const CardDetailPage = () => {
           }
         }
         
+        // 确保 chartData 存在且包含必要的属性
+        if (!cardData.chartData) {
+          cardData.chartData = { radar: [], line: [] };
+        } else {
+          if (!cardData.chartData.radar || !Array.isArray(cardData.chartData.radar)) {
+            cardData.chartData.radar = [];
+          }
+          if (!cardData.chartData.line || !Array.isArray(cardData.chartData.line)) {
+            cardData.chartData.line = [];
+          }
+        }
+        
         setCard(cardData)
         setEvaluationData(evaluationData)
         
@@ -479,26 +491,30 @@ const CardDetailPage = () => {
     if (!card || !card.chartData) return { radar: [], line: [] }
 
     // Enhanced radar data with multiple model values
-    const enhancedRadar = card.chartData.radar.map((item, index) => ({
-      name: item.name,
-      value: item.value,
-      'claude3.5': Math.min(100, item.value * (1 + Math.sin(index) * 0.2)),
-      'claude3.6': Math.min(100, item.value * (1 + Math.cos(index) * 0.15)),
-      'claude3.7': Math.min(100, item.value * (1 + Math.sin(index + 0.5) * 0.1)),
-      agent2: Math.min(100, item.value * (1 - Math.cos(index) * 0.15)),
-      deepseek: Math.min(100, item.value * (1 + Math.sin(index + 1) * 0.2)),
-    }))
+    const enhancedRadar = card.chartData.radar && Array.isArray(card.chartData.radar) 
+      ? card.chartData.radar.map((item, index) => ({
+        name: item.name,
+        value: item.value,
+        'claude3.5': Math.min(100, item.value * (1 + Math.sin(index) * 0.2)),
+        'claude3.6': Math.min(100, item.value * (1 + Math.cos(index) * 0.15)),
+        'claude3.7': Math.min(100, item.value * (1 + Math.sin(index + 0.5) * 0.1)),
+        agent2: Math.min(100, item.value * (1 - Math.cos(index) * 0.15)),
+        deepseek: Math.min(100, item.value * (1 + Math.sin(index + 1) * 0.2)),
+      }))
+      : [];
 
     // Enhanced line data with multiple model values
-    const enhancedLine = card.chartData.line.map((item, index) => ({
-      month: item.month,
-      value: item.value,
-      'claude3.5': Math.min(100, item.value * (1 + Math.sin(index) * 0.1)),
-      'claude3.6': Math.min(100, item.value * (1 + Math.cos(index) * 0.12)),
-      'claude3.7': Math.min(100, item.value * (1 + Math.sin(index + 0.5) * 0.08)),
-      agent2: Math.min(100, item.value * (1 - Math.cos(index) * 0.1)),
-      deepseek: Math.min(100, item.value * (1 + Math.sin(index + 1) * 0.12)),
-    }))
+    const enhancedLine = card.chartData.line && Array.isArray(card.chartData.line)
+      ? card.chartData.line.map((item, index) => ({
+        month: item.month,
+        value: item.value,
+        'claude3.5': Math.min(100, item.value * (1 + Math.sin(index) * 0.1)),
+        'claude3.6': Math.min(100, item.value * (1 + Math.cos(index) * 0.12)),
+        'claude3.7': Math.min(100, item.value * (1 + Math.sin(index + 0.5) * 0.08)),
+        agent2: Math.min(100, item.value * (1 - Math.cos(index) * 0.1)),
+        deepseek: Math.min(100, item.value * (1 + Math.sin(index + 1) * 0.12)),
+      }))
+      : [];
 
     return { radar: enhancedRadar, line: enhancedLine }
   }
@@ -724,7 +740,7 @@ const CardDetailPage = () => {
       title: `优化: ${card?.title || "未命名任务"}`,
       originalTitle: card?.title,
       source: card?.source || "优化测试",
-      tags: [...(card?.tags || []), "已优化"],
+      tags: [...(Array.isArray(card?.tags) ? card.tags : []), "已优化"],
       author: card?.author,
       comments: comments, // 所有注释
       steps: savedData, // 各步骤保存的数据
@@ -770,10 +786,12 @@ const CardDetailPage = () => {
                 score: optimizationData.optimizationResults.afterScore / 10, // 转换为0-1区间
                 consumed_points: 50,
                 description: "优化后的任务评估",
-                dimension: optimizationData.chartData?.radar?.map(item => ({
-                  latitude: item.name,
-                  weight: item.value / 100 // 转换为0-1区间
-                })) || []
+                dimension: optimizationData.chartData?.radar && Array.isArray(optimizationData.chartData.radar)
+                  ? optimizationData.chartData.radar.map(item => ({
+                      latitude: item.name,
+                      weight: item.value / 100 // 转换为0-1区间
+                    }))
+                  : []
               }
             ],
             reason: "通过优化模式改进"

@@ -2,7 +2,7 @@
 .task-card {
   border-radius: 16px;
   padding: 16px;
-  background-color: #E7F0EC;
+  background-color: var(--color-chat-bg);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
   position: relative;
   border: 1px solid #e8e9f1;

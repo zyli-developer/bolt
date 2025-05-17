@@ -20,9 +20,10 @@ const IM_DOMAIN = 'https://console.tim.qq.com';
  */
 function buildApiUrl(serviceCmd) {
   const random = Math.floor(Math.random() * 4294967295);
-  const userSig = IM.SecretKey;
+  // 生成管理员的UserSig
+  const adminUserSig = genUserSig(IM.AdminUserID);
   
-  return `${IM_DOMAIN}/v4/${serviceCmd}?sdkappid=${IM.SDKAppID}&identifier=${IM.AdminUserID}&usersig=${userSig}&random=${random}&contenttype=json`;
+  return `${IM_DOMAIN}/v4/${serviceCmd}?sdkappid=${IM.SDKAppID}&identifier=${IM.AdminUserID}&usersig=${adminUserSig}&random=${random}&contenttype=json`;
 }
 
 /**
