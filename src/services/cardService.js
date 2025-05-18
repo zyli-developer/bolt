@@ -218,6 +218,31 @@ const cardService = {
    */
   getExplorationDetail: async (id) => {
     try {
+      // 如果使用本地模拟数据
+      if (USE_MOCK_DATA) {
+        console.log(`使用本地模拟数据获取探索详情, ID: ${id}`);
+        
+        // 从explorationCardsData中获取对应ID的卡片数据
+        const exploration = explorationCardsData.find(card => card.id === id);
+        
+        if (!exploration) {
+          throw new Error(`找不到ID为 ${id} 的探索数据`);
+        }
+        
+        // 处理探索卡片数据
+        const processedExploration = processExplorationCard(exploration);
+        
+        // 使用processedExploration.modelEvaluations作为模型评估数据
+        const evaluationData = processedExploration.modelEvaluations || {};
+        
+        // 返回符合API格式的响应数据，包含卡片数据和模型评估数据
+        return {
+          exploration: processedExploration,
+          evaluationData: evaluationData
+        };
+      }
+      
+      // 以下是原始的API调用逻辑
       // 获取当前用户
       const currentUser = getCurrentUser();
       
@@ -235,7 +260,9 @@ const cardService = {
       
       // 如果有exploration字段，处理数据
       if (response.exploration) {
-        response.exploration = processExplorationCard(response.exploration);
+        const processedExploration = processExplorationCard(response.exploration);
+        response.exploration = processedExploration;
+        response.evaluationData = processedExploration.modelEvaluations || {};
       }
       
       return response;

@@ -111,6 +111,14 @@ const endpoints = {
   robotChat: {
     messages: (chatId) => `/v1/rbt/chats/${chatId}/messages`,
   },
+
+  // 模型相关 (API规范: /v1/syntrust/models)
+  models: {
+    list: "/v1/syntrust/models",
+    detail: (id) => `/v1/syntrust/model/${id}`,
+    evaluations: "/v1/syntrust/models/evaluations",
+    compare: "/v1/syntrust/models/compare",
+  },
 }
 
 export default endpoints

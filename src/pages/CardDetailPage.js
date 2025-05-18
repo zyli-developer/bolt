@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef, useContext } from "react"
+import { useState, useEffect, useRef, useContext, useMemo } from "react"
 import { useParams, useNavigate, useLocation } from "react-router-dom"
 import {  Button, Avatar, Tag, Spin, Select, Checkbox, Breadcrumb, Switch, Steps, message, Tooltip, Card } from "antd"
 import { transparentScrollbarStyle, hideScrollbarStyle } from "../styles/scrollbarStyles"
@@ -12,6 +12,7 @@ import {
   StarFilled,
   ShareAltOutlined,
   LikeOutlined,
+  LikeFilled,
   CommentOutlined,
   ForkOutlined,
   SettingOutlined,
@@ -123,6 +124,7 @@ const QAOptimizationSection = ({ comments = [], card }) => {
         taskId={card?.id}
         prompt={card?.prompt} 
         response={card?.response_summary} 
+        comments={card?.annotation?.qa || comments}
       />
     </div>
   );
@@ -137,6 +139,7 @@ const SceneOptimizationSection = ({ comments = [], card }) => {
         isEditable={true} 
         taskId={card?.id}
         scenario={card?.scenario} 
+        comments={card?.annotation?.scene || comments}
       />
     </div>
   );
@@ -151,6 +154,7 @@ const TemplateOptimizationSection = ({ comments = [], card }) => {
         isEditable={true} 
         taskId={card?.id}
         steps={card?.templateData ? { templateData: card.templateData, ...card?.step } : card?.step} 
+        comments={card?.annotation?.template || comments}
       />
     </div>
   );
@@ -178,13 +182,9 @@ const CardDetailPage = () => {
   const [card, setCard] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [selectedModels, setSelectedModels] = useState(['claude3.5', 'claude3.6', 'claude3.7'])
+  const [selectedModels, setSelectedModels] = useState([])
   const [selectedChartModels, setSelectedChartModels] = useState({
-    'claude3.5': true,
-    'claude3.6': true,
-    'claude3.7': true,
-    agent2: false,
-    deepseek: false,
+
   })
   const { isChatOpen } = useChatContext()
   const [expandedModel, setExpandedModel] = useState(false)
@@ -195,7 +195,8 @@ const CardDetailPage = () => {
   // 添加关注和分享相关状态
   const [isFollowing, setIsFollowing] = useState(false)
   const [isShareModalVisible, setIsShareModalVisible] = useState(false)
-  
+  const [isLiked, setIsLiked] = useState(false);
+
   // 添加用于保存完整卡片数据的状态
   const [completeCardData, setCompleteCardData] = useState(null)
   
@@ -323,10 +324,24 @@ const CardDetailPage = () => {
         setIsMultiSelectActive(false);
         clearAllHighlights();
       }
+      
+      // 根据步骤加载对应的注释数据 - 直接使用步骤字符串映射到annotation对应字段
+      if (card && card.annotation) {
+        // 使用步骤数值或字符串加载对应的注释
+        if ((current === 0 || current === 'result') && Array.isArray(card.annotation.result)) {
+          setComments(card.annotation.result);
+        // QA优化 - 对应 qa 注释
+        } else if ((current === 1 || current === 'qa') && Array.isArray(card.annotation.qa)) {
+          setComments(card.annotation.qa);
+        // 场景优化 - 对应 scene 注释
+        } else if ((current === 2 || current === 'scene') && Array.isArray(card.annotation.scene)) {
+          setComments(card.annotation.scene);
+        // 模板优化 - 对应 template 注释
+        } else if ((current === 3 || current === 'template') && Array.isArray(card.annotation.template)) {
+          setComments(card.annotation.template);
+        }
+      }
     }
-    
-    // 注意：不再需要在这里设置注释数据，因为现在使用全局上下文
-    // 各组件会从OptimizationContext中读取并更新自己所需的数据
   };
 
   // 返回按钮处理函数
@@ -370,20 +385,33 @@ const CardDetailPage = () => {
         setLoading(true)
         
         let cardData;
+        let evaluationData = {};
+        
         // 检查ID格式，确定使用哪个API获取数据
         // 如果ID是数字格式（如"1001"），则使用getExplorationDetail
         // 否则使用getCardDetail
         if (/^\d+$/.test(id)) {
           // 获取探索详情
+          console.log(`正在获取ID为 ${id} 的探索详情...`);
           const response = await cardService.getExplorationDetail(id);
+          
+          // 确保我们使用正确的数据结构 - 从response.exploration中获取数据
           cardData = response.exploration || response;
+          
+          // 从response中获取模型评估数据
+          evaluationData = response.evaluationData || {};
+          
+          console.log(`获取到的探索详情数据:`, cardData);
+          console.log(`获取到的模型评估数据:`, evaluationData);
         } else {
           // 获取普通卡片详情
+          console.log(`正在获取ID为 ${id} 的普通卡片详情...`);
           cardData = await cardService.getCardDetail(id);
-        }
+          console.log(`获取到的普通卡片详情数据:`, cardData);
         
         // 获取模型评估数据
-        const evaluationData = await taskService.getAllModelEvaluations();
+          evaluationData = await taskService.getAllModelEvaluations();
+        }
         
         // 确保templateData正确设置
         if (!cardData.templateData && cardData.step) {
@@ -404,19 +432,47 @@ const CardDetailPage = () => {
           }
         }
         
+        console.log("获取到的卡片数据:", cardData);
         setCard(cardData)
         setEvaluationData(evaluationData)
         
         // 确保每次加载卡片详情时，优化模式默认是关闭的
         setIsOptimizationMode(false);
-        setCurrentOptimizationStep(0);
+        setCurrentOptimizationStep('result'); // 使用字符串'result'，而非数字0
         
-        // 如果是从探索页面进入，默认设置一些注释数据
-        if (isFromExplore) {
-          setComments([
-            { author: 'Jackson', time: '2025-04-24 09:45', text: '这个模型在语音识别方面表现优秀，尤其是对儿童语音的识别准确率比预期高' },
-            { author: 'Alice', time: '2025-04-24 10:12', text: '安全性设计符合国际标准，没有发现明显漏洞' }
-          ]);
+        // 更新模型选择下拉菜单的可选项为从数据中获取的模型键
+        const availableModels = Object.keys(evaluationData);
+        if (availableModels.length > 0) {
+          // 根据可用模型更新默认选中的模型
+          setSelectedModels(availableModels.slice(0, 3)); // 默认选择前三个模型
+          setSelectedModel(availableModels[0]); // 设置第一个模型为当前选中的模型
+        }
+        
+        // 设置注释数据，确保正确使用task.annotation中的对应字段
+        if (isFromExplore || id) {
+          // 确保annotation对象存在，如果不存在则创建一个空的
+          if (!cardData.annotation) {
+            cardData.annotation = {
+              result: [],
+              qa: [],
+              scene: [],
+              template: []
+            };
+          }
+          
+                    // 使用步骤字符串确保直接映射到task.annotation对应字段
+          if (currentOptimizationStep === 'result' || currentOptimizationStep === 0) {
+            setComments(Array.isArray(cardData.annotation.result) ? cardData.annotation.result : []);
+          // QA优化 - 对应 qa 注释  
+          } else if (currentOptimizationStep === 'qa' || currentOptimizationStep === 1) {
+            setComments(Array.isArray(cardData.annotation.qa) ? cardData.annotation.qa : []);
+          // 场景优化 - 对应 scene 注释
+          } else if (currentOptimizationStep === 'scene' || currentOptimizationStep === 2) {
+            setComments(Array.isArray(cardData.annotation.scene) ? cardData.annotation.scene : []);
+          // 模板优化 - 对应 template 注释
+          } else if (currentOptimizationStep === 'template' || currentOptimizationStep === 3) {
+            setComments(Array.isArray(cardData.annotation.template) ? cardData.annotation.template : []);
+          }
         }
         
         setError(null)
@@ -486,40 +542,104 @@ const CardDetailPage = () => {
     setExpandedModel(expandedModel === modelKey ? null : modelKey);
   }
 
+  // 使用useRef和useMemo缓存图表数据，防止重新渲染导致数据变化
+  const chartDataRef = useRef({
+    radar: [],
+    line: []
+  });
+
   // Prepare enhanced chart data with multiple model series
   const getEnhancedChartData = () => {
+    // 如果已经有缓存的数据，直接返回
+    if (chartDataRef.current.radar.length > 0 || chartDataRef.current.line.length > 0) {
+      return chartDataRef.current;
+    }
+    
     if (!card || !card.chartData) return { radar: [], line: [] }
+
+    // 获取可用的模型键
+    const modelKeys = Object.keys(evaluationData);
 
     // Enhanced radar data with multiple model values
     const enhancedRadar = card.chartData.radar && Array.isArray(card.chartData.radar) 
-      ? card.chartData.radar.map((item, index) => ({
+      ? card.chartData.radar.map((item, index) => {
+          // 创建包含基本数据的对象
+          const radarPoint = {
         name: item.name,
-        value: item.value,
-        'claude3.5': Math.min(100, item.value * (1 + Math.sin(index) * 0.2)),
-        'claude3.6': Math.min(100, item.value * (1 + Math.cos(index) * 0.15)),
-        'claude3.7': Math.min(100, item.value * (1 + Math.sin(index + 0.5) * 0.1)),
-        agent2: Math.min(100, item.value * (1 - Math.cos(index) * 0.15)),
-        deepseek: Math.min(100, item.value * (1 + Math.sin(index + 1) * 0.2)),
-      }))
+            value: Math.round(item.value), // 确保值为整数，去掉小数点
+          };
+          
+          // 为每个模型添加对应的数据点
+          modelKeys.forEach((modelKey, modelIndex) => {
+            // 使用固定的偏移量，不再使用随机数
+            // 每个模型的数据会有轻微差异，但不会随重新渲染而变化
+            const offset = 0.8 + (modelIndex * 0.05);
+            radarPoint[modelKey] = Math.round(Math.min(100, item.value * offset));
+          });
+          
+          return radarPoint;
+        })
       : [];
 
     // Enhanced line data with multiple model values
     const enhancedLine = card.chartData.line && Array.isArray(card.chartData.line)
-      ? card.chartData.line.map((item, index) => ({
+      ? card.chartData.line.map((item, index) => {
+          // 创建包含基本数据的对象
+          const linePoint = {
         month: item.month,
-        value: item.value,
-        'claude3.5': Math.min(100, item.value * (1 + Math.sin(index) * 0.1)),
-        'claude3.6': Math.min(100, item.value * (1 + Math.cos(index) * 0.12)),
-        'claude3.7': Math.min(100, item.value * (1 + Math.sin(index + 0.5) * 0.08)),
-        agent2: Math.min(100, item.value * (1 - Math.cos(index) * 0.1)),
-        deepseek: Math.min(100, item.value * (1 + Math.sin(index + 1) * 0.12)),
-      }))
+            value: Math.round(item.value), // 确保值为整数，去掉小数点
+          };
+          
+          // 为每个模型添加对应的数据点
+          modelKeys.forEach((modelKey, modelIndex) => {
+            // 使用固定的偏移量，不再使用随机数
+            const offset = 0.8 + (modelIndex * 0.05);
+            linePoint[modelKey] = Math.round(Math.min(100, item.value * offset));
+          });
+          
+          return linePoint;
+        })
       : [];
 
-    return { radar: enhancedRadar, line: enhancedLine }
+    // 缓存计算结果
+    chartDataRef.current = { radar: enhancedRadar, line: enhancedLine };
+    return chartDataRef.current;
   }
 
-  const enhancedChartData = getEnhancedChartData()
+  // 当card或evaluationData变化时重置缓存
+  useEffect(() => {
+    chartDataRef.current = { radar: [], line: [] };
+  }, [card, evaluationData]);
+
+  const enhancedChartData = useMemo(() => getEnhancedChartData(), [card, evaluationData]);
+  
+  // 计算雷达图中的最大值
+  const calculateRadarMaxValue = () => {
+    if (!enhancedChartData.radar || enhancedChartData.radar.length === 0) {
+      return 100; // 默认值为100
+    }
+    
+    // 找出所有数据点中的最大值
+    let maxValue = 0;
+    enhancedChartData.radar.forEach(item => {
+      // 检查基本的value值
+      if (item.value > maxValue) {
+        maxValue = item.value;
+      }
+      
+      // 检查每个模型的值
+      Object.keys(item).forEach(key => {
+        if (key !== 'name' && key !== 'value' && typeof item[key] === 'number' && item[key] > maxValue) {
+          maxValue = item[key];
+        }
+      });
+    });
+    
+    // 向上取整到最接近的10的倍数，并确保至少为100
+    return Math.max(100, Math.ceil(maxValue / 10) * 10);
+  }
+
+  const radarMaxValue = calculateRadarMaxValue();
 
   const getModelColor = (modelKey) => {
     switch (modelKey) {
@@ -558,43 +678,7 @@ const CardDetailPage = () => {
     setIsCreateTaskModalVisible(false)
   }
 
-  // 添加注释数据，确保数据始终可用
-  const defaultAnnotationData = [
-    {
-      key: '1',
-      no: '1',
-      title: '内容安全',
-      content: '确保内容对所有年龄段用户安全',
-      attachments: [
-        { name: '安全标准.pdf', url: '#' },
-        { name: '检查清单.doc', url: '#' }
-      ],
-      lastModifiedBy: { name: 'Lisa', avatar: 'L' },
-      modifiedTime: { hour: '09:30', date: '11/28' }
-    },
-    {
-      key: '2',
-      no: '2',
-      title: '隐私保护',
-      content: '用户数据收集和处理合规性',
-      attachments: [
-        { name: '隐私政策.pdf', url: '#' }
-      ],
-      lastModifiedBy: { name: 'Mike', avatar: 'M' },
-      modifiedTime: { hour: '14:25', date: '11/27' }
-    },
-    {
-      key: '3',
-      no: '3',
-      title: '响应速度',
-      content: '系统响应时间需控制在200ms内',
-      attachments: [
-        { name: '性能测试.xlsx', url: '#' }
-      ],
-      lastModifiedBy: { name: 'Tom', avatar: 'T' },
-      modifiedTime: { hour: '16:40', date: '11/26' }
-    }
-  ];
+  // 移除默认注释数据
 
   // 注释表格列定义
   const annotationColumns = [
@@ -603,9 +687,11 @@ const CardDetailPage = () => {
       dataIndex: 'no',
       key: 'no',
       width: 50,
-      render: (text) => (
+      render: (text, record, index) => (
         <div style={{ display: 'flex', justifyContent: 'center' }}>
-          <Avatar size={24} style={{ background: 'var(--color-primary)', fontSize: '12px' }}>{text}</Avatar>
+          <Avatar size={24} style={{ background: 'var(--color-primary)', fontSize: '12px' }}>
+            {text || (index + 1)}
+          </Avatar>
         </div>
       ),
     },
@@ -615,6 +701,7 @@ const CardDetailPage = () => {
       key: 'title',
       width: 100,
       ellipsis: true,
+      render: (text, record) => text || record.summary || '未命名注释',
     },
     {
       title: '内容',
@@ -622,11 +709,14 @@ const CardDetailPage = () => {
       key: 'content',
       width: 200,
       ellipsis: true,
-      render: (text) => (
-        <Tooltip title={text}>
-          <a href="#" style={{ color: 'var(--color-primary)' }}>{text}</a>
+      render: (text, record) => {
+        const content = text || record.text || record.selectedText || '';
+        return (
+          <Tooltip title={content}>
+            <a href="#" style={{ color: 'var(--color-primary)' }}>{content || '无内容'}</a>
         </Tooltip>
-      ),
+        );
+      },
     },
     {
       title: '附件',
@@ -636,11 +726,14 @@ const CardDetailPage = () => {
       ellipsis: true,
       render: (attachments) => (
         <div style={{ display: 'flex', gap: '8px', overflow: 'hidden' }}>
-          {attachments.map((file, index) => (
+          {Array.isArray(attachments) && attachments.length > 0 ? 
+            attachments.map((file, index) => (
             <Tag key={index} style={{ cursor: 'pointer', whiteSpace: 'nowrap' }}>
               <a href={file.url} style={{ color: 'var(--color-primary)' }}>{file.name}</a>
             </Tag>
-          ))}
+            )) :
+            <span style={{ color: 'var(--color-text-tertiary)' }}>无附件</span>
+          }
         </div>
       ),
     },
@@ -649,12 +742,50 @@ const CardDetailPage = () => {
       dataIndex: 'lastModifiedBy',
       key: 'lastModifiedBy',
       width: 100,
-      render: (modifier) => (
+      render: (modifier, record) => {
+        // 首先尝试使用lastModifiedBy字段(如果存在)
+        if (modifier && typeof modifier === 'object') {
+          const avatar = modifier.avatar || modifier.name?.charAt(0) || '?';
+          return (
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Avatar size={24}>{modifier.avatar}</Avatar>
-          <span>{modifier.name}</span>
+              <Avatar size={24}>{avatar}</Avatar>
+              <span>{modifier.name || '未知'}</span>
         </div>
-      ),
+          );
+        }
+        
+        // 否则尝试使用author字段
+        const author = record.author;
+        if (author) {
+          if (typeof author === 'string') {
+            // 如果author是字符串
+            return (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Avatar size={24}>{author.charAt(0)}</Avatar>
+                <span>{author}</span>
+              </div>
+            );
+          } else if (typeof author === 'object') {
+            // 如果author是对象
+            const authorName = author.name || '未知';
+            const authorAvatar = author.avatar || authorName.charAt(0);
+            return (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Avatar size={24}>{authorAvatar}</Avatar>
+                <span>{authorName}</span>
+              </div>
+            );
+          }
+        }
+        
+        // 默认返回
+        return (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Avatar size={24}>?</Avatar>
+            <span>未知</span>
+          </div>
+        );
+      },
     },
     {
       title: '修改时间',
@@ -662,19 +793,92 @@ const CardDetailPage = () => {
       key: 'modifiedTime',
       width: 86,
       align: 'right',
-      render: (time) => (
+      render: (time, record) => {
+        // 如果有modifiedTime对象并且格式正确
+        if (time && typeof time === 'object' && time.hour && time.date) {
+          return (
         <div style={{ color: '#8f9098', fontSize: '12px' }}>
           <div>{time.hour}</div>
           <div>{time.date}</div>
         </div>
-      ),
+          );
+        }
+        
+        // 尝试使用time或updatedAt字段
+        const timeString = record.time || record.updatedAt || time;
+        if (!timeString) {
+          return (
+            <div style={{ color: '#8f9098', fontSize: '12px' }}>
+              <div>未知时间</div>
+            </div>
+          );
+        }
+        
+        // 尝试解析时间字符串
+        try {
+          const date = new Date(timeString);
+          if (!isNaN(date.getTime())) {
+            const hours = date.getHours().toString().padStart(2, '0');
+            const minutes = date.getMinutes().toString().padStart(2, '0');
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const day = date.getDate().toString().padStart(2, '0');
+            
+            return (
+              <div style={{ color: '#8f9098', fontSize: '12px' }}>
+                <div>{`${hours}:${minutes}`}</div>
+                <div>{`${month}/${day}`}</div>
+              </div>
+            );
+          }
+        } catch (e) {
+          // 解析失败，直接显示原始字符串
+        }
+        
+        // 无法解析，直接显示时间字符串
+        return (
+          <div style={{ color: '#8f9098', fontSize: '12px' }}>
+            <div>{typeof timeString === 'string' ? timeString : '未知时间'}</div>
+          </div>
+        );
+      },
     },
   ];
 
-  // 任务注释数据对象，包含columns和data
+  // 使用card中的annotation数据构建任务注释数据对象
+  const getAllAnnotations = (card) => {
+    if (!card?.annotation) return [];
+    
+    // 合并所有类型的注释数据
+    const allAnnotations = [];
+    
+    // 遍历annotation对象的所有属性（result、qa、scene、template等）
+    Object.keys(card?.annotation || {}).forEach(key => {
+      const categoryAnnotations = card.annotation[key];
+      // 确保是数组再添加
+      if (Array.isArray(categoryAnnotations)) {
+        allAnnotations.push(...categoryAnnotations);
+      }
+    });
+    
+    return allAnnotations;
+  };
+  
+  // 获取原始annotation对象
+  const getAnnotationObject = (card) => {
+    if (!card?.annotation || typeof card.annotation !== 'object') {
+      return {
+        qa: [],
+        scene: [],
+        template: [],
+        result: []
+      };
+    }
+    return card.annotation;
+  };
+  
   const taskAnnotationData = {
     columns: annotationColumns,
-    data: defaultAnnotationData
+    data: getAllAnnotations(card)
   };
 
   // 添加测试进度的定时器
@@ -731,9 +935,6 @@ const CardDetailPage = () => {
       clearAllHighlights()
     }
     
-    // 设置提交加载状态
-    setLoading(true)
-    
     // 收集所有优化步骤的数据
     const optimizationData = {
       sourceCardId: card?.id,
@@ -741,13 +942,27 @@ const CardDetailPage = () => {
       originalTitle: card?.title,
       source: card?.source || "优化测试",
       tags: [...(Array.isArray(card?.tags) ? card.tags : []), "已优化"],
-      author: card?.author,
-      comments: comments, // 所有注释
-      steps: savedData, // 各步骤保存的数据
-      selectedModels: selectedModels, // 选中的模型
+      author: card?.author ? JSON.parse(JSON.stringify(card.author)) : null,
+      comments: comments ? JSON.parse(JSON.stringify(comments)) : [], // 深拷贝所有注释
+      steps: savedData ? JSON.parse(JSON.stringify(savedData)) : {}, // 深拷贝各步骤保存的数据
+      selectedModels: selectedModels ? [...selectedModels] : [], // 深拷贝选中的模型
       // 添加卡片的原始数据
-      description: card?.description,
-      chartData: card?.chartData,
+      description: card?.description || card?.summary || "",
+      response_summary: card?.response_summary || "",
+      prompt: card?.prompt || "",
+      scenario: card?.scenario ? JSON.parse(JSON.stringify(card.scenario)) : {},
+      templateData: card?.templateData ? JSON.parse(JSON.stringify(card.templateData)) : {},
+      paramCount: card?.paramCount || "",
+      chartData: card?.chartData ? JSON.parse(JSON.stringify(card.chartData)) : {},
+      // 确保annotation对象被完整深拷贝
+      annotation: card?.annotation ? JSON.parse(JSON.stringify(card.annotation)) : {
+        result: [],
+        qa: [],
+        scene: [],
+        template: []
+      },
+      // 保留原始卡片的所有step信息并深拷贝
+      step: Array.isArray(card?.step) ? JSON.parse(JSON.stringify(card.step)) : (card?.step ? JSON.parse(JSON.stringify(card.step)) : {}),
       updatedAt: new Date().toLocaleString(),
       updatedBy: { name: "当前用户", avatar: null },
       optimizationResults: {
@@ -757,91 +972,35 @@ const CardDetailPage = () => {
       }
     }
     
-    try {
-      // 直接修改mock数据，添加新的优化任务
-      const { taskCardsData } = require("../mocks/data")
-      
-      // 生成新任务ID（确保是纯数字格式）
-      const timestamp = Date.now()
-      const newTaskId = Math.floor(Math.random() * 900) + 100 // 生成100-999之间的随机ID
-      const createdAt = { seconds: Math.floor(timestamp / 1000) }
-      
-      // 创建符合taskCardsData结构的新任务对象
-      const newTask = {
-        id: newTaskId.toString(), // 确保ID是字符串格式
-        prompt: optimizationData.title,
-        response_summary: optimizationData.description || card?.description || "优化后的任务",
-        created_by: optimizationData.author?.name || "当前用户",
-        created_from: optimizationData.source,
-        created_at: createdAt,
-        status: "running",
-        type: "optimization",
-        step: [
-          {
-            agent: "优化助手",
-            score: [
-              {
-                version: "1.0",
-                confidence: "0.95",
-                score: optimizationData.optimizationResults.afterScore / 10, // 转换为0-1区间
-                consumed_points: 50,
-                description: "优化后的任务评估",
-                dimension: optimizationData.chartData?.radar && Array.isArray(optimizationData.chartData.radar)
-                  ? optimizationData.chartData.radar.map(item => ({
-                      latitude: item.name,
-                      weight: item.value / 100 // 转换为0-1区间
-                    }))
-                  : []
-              }
-            ],
-            reason: "通过优化模式改进"
-          }
-        ],
-        title: optimizationData.title,
-        author: optimizationData.author,
-        source: optimizationData.source,
-        tags: optimizationData.tags,
-        summary: optimizationData.description || card?.description,
-        credibility: optimizationData.optimizationResults.afterScore,
-        credibilityChange: `+${optimizationData.optimizationResults.improvementRate}`,
-        score: optimizationData.optimizationResults.afterScore / 10, // 转换为0-10区间
-        scoreChange: `+${optimizationData.optimizationResults.improvementRate}`,
-        chartData: optimizationData.chartData,
-        optimizationResults: optimizationData.optimizationResults,
-        sourceCardId: optimizationData.sourceCardId
+    // 准备完整的卡片数据传递给CreateTaskModal
+    const completeCardData = {
+      ...card,
+      // 添加optimizationData中的额外数据
+      optimizationData: optimizationData,
+      // 确保所有必要的字段都被正确映射
+      questionDescription: card.prompt || "",
+      answerDescription: card.response_summary || card.summary || "",
+      // 确保所有字段都被深拷贝
+      scenario: card?.scenario ? JSON.parse(JSON.stringify(card.scenario)) : {},
+      templateData: card?.templateData ? JSON.parse(JSON.stringify(card.templateData)) : {},
+      annotation: card?.annotation ? JSON.parse(JSON.stringify(card.annotation)) : {
+        result: [],
+        qa: [],
+        scene: [],
+        template: []
+      },
+      step: Array.isArray(card?.step) ? JSON.parse(JSON.stringify(card.step)) : 
+            (card?.step ? JSON.parse(JSON.stringify(card.step)) : {})
       }
       
-      // 将新任务添加到任务数据数组的最前面
-      taskCardsData.unshift(newTask)
+    // 保存到状态中
+    setCompleteCardData(completeCardData)
       
-      console.log("已将优化结果添加到mock数据:", newTask)
+    // 显示创建任务的模态框
+    setIsCreateTaskModalVisible(true)
       
-      // 将完整的新任务对象保存到localStorage，确保页面刷新后数据不丢失
-      localStorage.setItem(`task_${newTaskId}`, JSON.stringify(newTask))
-      
-      // 设置标记，通知TaskPage激活任务菜单
-      localStorage.setItem('activate_tasks_menu', 'true')
-      
-      // 完成后关闭加载状态
+    // 关闭加载状态
       setLoading(false)
-      
-      // 显示成功消息
-      message.success("优化结果已提交，任务已创建")
-      
-      // 跳转到任务列表页面，并传递需要刷新列表的信息
-      navigate('/tasks', { 
-        state: { 
-          refreshList: true,
-          activateTasksMenu: true,
-          newTaskId: newTaskId,  // 现在是数字ID
-          newTask: newTask // 传递完整任务对象
-        } 
-      })
-    } catch (error) {
-      console.error("提交优化结果失败:", error)
-      setLoading(false)
-      message.error("提交失败: " + error.message)
-    }
   }
 
   // 处理文本选择事件
@@ -1180,6 +1339,14 @@ const CardDetailPage = () => {
     setIsFollowing(prev => !prev);
     message.success(isFollowing ? '已取消关注' : '已关注');
   };
+      // 新增点赞处理函数
+      const handleToggleLike = () => { // <--- 添加这个函数
+        setIsLiked(prev => {
+          const newLikedState = !prev;
+          message.success(newLikedState ? '已点赞' : '已取消点赞');
+          return newLikedState;
+        });
+      };
   
   // 处理分享按钮点击
   const handleShare = () => {
@@ -1440,11 +1607,7 @@ const CardDetailPage = () => {
                                 </>
                               )}
                             >
-                              <Option value="claude3.5">Claude 3.5</Option>
-                              <Option value="claude3.6">Claude 3.6</Option>
-                              <Option value="claude3.7">Claude 3.7</Option>
-                              <Option value="agent2">Agent 2</Option>
-                              <Option value="deepseek">DeepSeek</Option>
+                            
                             </Select>
                           </div>
                         </div>
@@ -1531,9 +1694,12 @@ const CardDetailPage = () => {
                               <YAxis 
                                 hide={true}
                                 domain={[0, 'dataMax + 20']}
+                                tickFormatter={(value) => `${Math.round(value)}%`}
                               />
                               <RechartsTooltip 
                                 cursor={false}
+                                formatter={(value, name) => [`${Math.round(value)}%`, evaluationData[name]?.name || name]}
+                                labelFormatter={(label) => `版本: ${label}`}
                                 contentStyle={{
                                   background: '#fff',
                                   border: 'none',
@@ -1585,7 +1751,18 @@ const CardDetailPage = () => {
                             <RadarChart data={enhancedChartData.radar}>
                               <PolarGrid stroke="#e0e0e0" />
                               <PolarAngleAxis dataKey="name" tick={{ fontSize: 10, fill: "#8f9098" }} />
-                              <PolarRadiusAxis domain={[0, 100]} tick={{ fontSize: 9, fill: "#8f9098" }} axisLine={false} />
+                              <PolarRadiusAxis domain={[0, radarMaxValue]} tick={{ fontSize: 9, fill: "#8f9098" }} axisLine={false} />
+                              <RechartsTooltip 
+                                formatter={(value, name) => [`${value}%`, evaluationData[name]?.name || name]}
+                                labelFormatter={(label) => `维度: ${label}`}
+                                contentStyle={{
+                                  background: '#fff',
+                                  border: 'none',
+                                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                                  borderRadius: '4px',
+                                  padding: '4px 8px'
+                                }}
+                              />
                               {selectedModels.map(modelKey => (
                                 <Radar 
                                   key={modelKey}
@@ -1644,7 +1821,7 @@ const CardDetailPage = () => {
                     SceneSection={SceneSection}
                     TemplateSection={TemplateSection}
                     annotationColumns={taskAnnotationData.columns}
-                    annotationData={taskAnnotationData.data}
+                    annotationData={getAnnotationObject(card)}
                   />
                 </div>
               ) : currentOptimizationStep === 5 ? (
@@ -1670,192 +1847,10 @@ const CardDetailPage = () => {
         ) : (
           // 原始布局
           <>
-        {/* 左侧评估区域 */}
-        <div className="evaluation-left-section" style={evaluationLeftSectionStyle}>
-          <div className="evaluation-section" style={{ padding: "8px" }}>
-            <div className="evaluation-header" style={{ marginBottom: "8px" }}>
-              <div className="evaluation-title" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <span style={{ fontSize: "14px", fontWeight: "500" }}>评估结果</span>
-                <Select
-                  mode="multiple"
-                  value={selectedModels}
-                  onChange={handleModelChange}
-                  className="model-selector"
-                  maxTagCount={2}
-                  maxTagTextLength={10}
-                  style={{ minWidth: "270px", flex: 1 }}
-                  dropdownRender={(menu) => (
-                    <>
-                      <div className="select-all-option" onClick={() => handleSelectAll(selectedModels.length < modelOptions.length)} style={{ padding: "4px 8px" }}>
-                        <Checkbox checked={selectedModels.length === modelOptions.length}>
-                          全选
-                        </Checkbox>
-                      </div>
-                      {menu}
-                    </>
-                  )}
-                >
-                  <Option value="claude3.5">Claude 3.5</Option>
-                  <Option value="claude3.6">Claude 3.6</Option>
-                  <Option value="claude3.7">Claude 3.7</Option>
-                  <Option value="agent2">Agent 2</Option>
-                  <Option value="deepseek">DeepSeek</Option>
-            </Select>
-          </div>
-        </div>
-
-            <div className="evaluation-model-info" style={evaluationModelInfoStyle}>
-              {selectedModels.map(modelKey => (
-                <div className="model-panel" key={modelKey} style={{ marginBottom: "4px" }}>
-                  <div className="model-panel-header" onClick={() => toggleModelPanel(modelKey)} style={{ padding: "8px" }}>
-                    <div className="model-panel-left">
-                      <Avatar size={32} className="model-avatar" style={{ background: getModelColor(modelKey) }}>
-                        {evaluationData[modelKey]?.name.charAt(0)}
-            </Avatar>
-                      <div className="model-info">
-                        <div className="model-name" style={{ fontSize: "14px" }}>
-                          {evaluationData[modelKey]?.name}
-                          <span className="model-usage" style={{ fontSize: "12px", marginLeft: "4px" }}>128k</span>
-                        </div>
-                        <div className="model-tags" style={{ gap: "4px" }}>
-                          {evaluationData[modelKey]?.tags.map((tag, index) => (
-                            <span key={index} className="model-tag" style={{ padding: "0 4px", fontSize: "11px" }}>
-                    {tag}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="model-panel-icon">
-                      {expandedModel === modelKey ? <MinusOutlined /> : <PlusOutlined />}
-                    </div>
-                  </div>
-                  
-                  {expandedModel === modelKey && (
-                    <div className={`model-panel-content ${isOptimizationMode ? 'optimization-mode' : ''}`} style={{ padding: "0 8px 8px" }}>
-                      <div className={`evaluation-content ${isOptimizationMode ? 'optimization-mode' : ''}`} style={{ padding: "8px" }}>
-                        <p className="evaluation-text" style={{ fontSize: "12px", margin: 0, lineHeight: "1.4" }}>{evaluationData[modelKey]?.description}</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-        {/* 右侧图表区域 */}
-        <div className="evaluation-right-section" style={{ gap: "4px", flex: 1 }}>
-          {/* 折线图区域 */}
-          <div className="line-chart-section" style={{ padding: "8px" }}>
-            <div className="chart-legend" style={{ marginBottom: "8px", gap: "8px" }}>
-              {selectedModels.map(modelKey => (
-                <div className="legend-item" key={modelKey} style={{ gap: "4px" }}>
-                  <span className="legend-color" style={{ backgroundColor: getModelColor(modelKey), width: "10px", height: "10px" }}></span>
-                  <span className="legend-label" style={{ fontSize: "12px" }}>{evaluationData[modelKey]?.name}</span>
-                </div>
-              ))}
-            </div>
-
-            <div className="line-chart-container" style={{ height: "150px", marginTop: "4px" }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart 
-                  data={enhancedChartData.line} 
-                  margin={{ top: 2, right: 5, left: 0, bottom: 2 }}
-                >
-                  {/* 渐变定义 */}
-                  <defs>
-                    {Object.keys(evaluationData).map(modelKey => (
-                      <linearGradient key={modelKey} id={`color${modelKey}`} x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor={getModelColor(modelKey)} stopOpacity={0.2}/>
-                        <stop offset="95%" stopColor={getModelColor(modelKey)} stopOpacity={0}/>
-                      </linearGradient>
-                    ))}
-                  </defs>
-                  <CartesianGrid 
-                    vertical={false} 
-                    horizontal={true}
-                    stroke="#f0f0f0"
-                  />
-                  <XAxis 
-                    dataKey="month" 
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 10, fill: '#8f9098' }}
-                  />
-                  <YAxis 
-                    hide={true}
-                    domain={[0, 'dataMax + 20']}
-                  />
-                  <RechartsTooltip 
-                    cursor={false}
-                    contentStyle={{
-                      background: '#fff',
-                      border: 'none',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                      borderRadius: '4px',
-                      padding: '4px 8px'
-                    }}
-                  />
-                  {selectedModels.map(modelKey => (
-                    <Area
-                      key={modelKey}
-                      type="monotone"
-                      dataKey={modelKey}
-                      name={evaluationData[modelKey]?.name}
-                      stroke={getModelColor(modelKey)}
-                      strokeWidth={1.5}
-                      fill={`url(#color${modelKey})`}
-                      dot={false}
+            {/* 使用SubmitResultSection组件替代原始评估内容 */}
+            <SubmitResultSection 
+              task={card}
                     />
-                  ))}
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          {/* 评分和雷达图区域 */}
-          <div className="score-radar-section" style={{ gap: "8px", padding: "8px" }}>
-            <div className="metrics-section" style={{ gap: "8px", minWidth: "150px" }}>
-              <div className="metric-item" style={{ padding: "8px" }}>
-                <div className="metric-label" style={{ fontSize: "12px", marginBottom: "4px" }}>综合得分</div>
-                <div className="metric-value" style={{ fontSize: "20px" }}>{currentEvaluation.score}</div>
-                <div className={`metric-change ${currentEvaluation.scoreChange.startsWith("+") ? "positive" : "negative"}`} style={{ fontSize: "12px" }}>
-                  {currentEvaluation.scoreChange}
-                </div>
-              </div>
-
-              <div className="metric-item" style={{ padding: "8px" }}>
-                <div className="metric-label" style={{ fontSize: "12px", marginBottom: "4px" }}>各维度得分</div>
-                <div className="metric-value" style={{ fontSize: "20px" }}>{currentEvaluation.credibility}%</div>
-                <div className={`metric-change ${currentEvaluation.credibilityChange.startsWith("+") ? "positive" : "negative"}`} style={{ fontSize: "12px" }}>
-                  {currentEvaluation.credibilityChange}
-                </div>
-              </div>
-            </div>
-
-            {/* 雷达图 */}
-            <div className="radar-chart-content" style={{ height: "220px" }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <RadarChart data={enhancedChartData.radar}>
-                  <PolarGrid stroke="#e0e0e0" />
-                  <PolarAngleAxis dataKey="name" tick={{ fontSize: 10, fill: "#8f9098" }} />
-                  <PolarRadiusAxis domain={[0, 100]} tick={{ fontSize: 9, fill: "#8f9098" }} axisLine={false} />
-                  {selectedModels.map(modelKey => (
-                    <Radar 
-                      key={modelKey}
-                      name={evaluationData[modelKey]?.name} 
-                      dataKey={modelKey} 
-                      stroke={getModelColor(modelKey)} 
-                      fill={getModelColor(modelKey)} 
-                      fillOpacity={0.2} 
-                    />
-                  ))}
-                </RadarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </div>
           </>
         )}
       </div>
@@ -1927,7 +1922,7 @@ const CardDetailPage = () => {
                   }}
                 >
                   <SendOutlined />
-                  提交优化结果
+                  保存并新建任务
                 </Button>
                 <div 
                   className="action-button optimize-mode"
@@ -2070,20 +2065,25 @@ const CardDetailPage = () => {
         ) : (
           // 非优化模式下的原始按钮
           <>
-        <Button 
-          icon={<LikeOutlined />} 
-          className="action-button like-button"
-          style={{ 
-            borderRadius: '20px', 
+        <Button
+          icon={isLiked ? <LikeFilled /> : <LikeOutlined />}
+          className={`action-button like-button ${isLiked ? 'liked' : ''}`}
+          onClick={handleToggleLike} // 添加点击事件
+          style={{
+            borderRadius: '20px',
             display: 'flex',
             alignItems: 'center',
             gap: '4px',
             padding: '0 12px',
             height: '32px',
-            fontSize: '12px'
+            fontSize: '12px',
+            color: isLiked ? 'var(--color-primary)' : 'inherit', // 点赞后文字颜色变化
+            borderColor: isLiked ? 'var(--color-primary)' : 'var(--color-border-secondary)', // 点赞后边框颜色变化
+            backgroundColor: isLiked ? 'var(--color-primary-bg)' : 'transparent', // 点赞后背景颜色变化
+            transition: 'all 0.3s ease' // 添加平滑过渡动画
           }}
         >
-          点赞
+          {isLiked ? '已点赞' : '点赞'}
         </Button>
         <Button 
           icon={<CommentOutlined />} 

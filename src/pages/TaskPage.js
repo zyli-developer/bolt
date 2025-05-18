@@ -38,12 +38,16 @@ const TaskPage = () => {
   useEffect(() => {
     const activateTasksMenu = localStorage.getItem('activate_tasks_menu');
     if (activateTasksMenu === 'true') {
-      // 设置导航为社区任务
-      handleNavChange("community");
-      console.log("根据localStorage标记激活社区任务菜单");
+      // 获取要激活的菜单类型，默认为tasks
+      const menuType = localStorage.getItem('activate_menu_type') || 'tasks';
+      
+      // 设置导航为指定任务类型
+      handleNavChange(menuType);
+      console.log(`根据localStorage标记激活${menuType}菜单`);
       
       // 移除标记，避免重复激活
       localStorage.removeItem('activate_tasks_menu');
+      localStorage.removeItem('activate_menu_type');
     }
   }, [handleNavChange]);
 
@@ -55,9 +59,12 @@ const TaskPage = () => {
       
       // 如果需要激活任务菜单
       if (location.state?.activateTasksMenu) {
-        // 设置导航为社区任务
-        handleNavChange("community");
-        console.log("已将导航设置为社区任务");
+        // 获取要激活的菜单类型，默认为tasks
+        const menuType = location.state?.menuType || 'tasks';
+        
+        // 设置导航为指定任务类型
+        handleNavChange(menuType);
+        console.log(`已将导航设置为${menuType}任务`);
       }
       
       // 使用延迟确保状态更新后再处理

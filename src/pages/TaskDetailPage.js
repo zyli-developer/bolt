@@ -1,13 +1,15 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef, useMemo } from "react"
 import { useParams, useNavigate, useLocation } from "react-router-dom"
 import { Typography, Button, Avatar, Tag, Spin, Breadcrumb, Select, Checkbox, Timeline, Table, Collapse, Tooltip, message, Progress, Switch } from "antd"
 import {
   ArrowLeftOutlined,
   StarOutlined,
+  StarFilled,
   ShareAltOutlined,
   LikeOutlined,
+  LikeFilled,
   CommentOutlined,
   ForkOutlined,
   SettingOutlined,
@@ -43,6 +45,8 @@ import QASection from "../components/qa/QASection"
 import SceneSection from '../components/scene/SceneSection'
 import TemplateSection from '../components/template/TemplateSection'
 import TestConfirmation from "../components/task/TestConfirmation"
+import ResultPage from "../components/task/ResultPage"
+import TaskOverview from "../components/task/TaskOverview"
 import useTaskDetailStyles from '../styles/pages/TaskDetailPage'
 
 const { Title, Text, Paragraph } = Typography
@@ -56,12 +60,8 @@ const TaskDetailPage = () => {
   const [task, setTask] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [selectedModel, setSelectedModel] = useState("claude")
-  const [selectedChartModels, setSelectedChartModels] = useState({
-    overall: true,
-    claude: true,
-    agent2: false,
-  })
+  const [selectedModel, setSelectedModel] = useState("")
+  const [selectedChartModels, setSelectedChartModels] = useState({})
   const { isChatOpen } = useChatContext()
   const [isScoreExpanded, setIsScoreExpanded] = useState(false);
   const [isAnnotationExpanded, setIsAnnotationExpanded] = useState(true);
@@ -72,6 +72,11 @@ const TaskDetailPage = () => {
   const [testProgress, setTestProgress] = useState(0);
   const [isTesting, setIsTesting] = useState(false);
   const [isOptimizeMode, setIsOptimizeMode] = useState(false);
+  
+  // 添加关注、分享和点赞相关状态
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
+  const [isShareModalVisible, setIsShareModalVisible] = useState(false);
 
   // 添加QA、场景和模板的内容数据
   const [qaContent] = useState([
@@ -98,47 +103,10 @@ const TaskDetailPage = () => {
   const parentLabel = isFromExplore ? "探索" : "任务"
 
   // 添加用于评估结果的状态
-  const [selectedModels, setSelectedModels] = useState(['claude3.5', 'claude3.6', 'claude3.7']);
+  const [selectedModels, setSelectedModels] = useState([]); // 将在数据加载后从task.step中填充
   const [expandedModel, setExpandedModel] = useState(false);
-  const [enhancedChartData, setEnhancedChartData] = useState({ radar: [], line: [] });
 
-  // 添加注释数据，确保数据始终可用
-  const defaultAnnotationData = [
-    {
-      key: '1',
-      no: '1',
-      title: '内容安全',
-      content: '确保内容对所有年龄段用户安全',
-      attachments: [
-        { name: '安全标准.pdf', url: '#' },
-        { name: '检查清单.doc', url: '#' }
-      ],
-      lastModifiedBy: { name: 'Lisa', avatar: 'L' },
-      modifiedTime: { hour: '09:30', date: '11/28' }
-    },
-    {
-      key: '2',
-      no: '2',
-      title: '隐私保护',
-      content: '用户数据收集和处理合规性',
-      attachments: [
-        { name: '隐私政策.pdf', url: '#' }
-      ],
-      lastModifiedBy: { name: 'Mike', avatar: 'M' },
-      modifiedTime: { hour: '14:25', date: '11/27' }
-    },
-    {
-      key: '3',
-      no: '3',
-      title: '响应速度',
-      content: '系统响应时间需控制在200ms内',
-      attachments: [
-        { name: '性能测试.xlsx', url: '#' }
-      ],
-      lastModifiedBy: { name: 'Tom', avatar: 'T' },
-      modifiedTime: { hour: '16:40', date: '11/26' }
-    }
-  ];
+
 
   // 注释表格列定义
   const annotationColumns = [
@@ -193,12 +161,30 @@ const TaskDetailPage = () => {
       dataIndex: 'lastModifiedBy',
       key: 'lastModifiedBy',
       width: 100,
-      render: (modifier) => (
+      render: (modifier) => {
+        // 安全地处理可能为空的modifier
+        if (!modifier) {
+          return (
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Avatar size={24}>{modifier.avatar}</Avatar>
-          <span>{modifier.name}</span>
+              <Avatar size={24}>?</Avatar>
+              <span>未知</span>
         </div>
-      ),
+          );
+        }
+        
+        // 如果modifier存在，安全地获取avatar和name
+        // 确保当avatar是对象时不会尝试渲染它
+        const avatarValue = typeof modifier.avatar === 'string' || modifier.avatar === null ? 
+          modifier.avatar : (modifier.name?.charAt(0) || '?');
+        const name = modifier.name || '未知';
+        
+        return (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Avatar size={24}>{avatarValue}</Avatar>
+            <span>{name}</span>
+          </div>
+        );
+      },
     },
     {
       title: '修改时间',
@@ -206,17 +192,205 @@ const TaskDetailPage = () => {
       key: 'modifiedTime',
       width: 86,
       align: 'right',
-      render: (time) => (
+      render: (time) => {
+        // 安全地处理可能为空的time对象
+        if (!time) {
+          return (
+            <div style={{ color: 'var(--color-text-tertiary)', fontSize: '12px' }}>
+              <div>未知时间</div>
+            </div>
+          );
+        }
+        
+        // 检查time是否有hour和date属性
+        if (typeof time === 'object' && time.hour && time.date) {
+          return (
         <div style={{ color: 'var(--color-text-tertiary)', fontSize: '12px' }}>
           <div>{time.hour}</div>
           <div>{time.date}</div>
         </div>
-      ),
+          );
+        }
+        
+        // 如果time是字符串，直接显示
+        if (typeof time === 'string') {
+          return (
+            <div style={{ color: 'var(--color-text-tertiary)', fontSize: '12px' }}>
+              <div>{time}</div>
+            </div>
+          );
+        }
+        
+        // 默认情况
+        return (
+          <div style={{ color: 'var(--color-text-tertiary)', fontSize: '12px' }}>
+            <div>未知时间</div>
+          </div>
+        );
+      },
     },
   ];
 
   // 使用任务数据中的注释或默认注释
-  const [annotationData, setAnnotationData] = useState(defaultAnnotationData);
+  const [annotationData, setAnnotationData] = useState([]);
+  
+  // 添加注释到任务中的方法
+  const addAnnotationToTask = (newAnnotation) => {
+    if (!task || !newAnnotation || !newAnnotation.step) return;
+    
+    // 创建任务的注释对象的副本（如果不存在则创建新对象）
+    const updatedAnnotation = task.annotation ? { ...task.annotation } : {
+      result: [],
+      qa: [],
+      scene: [],
+      template: []
+    };
+    
+    // 根据step字段确定注释应该被添加到哪个分类中
+    const category = newAnnotation.step === 'qa' ? 'qa' : 
+                     newAnnotation.step === 'scene' ? 'scene' : 
+                     newAnnotation.step === 'template' ? 'template' : 
+                     newAnnotation.step === 'result' ? 'result' : 'result';
+    
+    // 确保该分类中有一个数组
+    if (!updatedAnnotation[category]) {
+      updatedAnnotation[category] = [];
+    }
+    
+    // 添加新注释到对应分类
+    updatedAnnotation[category].push(newAnnotation);
+    
+    // 更新任务对象
+    const updatedTask = {
+      ...task,
+      annotation: updatedAnnotation
+    };
+    
+    // 更新state
+    setTask(updatedTask);
+    setAnnotationData(updatedAnnotation);
+    
+    // 可选：调用API更新服务器上的任务数据
+    try {
+      taskService.updateTask(id, updatedTask);
+      console.log(`已将注释添加到任务的${category}分类中`, newAnnotation);
+    } catch (error) {
+      console.error('更新任务数据失败:', error);
+    }
+  };
+
+  // 使用useRef和useMemo缓存图表数据，防止重新渲染导致数据变化
+  const chartDataRef = useRef({
+    radar: [],
+    line: []
+  });
+  
+  // 计算雷达图中的最大值
+  const calculateRadarMaxValue = () => {
+    if (!enhancedChartData || !enhancedChartData.radar || enhancedChartData.radar.length === 0) {
+      return 100; // 默认值为100
+    }
+    
+    // 找出所有数据点中的最大值
+    let maxValue = 0;
+    enhancedChartData.radar.forEach(item => {
+      // 检查基本的value值
+      if (item.value > maxValue) {
+        maxValue = item.value;
+      }
+      
+      // 检查每个模型的值
+      Object.keys(item).forEach(key => {
+        if (key !== 'name' && key !== 'value' && typeof item[key] === 'number' && item[key] > maxValue) {
+          maxValue = item[key];
+        }
+      });
+    });
+    
+    // 向上取整到最接近的10的倍数，并确保至少为100
+    return Math.max(100, Math.ceil(maxValue / 10) * 10);
+  }
+  
+  // Prepare enhanced chart data with multiple model series
+  const getEnhancedChartData = (chartData) => {
+    // 如果已经有缓存的数据，直接返回
+    if (chartDataRef.current.radar.length > 0 || chartDataRef.current.line.length > 0) {
+      return chartDataRef.current;
+    }
+    
+    if (!chartData) {
+      // 如果没有图表数据，提供默认数据
+      const defaultChartData = {
+        radar: [
+          { name: "准确性", value: 85 },
+          { name: "流畅性", value: 90 },
+          { name: "创新性", value: 70 },
+          { name: "可靠性", value: 80 },
+          { name: "安全性", value: 95 }
+        ],
+        line: [
+          { month: "1月", value: 65 },
+          { month: "2月", value: 70 },
+          { month: "3月", value: 75 },
+          { month: "4月", value: 80 },
+          { month: "5月", value: 85 },
+          { month: "6月", value: 90 }
+        ]
+      };
+      chartData = defaultChartData;
+    }
+
+    // 获取可用的模型键
+    const modelKeys = Object.keys(evaluationData || {});
+
+    // 增强雷达图数据，使用固定偏移量而非随机值
+    const enhancedRadar = (chartData.radar || []).map((item, index) => {
+      const radarPoint = {
+        name: item.name,
+        value: Math.round(item.value), // 确保值为整数，去掉小数点
+      };
+      
+      // 为每个模型添加对应的数据点，使用固定偏移量
+      modelKeys.forEach((modelKey, modelIndex) => {
+        const offset = 0.8 + (modelIndex * 0.05);
+        radarPoint[modelKey] = Math.round(Math.min(100, item.value * offset));
+      });
+      
+      return radarPoint;
+    });
+
+    // 增强折线图数据，使用固定偏移量而非随机值
+    const enhancedLine = (chartData.line || []).map((item, index) => {
+      const linePoint = {
+        month: item.month,
+        value: Math.round(item.value), // 确保值为整数，去掉小数点
+      };
+      
+      // 为每个模型添加对应的数据点，使用固定偏移量
+      modelKeys.forEach((modelKey, modelIndex) => {
+        const offset = 0.8 + (modelIndex * 0.05);
+        linePoint[modelKey] = Math.round(Math.min(100, item.value * offset));
+      });
+      
+      return linePoint;
+    });
+
+    // 缓存计算结果
+    chartDataRef.current = { radar: enhancedRadar, line: enhancedLine };
+    return chartDataRef.current;
+  };
+  
+  // 当task或evaluationData变化时重置缓存
+  useEffect(() => {
+    chartDataRef.current = { radar: [], line: [] };
+  }, [task, evaluationData]);
+
+  const enhancedChartData = useMemo(() => {
+    return task?.chartData ? getEnhancedChartData(task.chartData) : { radar: [], line: [] };
+  }, [task, evaluationData]);
+  
+  // 计算雷达图的最大值
+  const radarMaxValue = calculateRadarMaxValue();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -231,12 +405,29 @@ const TaskDetailPage = () => {
             taskData = taskData.task;
         }
         
-        // 确保taskData有基本结构
-        taskData = taskData || {};
-        taskData.tags = taskData.tags || [];
+        // 检查taskData类型，确保是对象而不是字符串
+        if (typeof taskData === 'string') {
+          try {
+            // 尝试将字符串解析为JSON对象
+            taskData = JSON.parse(taskData);
+          } catch (parseError) {
+            console.error("无法解析任务数据:", parseError);
+            // 如果无法解析，则创建一个空对象
+            taskData = {};
+          }
+        }
+        
+        // 确保taskData是对象而不是null或undefined
+        taskData = (taskData && typeof taskData === 'object' && !Array.isArray(taskData)) ? taskData : {};
+        
+        // 现在安全地设置属性
+        taskData.tags = Array.isArray(taskData.tags) ? taskData.tags : [];
         taskData.author = taskData.author || { name: '未知用户' };
-        taskData.title = taskData.title || '未命名任务';
-        taskData.description = taskData.description || '暂无描述';
+        taskData.title = taskData.title || '未命名任务';  // 使用title显示任务名称
+        taskData.prompt = taskData.prompt || ''; // 用于显示在.task-title中
+        taskData.summary = taskData.summary || ''; // 优先使用summary作为描述
+        taskData.description = taskData.description || '暂无描述';  // 备用描述
+        taskData.response_summary = taskData.response_summary || ''; // 用于QA页面显示
         taskData.source = taskData.source || '未知来源';
         taskData.chartData = taskData.chartData || {
           radar: [
@@ -262,70 +453,139 @@ const TaskDetailPage = () => {
           }
         }
         
+        // 如果数据中有step部分，从中提取评估模型信息
+        if (taskData.step) {
+          // 如果step是数组，遍历并提取agent字段
+          if (Array.isArray(taskData.step)) {
+            const modelData = {};
+            const agentKeys = []; // 保存所有的agent keys用于默认选中
+            
+            taskData.step.forEach((step, index) => {
+              if (step && step.agent) {
+                const modelKey = step.agent.toLowerCase().replace(/\s+/g, '');
+                agentKeys.push(modelKey); // 添加到agent keys列表
+                
+                modelData[modelKey] = {
+                  name: step.agent,
+                  score: step.score || Math.floor(70 + Math.random() * 30),
+                  scoreChange: step.scoreChange || `+${(Math.random() * 5).toFixed(1)}`,
+                  credibility: step.credibility || Math.floor(70 + Math.random() * 30),
+                  credibilityChange: step.credibilityChange || `+${(Math.random() * 5).toFixed(1)}`,
+                  tags: step.tags || ['智能模型'],
+                  reason: step.reason || '暂无评估原因',
+                  description: step.description || '暂无描述',
+                  updatedAt: step.updatedAt || '2023-12-25 14:30',
+                  updatedBy: step.updatedBy || '系统'
+                };
+              }
+            });
+            
+            // 如果从step中提取到了模型数据，与默认评估数据合并
+            if (Object.keys(modelData).length > 0) {
+              // 保存到evaluationData中
+              setEvaluationData(prevData => ({
+                ...prevData,
+                ...modelData
+              }));
+              
+              // 设置默认选中的模型为所有从step中提取的agent
+              if (agentKeys.length > 0) {
+                setSelectedModels(agentKeys);
+                // 同时更新selectedChartModels状态
+                const chartModels = {};
+                agentKeys.forEach(key => {
+                  chartModels[key] = true;
+                });
+                setSelectedChartModels(prevChartModels => ({
+                  ...prevChartModels,
+                  ...chartModels
+                }));
+              }
+            }
+          }
+        }
+        
         // 获取评估数据
         const evaluationData = await taskService.getAllModelEvaluations();
         
         console.log("获取到的任务数据:", taskData);
         setTask(taskData)
 
-        // 设置注释数据，添加保护措施防止undefined使用map
-        if (taskData && taskData.annotations) {
+        // 设置注释数据，直接使用task中的annotation对象
+        // annotation属性是一个对象，包含各类注释，如{result:[], qa:[], scene:[], template:[]}
+        if (taskData && taskData.annotation) {
+          // 直接使用原始annotation对象
+          setAnnotationData(taskData.annotation);
+        } else if (taskData && taskData.annotations) {
+          // 兼容旧数据结构
+          if (Array.isArray(taskData.annotations)) {
+            // 如果是数组，转换为对象结构
+            setAnnotationData({
+              result: taskData.annotations,
+              qa: [],
+              scene: [],
+              template: []
+            });
+          } else {
+            // 如果已经是对象，直接使用
           setAnnotationData(taskData.annotations);
-        } else if (taskAnnotationData) {
-          setAnnotationData(taskAnnotationData);
+          }
+        } else if (taskAnnotationData && taskAnnotationData.data) {
+          // 使用默认注释数据作为后备
+          setAnnotationData(taskAnnotationData.data);
+        } else {
+          // 确保始终设置为有效对象
+          setAnnotationData({
+            result: [],
+            qa: [],
+            scene: [],
+            template: []
+          });
         }
 
         // 如果没有评估数据，提供默认数据
         if (!evaluationData || Object.keys(evaluationData).length === 0) {
-          const defaultEvaluationData = {
-            'claude3.5': {
-              name: 'Claude 3.5',
-              score: '92',
-              scoreChange: '+2.5',
-              credibility: '88',
-              credibilityChange: '+3.2',
-              tags: ['大语言模型', '文本生成'],
-              description: 'Claude 3.5 是一个功能强大的大语言模型，擅长文本生成、问答和内容创作。',
-              updatedAt: '2023-11-25 09:30',
-              updatedBy: 'Alex Chen',
-              history: '上次评估后，模型在流畅性和创新性方面有显著提升，但安全性略有下降。'
-            },
-            'claude3.6': {
-              name: 'Claude 3.6',
-              score: '95',
-              scoreChange: '+4.2',
-              credibility: '91',
-              credibilityChange: '+5.5',
-              tags: ['增强型AI', '多模态'],
-              description: 'Claude 3.6 是新一代增强型AI，支持多模态输入和更强的推理能力。',
-              updatedAt: '2023-12-10 14:20',
-              updatedBy: 'Sarah Wang',
-              history: '本次迭代中，模型在所有维度都有全面提升，特别是在准确性和可靠性方面。'
-            },
-            'claude3.7': {
-              name: 'Claude 3.7',
-              score: '97',
-              scoreChange: '+1.8',
-              credibility: '93',
-              credibilityChange: '+2.1',
-              tags: ['AGI', '专家系统'],
-              description: 'Claude 3.7 是最新研发的接近AGI的模型，拥有专家级知识和超强推理能力。',
-              updatedAt: '2024-01-05 16:45',
-              updatedBy: 'Mike Johnson',
-              history: '作为最新模型，3.7在创新性和安全性方面取得了突破，但资源消耗较大。'
-            }
-          };
-          setEvaluationData(defaultEvaluationData);
+          // const defaultEvaluationData = {
+          //   'claude3.5': {
+          //     name: 'Claude 3.5',
+          //     score: '92',
+          //     scoreChange: '+2.5',
+          //     credibility: '88',
+          //     credibilityChange: '+3.2',
+          //     tags: ['大语言模型', '文本生成'],
+          //     description: 'Claude 3.5 是一个功能强大的大语言模型，擅长文本生成、问答和内容创作。',
+          //     updatedAt: '2023-11-25 09:30',
+          //     updatedBy: 'Alex Chen',
+          //     history: '上次评估后，模型在流畅性和创新性方面有显著提升，但安全性略有下降。'
+          //   },
+          //   'claude3.6': {
+          //     name: 'Claude 3.6',
+          //     score: '95',
+          //     scoreChange: '+4.2',
+          //     credibility: '91',
+          //     credibilityChange: '+5.5',
+          //     tags: ['增强型AI', '多模态'],
+          //     description: 'Claude 3.6 是新一代增强型AI，支持多模态输入和更强的推理能力。',
+          //     updatedAt: '2023-12-10 14:20',
+          //     updatedBy: 'Sarah Wang',
+          //     history: '本次迭代中，模型在所有维度都有全面提升，特别是在准确性和可靠性方面。'
+          //   },
+          //   'claude3.7': {
+          //     name: 'Claude 3.7',
+          //     score: '97',
+          //     scoreChange: '+1.8',
+          //     credibility: '93',
+          //     credibilityChange: '+2.1',
+          //     tags: ['AGI', '专家系统'],
+          //     description: 'Claude 3.7 是最新研发的接近AGI的模型，拥有专家级知识和超强推理能力。',
+          //     updatedAt: '2024-01-05 16:45',
+          //     updatedBy: 'Mike Johnson',
+          //     history: '作为最新模型，3.7在创新性和安全性方面取得了突破，但资源消耗较大。'
+          //   }
+          // };
+          // setEvaluationData(defaultEvaluationData);
         } else {
           setEvaluationData(evaluationData);
-        }
-
-        // 初始化增强图表数据
-        if (taskData && taskData.chartData) {
-          setEnhancedChartData(getEnhancedChartData(taskData.chartData));
-        } else {
-          // 使用默认图表数据
-          setEnhancedChartData(getEnhancedChartData());
         }
 
         setError(null)
@@ -336,10 +596,12 @@ const TaskDetailPage = () => {
         // 设置一些默认数据，防止界面崩溃
         setTask({
           title: '加载失败的任务',
+          prompt: '加载失败的任务',
           author: { name: '未知用户' },
           source: '未知来源',
           tags: ['加载失败'],
           description: '无法加载任务数据，请刷新页面重试',
+          response_summary: '无法加载回答数据',
           chartData: {
             radar: [],
             line: []
@@ -367,13 +629,48 @@ const TaskDetailPage = () => {
             // 测试完成后自动进入结果页面
             setCurrentStep(5);
             setIsTesting(false);
+            
+            // 更新评估数据，模拟测试完成后得到的新数据
+            const updatedEvaluationData = { ...evaluationData };
+            
+            // 更新所有选中模型的评估数据
+            selectedModels.forEach(modelKey => {
+              if (updatedEvaluationData[modelKey]) {
+                // 更新综合得分（credibility）
+                const originalCredibility = parseFloat(updatedEvaluationData[modelKey].credibility) || 75;
+                const credibilityImprovement = (Math.random() * 5 + 1).toFixed(1);
+                const newCredibility = Math.min(100, originalCredibility + parseFloat(credibilityImprovement));
+                
+                // 更新各维度得分（score）
+                const originalScore = parseFloat(updatedEvaluationData[modelKey].score) || 70;
+                const scoreImprovement = (Math.random() * 0.8 + 0.2).toFixed(1);
+                const newScore = Math.min(10, originalScore + parseFloat(scoreImprovement)).toFixed(1);
+                
+                // 更新评估数据
+                updatedEvaluationData[modelKey] = {
+                  ...updatedEvaluationData[modelKey],
+                  credibility: newCredibility,
+                  credibilityChange: `+${credibilityImprovement}`,
+                  score: newScore,
+                  scoreChange: `+${scoreImprovement}`,
+                  updatedAt: new Date().toLocaleString(),
+                  reason: `${updatedEvaluationData[modelKey].reason || '模型表现良好'}\n测试显示在多数场景中性能稳定，优化后的响应更加准确。`
+                };
+              }
+            });
+            
+            // 更新评估数据状态
+            setEvaluationData(updatedEvaluationData);
+            
+            // 重置图表数据缓存，以便重新计算
+            chartDataRef.current = { radar: [], line: [] };
           }
           return next;
         });
       }, 100);
     }
     return () => timer && clearInterval(timer);
-  }, [isTesting, testProgress]);
+  }, [isTesting, testProgress, evaluationData, selectedModels]);
 
   const handleGoBack = () => {
     navigate(-1)
@@ -414,6 +711,8 @@ const TaskDetailPage = () => {
                 taskId={task?.id}
                 prompt={task?.prompt} 
                 response={task?.response_summary}
+                comments={task?.annotation?.qa || []}
+                onAddAnnotation={addAnnotationToTask}
               />
             </div>
           );
@@ -424,6 +723,8 @@ const TaskDetailPage = () => {
                 isEditable={true} 
                 taskId={task?.id}
                 scenario={task?.scenario}
+                comments={task?.annotation?.scene || []}
+                onAddAnnotation={addAnnotationToTask}
               />
             </div>
           );
@@ -434,6 +735,8 @@ const TaskDetailPage = () => {
                 isEditable={true} 
                 taskId={task?.id}
                 steps={task?.templateData ? { templateData: task.templateData, ...task?.step } : task?.step}
+                comments={task?.annotation?.template || []}
+                onAddAnnotation={addAnnotationToTask}
               />
             </div>
           );
@@ -451,128 +754,20 @@ const TaskDetailPage = () => {
       case 'overview':
         return (
           <>
-            {/* 积分说明区域 */}
-            <div className="score-section" style={{
-              background: 'var(--color-primary-bg)',
-              padding: '16px',
-              borderRadius: '12px',
-              marginBottom: '24px'
-            }}>
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  marginBottom: isScoreExpanded ? '8px' : 0,
-                  cursor: 'pointer'
-                }}
-                onClick={() => setIsScoreExpanded(!isScoreExpanded)}
-              >
-                <span style={{
-                  fontSize: '14px',
-                  fontWeight: '500'
-                }}>积分消耗说明</span>
-                {isScoreExpanded ?
-                  <CaretDownOutlined style={{ marginLeft: '4px', color: 'var(--color-text-tertiary)' }} /> :
-                  <CaretRightOutlined style={{ marginLeft: '4px', color: 'var(--color-text-tertiary)' }} />
-                }
-              </div>
-              {isScoreExpanded && (
-                <div style={{ fontSize: '14px', color: 'var(--color-text-tertiary)' }}>
-                  <div>根据此任务的配置，预计每次测试消耗XXX积分*。</div>
-                  <div style={{ marginTop: '4px' }}>
-                    <span>*根据配置参数动态计算，</span>
-                    <a href="#" style={{ color: 'var(--color-primary)' }}>了解计算规则&gt;&gt;</a>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* 任务信息区域 */}
-            <div className="task-info-section" style={{ marginBottom: '24px' }}>
-              <div className="info-row" style={{
-                display: 'flex',
-                marginBottom: '16px'
-              }}>
-                <div style={{ width: '80px', color: 'var(--color-text-tertiary)' }}>任务名称</div>
-                <div style={{ flex: 1 }}>{task?.title}</div>
-              </div>
-              <div className="info-row" style={{
-                display: 'flex',
-                marginBottom: '16px'
-              }}>
-                <div style={{ width: '80px', color: 'var(--color-text-tertiary)' }}>创建人</div>
-                <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Avatar size={24}>{task?.author?.name?.charAt(0)}</Avatar>
-                  <span>{task?.author?.name}</span>
-                </div>
-              </div>
-              <div className="info-row" style={{
-                display: 'flex',
-                marginBottom: '16px'
-              }}>
-                <div style={{ width: '80px', color: 'var(--color-text-tertiary)' }}>描述</div>
-                <div style={{ flex: 1 }}>{task?.description}</div>
-              </div>
-              <div className="info-row" style={{
-                display: 'flex',
-                marginBottom: '16px'
-              }}>
-                <div style={{ width: '80px', color: 'var(--color-text-tertiary)' }}>关键词</div>
-                <div style={{ flex: 1 }}>
-                  {Array.isArray(task?.tags) && task?.tags.map((tag, index) => (
-                    <Tag key={index} style={{ borderRadius: '12px', marginRight: '8px' }}>{tag}</Tag>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* 注释表格区域 */}
-            <div className="annotation-section">
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  marginBottom: '16px',
-                  cursor: 'pointer'
-                }}
-                onClick={() => setIsAnnotationExpanded(!isAnnotationExpanded)}
-              >
-                <span style={{
-                  fontSize: '14px',
-                  fontWeight: '500'
-                }}>注释</span>
-                {isAnnotationExpanded ?
-                  <CaretDownOutlined style={{ marginLeft: '4px', color: 'var(--color-text-tertiary)' }} /> :
-                  <CaretRightOutlined style={{ marginLeft: '4px', color: 'var(--color-text-tertiary)' }} />
-                }
-              </div>
-
-              {isAnnotationExpanded && (
-                <div>
+            {/* 使用TaskOverview组件替代原有代码 */}
                   {loading ? (
                     <div style={{ padding: '20px 0', textAlign: 'center' }}>
                       <Spin size="small" />
                       <div style={{ marginTop: '8px', color: 'var(--color-text-tertiary)', fontSize: '12px' }}>
-                        加载注释数据...
+                  加载任务数据...
                       </div>
                     </div>
                   ) : (
-                    <Table
-                      columns={annotationColumns}
-                      dataSource={annotationData}
-                      pagination={false}
-                      size="small"
-                      style={{
-                        marginTop: '8px',
-                        width: '676px'
-                      }}
-                      scroll={{ x: 676 }}
-                      locale={{ emptyText: '暂无注释数据' }}
+              <TaskOverview 
+                task={task} 
+                annotationData={annotationData}
                     />
                   )}
-                </div>
-              )}
-            </div>
           </>
         );
       case 'qa':
@@ -582,10 +777,12 @@ const TaskDetailPage = () => {
             borderRadius: '12px',
           }}>
             <QASection 
-              isEditable={false} 
+              isEditable={true} 
               taskId={task?.id}
               prompt={task?.prompt} 
               response={task?.response_summary}
+              comments={task?.annotation?.qa || []}
+              onAddAnnotation={addAnnotationToTask}
             />
           </div>
         );
@@ -596,6 +793,8 @@ const TaskDetailPage = () => {
               isEditable={false} 
               taskId={task?.id}
               scenario={task?.scenario}
+              comments={task?.annotation?.scene || []}
+              onAddAnnotation={addAnnotationToTask}
             />
           </div>
         );
@@ -606,6 +805,8 @@ const TaskDetailPage = () => {
               isEditable={false} 
               taskId={task?.id}
               steps={task?.templateData ? { templateData: task.templateData, ...task?.step } : task?.step}
+              comments={task?.annotation?.template || []}
+              onAddAnnotation={addAnnotationToTask}
             />
           </div>
         );
@@ -682,10 +883,45 @@ const TaskDetailPage = () => {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          height: '400px'
+          height: '400px',
+          width: '100%',
+          background: 'var(--color-bg-layout)',
+          borderRadius: '8px',
+          padding: '20px'
         }}>
-          <Progress type="circle" percent={testProgress} />
-          <div style={{ marginTop: '24px' }}>测试进行中，请稍候...</div>
+          <Progress 
+            type="circle" 
+            percent={testProgress} 
+            strokeColor={{
+              '0%': 'var(--color-primary)',
+              '100%': 'var(--color-success)',
+            }}
+            strokeWidth={6}
+            width={120}
+            format={percent => (
+              <span style={{ 
+                fontSize: '20px', 
+                fontWeight: 'normal', 
+                color: 'var(--color-text-base)'
+              }}>
+                {percent}%
+              </span>
+            )}
+          />
+          <div style={{ 
+            marginTop: '24px', 
+            fontSize: '14px',
+            color: 'var(--color-text-secondary)',
+            textAlign: 'center'
+          }}>
+            <div>测试进行中，请稍候...</div>
+            <div style={{ marginTop: '8px', fontSize: '12px' }}>
+              {testProgress < 30 ? '正在初始化测试环境...' :
+               testProgress < 60 ? '正在执行测试用例...' :
+               testProgress < 90 ? '正在分析测试结果...' : 
+               '即将完成测试...'}
+            </div>
+          </div>
         </div>
       );
     }
@@ -702,12 +938,23 @@ const TaskDetailPage = () => {
         onStartTest={() => {
           setIsTesting(true);
           setTestProgress(0);
+          
+          // 确保选中至少一个模型用于测试
+          if (selectedModels.length === 0 && Object.keys(evaluationData).length > 0) {
+            const defaultModel = Object.keys(evaluationData)[0];
+            setSelectedModels([defaultModel]);
+          }
         }}
         QASection={QASection}
         SceneSection={SceneSection}
         TemplateSection={TemplateSection}
         annotationColumns={taskAnnotationData.columns}
-        annotationData={taskAnnotationData.data}
+        annotationData={task?.annotation || {
+          result: [],
+          qa: [],
+          scene: [],
+          template: []
+        }}
       />
     );
   };
@@ -725,278 +972,45 @@ const TaskDetailPage = () => {
 
   // 获取模型颜色
   const getModelColor = (modelKey) => {
-    switch (modelKey) {
-      case 'claude3.5':
-        return 'var(--color-success)';
-      case 'claude3.6':
-        return 'var(--color-primary)';
-      case 'claude3.7':
-        return 'var(--color-heavy)';
-      case 'agent2': 
-        return 'var(--color-assist-1)';
-      case 'deepseek':
-        return 'var(--color-heavy)';
-      default:
-        return 'var(--color-text-tertiary)';
+    const colorMap = {
+      0: 'var(--color-success)',
+      1: 'var(--color-primary)',
+      2: 'var(--color-heavy)',
+      3: 'var(--color-assist-1)',
+      4: 'var(--color-assist-2)',
+      5: 'var(--color-warning)',
+      6: 'var(--color-info)'
+    };
+    
+    // 从已有的selectedModels中获取索引
+    const index = selectedModels.indexOf(modelKey);
+    if (index >= 0) {
+      return colorMap[index % Object.keys(colorMap).length];
     }
-  };
-
-  // 准备增强图表数据
-  const getEnhancedChartData = (chartData) => {
-    if (!chartData) {
-      // 如果没有图表数据，提供默认数据
-      const defaultChartData = {
-        radar: [
-          { name: "准确性", value: 85 },
-          { name: "流畅性", value: 90 },
-          { name: "创新性", value: 70 },
-          { name: "可靠性", value: 80 },
-          { name: "安全性", value: 95 }
-        ],
-        line: [
-          { month: "1月", value: 65 },
-          { month: "2月", value: 70 },
-          { month: "3月", value: 75 },
-          { month: "4月", value: 80 },
-          { month: "5月", value: 85 },
-          { month: "6月", value: 90 }
-        ]
-      };
-      chartData = defaultChartData;
-    }
-
-    // 增强雷达图数据
-    const enhancedRadar = (chartData.radar || []).map((item, index) => ({
-      name: item.name,
-      value: item.value,
-      'claude3.5': Math.min(100, item.value * (1 + Math.sin(index) * 0.2)),
-      'claude3.6': Math.min(100, item.value * (1 + Math.cos(index) * 0.15)),
-      'claude3.7': Math.min(100, item.value * (1 + Math.sin(index + 0.5) * 0.1)),
-      agent2: Math.min(100, item.value * (1 - Math.cos(index) * 0.15)),
-      deepseek: Math.min(100, item.value * (1 + Math.sin(index + 1) * 0.2)),
-    }));
-
-    // 增强折线图数据
-    const enhancedLine = (chartData.line || []).map((item, index) => ({
-      month: item.month,
-      value: item.value,
-      'claude3.5': Math.min(100, item.value * (1 + Math.sin(index) * 0.1)),
-      'claude3.6': Math.min(100, item.value * (1 + Math.cos(index) * 0.12)),
-      'claude3.7': Math.min(100, item.value * (1 + Math.sin(index + 0.5) * 0.08)),
-      agent2: Math.min(100, item.value * (1 - Math.cos(index) * 0.1)),
-      deepseek: Math.min(100, item.value * (1 + Math.sin(index + 1) * 0.12)),
-    }));
-
-    return { radar: enhancedRadar, line: enhancedLine };
+    
+    // 如果不在selectedModels中，使用模型名称的哈希值取模
+    const hashCode = modelKey.split('').reduce((acc, char) => 
+      (acc * 31 + char.charCodeAt(0)) & 0xffffffff, 0);
+    return colorMap[Math.abs(hashCode) % Object.keys(colorMap).length] || 'var(--color-text-tertiary)';
   };
 
   // 渲染结果页面
   const renderResultPage = () => {
-    const modelOptions = Object.keys(evaluationData || {});
-    const currentEvaluation = evaluationData?.[selectedModel] || evaluationData?.claude3;
-
-    if (!task || !enhancedChartData || !currentEvaluation) {
       return (
-        <div style={{ textAlign: 'center', padding: '40px 0' }}>
-          <Spin size="large" />
-          <div style={{ marginTop: '16px' }}>加载评估结果...</div>
-        </div>
-      );
-    }
-
-    return (
-      <div className="evaluation-charts-wrapper" style={{ gap: "4px", marginTop: "4px" }}>
-        {/* 左侧评估区域 */}
-        <div className="evaluation-left-section" style={{ flex: "0 0 400px", gap: "4px" }}>
-          <div className="evaluation-section" style={{ padding: "8px" }}>
-            <div className="evaluation-header" style={{ marginBottom: "8px" }}>
-              <div className="evaluation-title" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <span style={{ fontSize: "14px", fontWeight: "500" }}>评估结果</span>
-                <Select
-                  mode="multiple"
-                  value={selectedModels || []}
-                  onChange={handleModelChange}
-                  className="model-selector"
-                  maxTagCount={2}
-                  maxTagTextLength={10}
-                  style={{ minWidth: "270px", flex: 1 }}
-                  dropdownRender={(menu) => (
-                    <>
-                      <div className="select-all-option" onClick={() => handleSelectAll(selectedModels?.length < modelOptions?.length)} style={{ padding: "4px 8px" }}>
-                        <Checkbox checked={selectedModels?.length === modelOptions?.length}>
-                          全选
-                        </Checkbox>
-                      </div>
-                      {menu}
-                    </>
-                  )}
-                >
-                  <Option value="claude3.5">Claude 3.5</Option>
-                  <Option value="claude3.6">Claude 3.6</Option>
-                  <Option value="claude3.7">Claude 3.7</Option>
-                  <Option value="agent2">Agent 2</Option>
-                  <Option value="deepseek">DeepSeek</Option>
-                </Select>
-              </div>
-            </div>
-
-            <div className="evaluation-model-info" style={{ gap: "4px" }}>
-              {Array.isArray(selectedModels) && selectedModels.map(modelKey => {
-                if (!evaluationData || !evaluationData[modelKey]) return null;
-                return (
-                <div className="model-panel" key={modelKey} style={{ marginBottom: "4px" }}>
-                  <div className="model-panel-header" onClick={() => toggleModelPanel(modelKey)} style={{ padding: "8px" }}>
-                    <div className="model-panel-left">
-                      <Avatar size={32} className="model-avatar" style={{ background: getModelColor(modelKey) }}>
-                          {evaluationData[modelKey]?.name?.charAt(0) || '?'}
-                      </Avatar>
-                      <div className="model-info">
-                        <div className="model-name" style={{ fontSize: "14px" }}>
-                            {evaluationData[modelKey]?.name || 'Unknown Model'}
-                          <span className="model-usage" style={{ fontSize: "12px", marginLeft: "4px" }}>128k</span>
-                        </div>
-                        <div className="model-tags" style={{ gap: "4px" }}>
-                            {Array.isArray(evaluationData[modelKey]?.tags) && evaluationData[modelKey]?.tags.map((tag, index) => (
-                            <span key={index} className="model-tag" style={{ padding: "0 4px", fontSize: "11px" }}>
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="model-panel-icon">
-                      {expandedModel === modelKey ? <MinusOutlined /> : <PlusOutlined />}
-                    </div>
-                  </div>
-
-                  {expandedModel === modelKey && (
-                    <div className="model-panel-content" style={{ padding: "0 8px 8px" }}>
-                      <div className="evaluation-content" style={{ padding: "8px" }}>
-                          <p className="evaluation-text" style={{ fontSize: "12px", margin: 0, lineHeight: "1.4" }}>{evaluationData[modelKey]?.description || '暂无描述'}</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-
-        {/* 右侧图表区域 */}
-        <div className="evaluation-right-section" style={{ gap: "4px" }}>
-          {/* 折线图区域 */}
-          <div className="line-chart-section" style={{ padding: "8px" }}>
-            <div className="chart-legend" style={{ marginBottom: "8px", gap: "8px" }}>
-              {Array.isArray(selectedModels) && selectedModels.map(modelKey => (
-                <div className="legend-item" key={modelKey} style={{ gap: "4px" }}>
-                  <span className="legend-color" style={{ backgroundColor: getModelColor(modelKey), width: "10px", height: "10px" }}></span>
-                  <span className="legend-label" style={{ fontSize: "12px" }}>{evaluationData?.[modelKey]?.name || modelKey}</span>
-                </div>
-              ))}
-            </div>
-
-            <div className="line-chart-container" style={{ height: "150px", marginTop: "4px" }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart
-                  data={enhancedChartData?.line || []}
-                  margin={{ top: 2, right: 5, left: 0, bottom: 2 }}
-                >
-                  {/* 渐变定义 */}
-                  <defs>
-                    {Object.keys(evaluationData || {}).map(modelKey => (
-                      <linearGradient key={modelKey} id={`color${modelKey}`} x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor={getModelColor(modelKey)} stopOpacity={0.2} />
-                        <stop offset="95%" stopColor={getModelColor(modelKey)} stopOpacity={0} />
-                      </linearGradient>
-                    ))}
-                  </defs>
-                  <CartesianGrid
-                    vertical={false}
-                    horizontal={true}
-                    stroke="var(--color-border-secondary)"
-                  />
-                  <XAxis
-                    dataKey="month"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 10, fill: 'var(--color-text-tertiary)' }}
-                  />
-                  <YAxis
-                    hide={true}
-                    domain={[0, 'dataMax + 20']}
-                  />
-                  <RechartsTooltip
-                    cursor={false}
-                    contentStyle={{
-                      background: 'var(--color-bg-container)',
-                      border: 'none',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                      borderRadius: '4px',
-                      padding: '4px 8px'
-                    }}
-                  />
-                  {Array.isArray(selectedModels) && selectedModels.map(modelKey => (
-                    <Area
-                      key={modelKey}
-                      type="monotone"
-                      dataKey={modelKey}
-                      name={evaluationData?.[modelKey]?.name || modelKey}
-                      stroke={getModelColor(modelKey)}
-                      strokeWidth={1.5}
-                      fill={`url(#color${modelKey})`}
-                      dot={false}
+      <ResultPage 
+        task={task}
+        enhancedChartData={enhancedChartData}
+        evaluationData={evaluationData}
+        selectedModels={selectedModels}
+        selectedModel={selectedModel}
+        expandedModel={expandedModel}
+        radarMaxValue={radarMaxValue}
+        handleModelChange={handleModelChange}
+        handleSelectAll={handleSelectAll}
+        toggleModelPanel={toggleModelPanel}
+        getModelColor={getModelColor}
+        onAddAnnotation={addAnnotationToTask}
                     />
-                  ))}
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          {/* 评分和雷达图区域 */}
-          <div className="score-radar-section" style={{ gap: "8px", padding: "8px" }}>
-            <div className="metrics-section" style={{ gap: "8px", minWidth: "70px" }}>
-              <div className="metric-item" style={{ padding: "8px" }}>
-                <div className="metric-label" style={{ fontSize: "12px", marginBottom: "4px" }}>综合得分</div>
-                <div className="metric-value" style={{ fontSize: "20px" }}>{currentEvaluation?.score || 'N/A'}</div>
-                <div className={`metric-change ${currentEvaluation?.scoreChange?.startsWith("+") ? "positive" : "negative"}`} style={{ fontSize: "12px" }}>
-                  {currentEvaluation?.scoreChange || '0'}
-                </div>
-              </div>
-
-              <div className="metric-item" style={{ padding: "8px" }}>
-                <div className="metric-label" style={{ fontSize: "12px", marginBottom: "4px" }}>各维度得分</div>
-                <div className="metric-value" style={{ fontSize: "20px" }}>{currentEvaluation?.credibility || 'N/A'}%</div>
-                <div className={`metric-change ${currentEvaluation?.credibilityChange?.startsWith("+") ? "positive" : "negative"}`} style={{ fontSize: "12px" }}>
-                  {currentEvaluation?.credibilityChange || '0'}
-                </div>
-              </div>
-            </div>
-
-            {/* 雷达图 */}
-            <div className="radar-chart-content" style={{ height: "220px" }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <RadarChart data={enhancedChartData?.radar || []}>
-                  <PolarGrid stroke="var(--color-border-secondary)" />
-                  <PolarAngleAxis dataKey="name" tick={{ fontSize: 10, fill: "var(--color-text-tertiary)" }} />
-                  <PolarRadiusAxis domain={[0, 100]} tick={{ fontSize: 9, fill: "var(--color-text-tertiary)" }} axisLine={false} />
-                  {Array.isArray(selectedModels) && selectedModels.map(modelKey => (
-                    <Radar
-                      key={modelKey}
-                      name={evaluationData?.[modelKey]?.name || modelKey}
-                      dataKey={modelKey}
-                      stroke={getModelColor(modelKey)}
-                      fill={getModelColor(modelKey)}
-                      fillOpacity={0.2}
-                    />
-                  ))}
-                </RadarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-        </div>
-      </div>
     );
   };
 
@@ -1056,10 +1070,10 @@ const TaskDetailPage = () => {
   const handleCompleteTask = async () => {
     try {
       setLoading(true);
-      // 更新任务状态为completed
+      // 更新任务状态为待审批(pending_approval)
       const updatedTaskData = {
         ...task,
-        status: "completed"
+        status: "pending_approval"
       };
       
       // 调用taskService的更新任务方法
@@ -1069,13 +1083,18 @@ const TaskDetailPage = () => {
       setTask(updatedTaskData);
       
       // 显示成功消息
-      message.success("任务已成功完成！");
+      message.success("任务已提交审批！");
       
-      // 可选：导航回任务列表
-      // navigate("/tasks");
+      // 导航回任务列表
+      navigate("/tasks", {
+        state: {
+          refreshList: true, // 提示任务页面刷新列表
+          activateTasksMenu: true // 激活任务菜单
+        }
+      });
     } catch (error) {
       console.error("完成任务失败:", error);
-      message.error("完成任务失败，请重试");
+      message.error("提交审批失败，请重试");
     } finally {
       setLoading(false);
     }
@@ -1124,7 +1143,8 @@ const TaskDetailPage = () => {
         // 直接更新任务数据中的测试结果
         const updatedTaskData = {
           ...task,
-          evaluations: [...(task.evaluations || []), testResultData]
+          evaluations: [...(task.evaluations || []), testResultData],
+          status: "pending_approval" // 更新状态为待审批
         };
         
         await taskService.updateTask(id, updatedTaskData);
@@ -1136,8 +1156,13 @@ const TaskDetailPage = () => {
       // 显示成功消息
       message.success("测试结果已成功提交！");
       
-      // 可选：导航到结果页面
-      // setActiveSection('result');
+      // 导航到任务列表页面
+      navigate("/tasks", {
+        state: {
+          refreshList: true, // 提示任务页面刷新列表
+          activateTasksMenu: true // 激活任务菜单
+        }
+      });
     } catch (error) {
       console.error("提交测试结果失败:", error);
       message.error("提交测试结果失败，请重试");
@@ -1154,6 +1179,8 @@ const TaskDetailPage = () => {
   // 渲染底部按钮
   const renderFooterButtons = () => {
     if (!isTaskStarted) {
+
+      
       // 根据任务状态显示不同的按钮文本
       let buttonText = "开始任务";
       if (task.status === "running") {
@@ -1163,15 +1190,18 @@ const TaskDetailPage = () => {
       }
       
       return (
-        <Button
-          type="primary"
-          size="large"
-          icon={<StartTaskIcon />}
-          onClick={handleStartTask}
-          className={styles.startTaskButton}
-        >
-          {buttonText}
-        </Button>
+        <>
+         
+          <Button
+            type="primary"
+            size="large"
+            icon={<StartTaskIcon />}
+            onClick={handleStartTask}
+            className={styles.startTaskButton}
+          >
+            {buttonText}
+          </Button>
+        </>
       );
     }
 
@@ -1179,21 +1209,23 @@ const TaskDetailPage = () => {
       return (
         <>
           <Button
-            type="primary"
-            size="large"
-            onClick={handleCompleteTask}
-            className={`${styles.primaryButton} ${styles.flexButton}`}
-            icon={<CheckOutlined />}
-          >
-            完成任务
-          </Button>
-          <Button
             size="large"
             onClick={handleSubmitResults}
-            className={styles.flexButton}
+            icon={<CheckOutlined />}
+            className={`${styles.primaryButton} ${styles.flexButton}`}
           >
             提交结果
           </Button>
+          <Button
+            type="primary"
+            size="large"
+            onClick={handleCompleteTask}
+            className={styles.flexButton}
+          
+          >
+            完成任务
+          </Button>
+  
           <Button
             size="large"
             onClick={handleGenerateReport}
@@ -1294,6 +1326,34 @@ const TaskDetailPage = () => {
     );
   };
 
+  // 处理关注切换
+  const handleToggleFollow = () => {
+    setIsFollowing(prev => !prev);
+    message.success(isFollowing ? '已取消关注' : '已关注');
+  };
+
+  // 点赞处理函数
+  const handleToggleLike = () => {
+    setIsLiked(prev => {
+      const newLikedState = !prev;
+      message.success(newLikedState ? '已点赞' : '已取消点赞');
+      return newLikedState;
+    });
+  };
+  
+  // 处理分享按钮点击
+  const handleShare = () => {
+    // 如果你有ShareModal组件，可以设置为true显示
+    setIsShareModalVisible(true);
+    // 如果没有ShareModal组件，可以使用message提示
+    message.info('分享功能开发中...');
+  };
+  
+  // 关闭分享模态框
+  const handleCloseShareModal = () => {
+    setIsShareModalVisible(false);
+  };
+
   if (loading) {
     return (
       <div className={`task-detail-page ${isChatOpen ? "chat-open" : "chat-closed"}`}>
@@ -1342,7 +1402,7 @@ const TaskDetailPage = () => {
 
       {/* 任务标题和信息 */}
       <div className="task-detail-title-section">
-        <h1 className="task-title">{task?.title}</h1>
+        <h1 className="task-title">{task?.prompt}</h1>
         <div className="task-creator-section">
           <div className="task-creator-info">
             <Avatar size={24} className="creator-avatar">
@@ -1361,10 +1421,29 @@ const TaskDetailPage = () => {
             ))}
           </div>
           <div className="task-actions-top">
-            <Button icon={<StarOutlined />} className="follow-button">
-              关注
+            <Button 
+              icon={isFollowing ? <StarFilled /> : <StarOutlined />} 
+              className={`follow-button ${isFollowing ? 'following' : ''}`}
+              onClick={handleToggleFollow}
+              size="small" 
+              style={{ 
+                height: "24px", 
+                padding: "0 8px",
+                transition: "all 0.3s",
+                backgroundColor: isFollowing ? "var(--color-primary-bg)" : "transparent",
+                borderColor: isFollowing ? "var(--color-primary-border)" : "var(--color-border-secondary)",
+                color: isFollowing ? "var(--color-primary-text)" : "inherit"
+              }}
+            >
+              {isFollowing ? '已关注' : '关注'}
             </Button>
-            <Button icon={<ShareAltOutlined />} className="share-button">
+            <Button 
+              icon={<ShareAltOutlined />} 
+              className="share-button" 
+              onClick={handleShare}
+              size="small" 
+              style={{ height: "24px", padding: "0 8px" }}
+            >
               分享
             </Button>
           </div>

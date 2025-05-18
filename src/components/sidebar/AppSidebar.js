@@ -89,7 +89,26 @@ const AppSidebar = () => {
   // 初始加载时获取菜单数据
   useEffect(() => {
     loadMenuData();
-  }, [])
+  }, []);
+  
+  // 单独处理localStorage中的激活任务菜单标记
+  useEffect(() => {
+    // 检查是否需要激活任务菜单（从localStorage中）
+    const shouldActivateTasksMenu = localStorage.getItem('activate_tasks_menu');
+    if (shouldActivateTasksMenu === 'true' && menuItems.length > 0) {
+      // 查找任务菜单项
+      menuItems.forEach(item => {
+        if (item.path === '/tasks') {
+          // 设置激活状态
+          setActiveItemId(item.id);
+          setActiveSubItemId(null); // 清除子菜单激活状态
+        }
+      });
+      
+      // 使用后删除此标记
+      localStorage.removeItem('activate_tasks_menu');
+    }
+  }, [menuItems]);
   
   // 添加菜单变更监听器
   useEffect(() => {
@@ -183,8 +202,19 @@ const AppSidebar = () => {
     const isDetailPage = location.pathname.includes("/detail")
     setIsCollapsed(isDetailPage)
     
+    // 如果在tasks路径且需要激活任务菜单
+    if (location.pathname === '/tasks' && location.state?.activateTasksMenu) {
+      // 查找任务菜单项
+      menuItems.forEach(item => {
+        if (item.path === '/tasks') {
+          // 设置激活状态
+          setActiveItemId(item.id);
+          setActiveSubItemId(null); // 清除子菜单激活状态
+        }
+      });
+    }
     // 如果在一级路径上且带有视图ID，自动展开对应的菜单项
-    if ((location.pathname === '/explore' || location.pathname === '/tasks') && location.state?.viewId) {
+    else if ((location.pathname === '/explore' || location.pathname === '/tasks') && location.state?.viewId) {
       // 查找拥有该视图ID子项的父菜单
       menuItems.forEach(item => {
         if (item.children && item.children.some(child => child.viewId === location.state.viewId)) {

@@ -108,7 +108,7 @@ const FooterActions = ({
             onClick={onSubmit}
             flex={1}
           >
-            提交优化结果
+            保存并新建任务
           </ActionButton>
           <div
             className={`${styles.optimizeMode} ${isOptimizationMode ? styles.active : ''}`}

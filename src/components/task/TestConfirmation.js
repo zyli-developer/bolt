@@ -278,6 +278,25 @@ const TestConfirmation = ({
 
   // 根据activeSection渲染不同的内容
   const renderSectionContent = () => {
+    // 从task中获取注释数据
+    const getCommentsFromTask = (section) => {
+      if (!task || !task.annotation) return [];
+      
+      // 根据不同的区域返回对应的注释
+      switch(section) {
+        case 'qa':
+          return task.annotation.qa || [];
+        case 'scene':
+          return task.annotation.scene || [];
+        case 'template':
+          return task.annotation.template || [];
+        case 'result':
+          return task.annotation.result || [];
+        default:
+          return [];
+      }
+    };
+
     switch (activeSection) {
       case 'overview':
         return (
@@ -345,15 +364,16 @@ const TestConfirmation = ({
                 }
               </div>
               
-              {isAnnotationExpanded && annotationColumns && annotationData && (
+              {isAnnotationExpanded && annotationColumns && (
                 <Table
                   columns={annotationColumns}
-                  dataSource={annotationData}
+                  dataSource={Array.isArray(annotationData) ? annotationData : []}
                   pagination={false}
                   size="small"
                   className={styles.annotationTable}
                   style={{ width: "100%" }}
                   scroll={{ x: true }}
+                  locale={{ emptyText: '暂无注释数据' }}
                 />
               )}
             </div>
@@ -362,19 +382,35 @@ const TestConfirmation = ({
       case 'qa':
         return QASection ? (
           <div className={styles.section}>
-            <QASection isEditable={false} />
+            <QASection 
+              isEditable={false} 
+              taskId={task?.id}
+              prompt={task?.prompt} 
+              response={task?.response_summary}
+              comments={getCommentsFromTask('qa')} // 从task数据中获取QA注释
+            />
           </div>
         ) : renderConfirmContent();
       case 'scene':
         return SceneSection ? (
           <div className={styles.section}>
-            <SceneSection isEditable={false} />
+            <SceneSection 
+              isEditable={false} 
+              taskId={task?.id}
+              scenario={task?.scenario}
+              comments={getCommentsFromTask('scene')} // 从task数据中获取场景注释
+            />
           </div>
         ) : renderConfirmContent();
       case 'template':
         return TemplateSection ? (
           <div className={styles.section}>
-            <TemplateSection isEditable={false} />
+            <TemplateSection 
+              isEditable={false} 
+              taskId={task?.id}
+              steps={task?.templateData ? { templateData: task.templateData, ...task?.step } : task?.step}
+              comments={getCommentsFromTask('template')} // 从task数据中获取模板注释
+            />
           </div>
         ) : renderConfirmContent();
       case 'confirm':

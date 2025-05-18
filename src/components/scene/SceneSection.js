@@ -15,7 +15,7 @@ import { OptimizationContext } from '../../contexts/OptimizationContext';
 const { Title } = Typography;
 const { TextArea } = Input;
 
-const SceneSection = ({ isEditable = false, taskId, scenario }) => {
+const SceneSection = ({ isEditable = false, taskId, scenario, comments = [], onAddAnnotation, onScenarioUpdate = () => {} }) => {
   const { styles } = useStyles();
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
@@ -27,13 +27,16 @@ const SceneSection = ({ isEditable = false, taskId, scenario }) => {
   const [contextMenu, setContextMenu] = useState(null);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editContent, setEditContent] = useState('');
+  const [editWeight, setEditWeight] = useState('');
   const [addNodeModalVisible, setAddNodeModalVisible] = useState(false);
   const [newNodeContent, setNewNodeContent] = useState('');
+  const [newNodeWeight, setNewNodeWeight] = useState('0');
   const [expandedNodes, setExpandedNodes] = useState(new Set());
   
   // 添加讨论模态框状态
   const [discussModalVisible, setDiscussModalVisible] = useState(false);
   const [selectedText, setSelectedText] = useState('');
+  // 移除重复的annotationModalVisible状态，只使用modalVisible
 
   // 引入全局优化上下文
   const { 
@@ -103,9 +106,17 @@ const SceneSection = ({ isEditable = false, taskId, scenario }) => {
 
       setNodes(flowNodes);
       setEdges(flowEdges);
+      
+      if (comments && comments.length > 0) {
+        // 如果提供了comments属性，直接使用它
+        setAnnotations(comments);
+        setLoading(false);
+      } else {
+        // 否则从服务获取注释
       fetchAnnotations().finally(() => {
         setLoading(false);
       });
+      }
     } else {
       // 如果没有提供scenario参数，则从服务获取数据
       Promise.all([
@@ -180,12 +191,17 @@ const SceneSection = ({ isEditable = false, taskId, scenario }) => {
     }
   }, [scenario]);
 
-  // 当从优化上下文获取到注释数据时，更新本地状态
+  // 当从props获取到comments或从优化上下文获取到注释数据时，更新本地状态
   useEffect(() => {
-    if (currentOptimizationStep === 2 && currentStepComments && currentStepComments.length > 0) {
+    // 优先使用从props传入的comments
+    if (comments && comments.length > 0) {
+      setAnnotations(comments);
+    } 
+    // 如果没有props传入comments但有来自上下文的数据，则使用上下文数据
+    else if (currentOptimizationStep === 2 && currentStepComments && currentStepComments.length > 0) {
       setAnnotations(currentStepComments);
     }
-  }, [currentOptimizationStep, currentStepComments]);
+  }, [comments, currentOptimizationStep, currentStepComments]);
 
   useEffect(() => {
     const handleGlobalClick = (e) => {
@@ -260,6 +276,18 @@ const SceneSection = ({ isEditable = false, taskId, scenario }) => {
         break;
       case 'edit':
         setEditContent(selectedNode.data.label);
+        
+        // 查找对应的场景节点以获取权重
+        let nodeWeight = "0";
+        if (scenario && scenario.node && Array.isArray(scenario.node)) {
+          const sceneNode = scenario.node.find(n => n.id === selectedNode.id);
+          if (sceneNode && typeof sceneNode.weight !== 'undefined') {
+            nodeWeight = String(sceneNode.weight);
+          }
+        }
+        
+        // 初始化权重值，优先使用场景节点中的weight
+        setEditWeight(nodeWeight);
         setEditModalVisible(true);
         break;
       case 'select':
@@ -273,34 +301,76 @@ const SceneSection = ({ isEditable = false, taskId, scenario }) => {
     }
   };
 
-  const handleSaveAnnotation = async (data) => {
+  const handleSaveAnnotation = async (data, annotationType = 'scene') => {
     try {
-      if (!selectedNode) {
-        message.error('请选择一个节点');
+      // 验证data参数
+      if (!data) {
+        message.error('观点数据不能为空');
         return;
       }
 
+      // 确保text存在，即使summary为空也可以保存
+      if (!data.text && !data.selectedText) {
+        message.error('请输入观点内容');
+        return;
+      }
+
+      // 确保nodeId存在（如果是从节点上下文菜单打开的）
+      const finalNodeId = data.nodeId || selectedNode?.id;
+
+          // 创建注释数据对象，确保数据格式与CommentsList组件兼容
       const annotationData = {
         ...data,
-        nodeId: selectedNode.id,
-        id: `annotation-${Date.now()}` // 确保有唯一ID
-      };
+      nodeId: finalNodeId, // 保存节点ID
+      // 如果数据中已有id则保留该id，如果没有id则认为是对当前场景的注释
+      id: data.id || null, // 不自动生成id，如果没有id则保持为null
+      // 确保step字段始终为'scene'
+      step: 'scene', // 标识为场景注释，与task.annotation.scene关联
+      // 确保时间格式正确
+      time: data.time || new Date().toLocaleString('zh-CN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      }),
+      // 确保author格式正确
+      author: typeof data.author === 'string' ? data.author : (data.author?.name || '当前用户')
+    };
 
+      // 调用API保存注释
       await annotationService.addAnnotation(annotationData);
 
       // 更新本地状态
       setAnnotations(prev => [...prev, annotationData]);
       
-      // 同时更新全局状态
-      if (currentOptimizationStep === 2) {
+          // 同时更新全局状态 - 使用'scene'字符串标识，确保添加到正确的步骤
+    if (typeof addComment === 'function') {
+      // 传递带有step字段的注释，确保添加到'scene'类别
         addComment(annotationData);
       }
       
+    // 如果父组件提供了onAddAnnotation函数，调用它将注释添加到task.annotation.scene中
+    if (onAddAnnotation && typeof onAddAnnotation === 'function') {
+      // 使用annotationData.step确保保存到scene分类
+      onAddAnnotation(annotationData);
+    }
+      
+      // 关闭模态框并清除状态
       setModalVisible(false);
       setSelectedNode(null);
-      message.success('添加注释成功');
+      setSelectedText('');
+      message.success('添加观点成功');
     } catch (error) {
-      message.error('添加注释失败');
+      console.error('添加观点失败:', error);
+      // 提供更具体的错误信息
+      if (error.response) {
+        message.error(`添加观点失败: ${error.response.data?.message || error.message}`);
+      } else if (error.request) {
+        message.error('网络请求失败，请检查网络连接');
+      } else {
+        message.error(`添加观点失败: ${error.message}`);
+      }
     }
   };
 
@@ -333,6 +403,14 @@ const SceneSection = ({ isEditable = false, taskId, scenario }) => {
       return;
     }
 
+    // 验证权重值是否为有效数字
+    const weightValue = parseFloat(editWeight);
+    if (isNaN(weightValue)) {
+      message.error('权重必须是有效的数字');
+      return;
+    }
+
+    // 更新React Flow节点的显示内容
     setNodes((nds) =>
       nds.map((node) => {
         if (node.id === selectedNode.id) {
@@ -348,8 +426,34 @@ const SceneSection = ({ isEditable = false, taskId, scenario }) => {
       })
     );
 
+    // 如果是可编辑模式，同时更新scenario.node数据
+    if (isEditable && scenario && scenario.node && Array.isArray(scenario.node)) {
+      // 创建scenario的副本，避免直接修改props
+      const updatedScenario = { ...scenario };
+      const updatedNodes = [...updatedScenario.node];
+      
+      // 查找对应节点并更新
+      const nodeIndex = updatedNodes.findIndex(n => n.id === selectedNode.id);
+      if (nodeIndex !== -1) {
+        updatedNodes[nodeIndex] = {
+          ...updatedNodes[nodeIndex],
+          label: editContent.trim(),
+          weight: weightValue
+        };
+        
+        // 更新scenario
+        updatedScenario.node = updatedNodes;
+        
+        // 如果有更新scenario的回调，调用它
+        if (typeof onScenarioUpdate === 'function') {
+          onScenarioUpdate(updatedScenario);
+        }
+      }
+    }
+
     setEditModalVisible(false);
     setEditContent('');
+    setEditWeight('');
     setSelectedNode(null);
     message.success('修改成功');
   };
@@ -371,9 +475,19 @@ const SceneSection = ({ isEditable = false, taskId, scenario }) => {
       return;
     }
 
+    // 验证权重值是否为有效数字
+    const weightValue = parseFloat(newNodeWeight);
+    if (isNaN(weightValue)) {
+      message.error('权重必须是有效的数字');
+      return;
+    }
+
     const newNode = {
       id: `${Date.now()}`,
-      data: { label: newNodeContent.trim() },
+      data: { 
+        label: newNodeContent.trim(),
+        weight: weightValue
+      },
       position: { x: 250, y: 400 },
       style: {
         background: '#fff',
@@ -387,6 +501,7 @@ const SceneSection = ({ isEditable = false, taskId, scenario }) => {
     setNodes((nds) => [...nds, newNode]);
     setAddNodeModalVisible(false);
     setNewNodeContent('');
+    setNewNodeWeight('0');
     message.success('添加成功');
   };
 
@@ -445,7 +560,20 @@ const SceneSection = ({ isEditable = false, taskId, scenario }) => {
         <div className={styles.flowChartHeader}>
           <Title level={5} className={styles.headerTitle}>场景详情</Title>
           {isEditable ? (
-            <Button type="text" icon={<EyeOutlined />}>预览</Button>
+            // <Button type="text" icon={<EyeOutlined />}>预览</Button>
+            <Button 
+            type="text" 
+            icon={<PlusOutlined />} 
+            className={styles.actionButton}
+            onClick={() => {
+              // 点击添加观点按钮时，清空已选节点，直接打开模态框
+              setSelectedNode(null);
+              setSelectedText('');
+              setModalVisible(true);
+            }}
+          >
+            添加观点
+          </Button>
           ) : null}
         </div>
         
@@ -467,7 +595,8 @@ const SceneSection = ({ isEditable = false, taskId, scenario }) => {
               zoomOnScroll={false}
               panOnScroll={false}
               panOnDrag={true}
-              preventScrolling={true}
+              preventScrolling={false}
+              onWheelCapture={(e) => e.stopPropagation()}
             >
               <Background />
               <Controls />
@@ -476,7 +605,8 @@ const SceneSection = ({ isEditable = false, taskId, scenario }) => {
         </div>
       </div>
 
-      {/* 右侧注释列表 */}
+      {/* 右侧注释列表 - 只有当有注释数据时才显示 */}
+      {annotations && annotations.length > 0 && (
       <div className="scene-sidebar-container" style={{ 
         width: '320px', 
         flexShrink: 0,
@@ -496,6 +626,7 @@ const SceneSection = ({ isEditable = false, taskId, scenario }) => {
           nodes={nodes}
         />
       </div>
+      )}
 
       {/* 右键菜单 */}
       {contextMenu && (
@@ -508,7 +639,7 @@ const SceneSection = ({ isEditable = false, taskId, scenario }) => {
         />
       )}
 
-      {/* 添加注释的 Modal */}
+      {/* 添加观点的 Modal */}
       <AnnotationModal
         visible={modalVisible}
         onClose={() => {
@@ -516,7 +647,10 @@ const SceneSection = ({ isEditable = false, taskId, scenario }) => {
           setSelectedNode(null);
         }}
         onSave={handleSaveAnnotation}
-        selectedText={selectedNode?.data.label || ''}
+        selectedText={selectedNode?.data.label || selectedText || ''}
+        initialContent={selectedNode?.data.label || selectedText || ''}
+        step="scene"
+        nodeId={selectedNode?.id} // 传递选中节点的ID
       />
 
       {/* 编辑节点的 Modal */}
@@ -526,18 +660,33 @@ const SceneSection = ({ isEditable = false, taskId, scenario }) => {
         onCancel={() => {
           setEditModalVisible(false);
           setEditContent('');
+          setEditWeight('');
           setSelectedNode(null);
         }}
         onOk={handleEditNode}
         okText="保存"
         cancelText="取消"
       >
+        <div style={{ marginBottom: '16px' }}>
+          <div style={{ marginBottom: '8px' }}>内容：</div>
         <TextArea
           value={editContent}
           onChange={(e) => setEditContent(e.target.value)}
           placeholder="请输入节点内容..."
           rows={4}
         />
+        </div>
+        <div>
+          <div style={{ marginBottom: '8px' }}>权重：</div>
+          <Input
+            type="number"
+            step="0.01"
+            value={editWeight}
+            onChange={(e) => setEditWeight(e.target.value)}
+            placeholder="请输入节点权重值..."
+            style={{ width: '100%' }}
+          />
+        </div>
       </Modal>
 
       {/* 添加节点的 Modal */}
@@ -547,17 +696,32 @@ const SceneSection = ({ isEditable = false, taskId, scenario }) => {
         onCancel={() => {
           setAddNodeModalVisible(false);
           setNewNodeContent('');
+          setNewNodeWeight('0');
         }}
         onOk={handleAddNode}
         okText="添加"
         cancelText="取消"
       >
+        <div style={{ marginBottom: '16px' }}>
+          <div style={{ marginBottom: '8px' }}>内容：</div>
         <TextArea
           value={newNodeContent}
           onChange={(e) => setNewNodeContent(e.target.value)}
           placeholder="请输入节点内容..."
           rows={4}
         />
+        </div>
+        <div>
+          <div style={{ marginBottom: '8px' }}>权重：</div>
+          <Input
+            type="number"
+            step="0.01"
+            value={newNodeWeight}
+            onChange={(e) => setNewNodeWeight(e.target.value)}
+            placeholder="请输入节点权重值..."
+            style={{ width: '100%' }}
+          />
+        </div>
       </Modal>
 
       {/* 添加节点按钮 */}
@@ -578,6 +742,8 @@ const SceneSection = ({ isEditable = false, taskId, scenario }) => {
         onClose={() => setDiscussModalVisible(false)}
         selectedText={selectedText}
       />
+
+      
     </div>
   );
 };
