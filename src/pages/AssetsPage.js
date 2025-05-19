@@ -49,9 +49,9 @@ const AssetsPage = () => {
         // 更新报告数据
         setReports(prev => {
           // 避免重复添加
-          const newReports = event.detail.reports.filter(newReport => 
-            !prev.some(existingReport => existingReport.id === newReport.id)
-          );
+          const newReports = event.detail.reports
+            .filter(newReport => !prev.some(existingReport => existingReport.id === newReport.id))
+            .map(report => ({ ...report, type: 'report' }));
           
           if (newReports.length > 0) {
             console.log(`添加 ${newReports.length} 个新报告`);
@@ -63,19 +63,153 @@ const AssetsPage = () => {
       } else {
         // 否则重新加载报告数据
         console.log('从localStorage加载报告数据');
-        loadLocalReports();
+        
+        try {
+          const reportDataJson = localStorage.getItem('task_reports');
+          if (reportDataJson) {
+            const reportData = JSON.parse(reportDataJson);
+            if (Array.isArray(reportData) && reportData.length > 0) {
+              console.log('从localStorage加载到报告数据:', reportData.length, '条');
+              
+              // 获取已生成的报告ID列表
+              const generatedReportsJson = localStorage.getItem('generated_reports');
+              let generatedReportIds = [];
+              
+              if (generatedReportsJson) {
+                try {
+                  const parsedIds = JSON.parse(generatedReportsJson);
+                  if (Array.isArray(parsedIds)) {
+                    generatedReportIds = parsedIds;
+                  }
+                } catch (e) {
+                  console.error('解析generated_reports失败:', e);
+                }
+              }
+              
+              // 过滤和格式化报告数据
+              const formattedReports = reportData
+                .filter(report => generatedReportIds.length === 0 || generatedReportIds.includes(report.id))
+                .map(report => ({
+                  ...report,
+                  type: 'report'
+                }));
+              
+              // 合并报告数据，避免重复
+              setReports(prev => {
+                // 过滤掉已存在的报告
+                const newReports = formattedReports.filter(
+                  newReport => !prev.some(existingReport => existingReport.id === newReport.id)
+                );
+                
+                if (newReports.length > 0) {
+                  console.log(`添加 ${newReports.length} 个新报告`);
+                  return [...prev, ...newReports];
+                }
+                
+                return prev;
+              });
+            }
+          }
+        } catch (error) {
+          console.error('加载报告数据失败:', error);
+        }
       }
       
       // 增加刷新触发器的值，触发AssetList组件刷新
       setRefreshTrigger(prev => prev + 1);
     };
     
+    // 处理报告生成事件
+    const handleReportGenerated = (event) => {
+      console.log('AssetsPage: 收到报告生成事件，详情:', event.detail);
+      
+      // 从事件中获取生成的报告ID和报告数据
+      const generatedReportId = event.detail?.reportId;
+      const generatedReport = event.detail?.report;
+      
+      if (generatedReportId) {
+        // 从localStorage获取已生成的报告ID列表
+        const generatedReportsJson = localStorage.getItem('generated_reports');
+        let generatedReportIds = [];
+        
+        if (generatedReportsJson) {
+          try {
+            generatedReportIds = JSON.parse(generatedReportsJson);
+          } catch (e) {
+            console.error('解析已生成报告ID列表失败:', e);
+            generatedReportIds = [];
+          }
+        }
+        
+        // 添加新生成的报告ID
+        if (!generatedReportIds.includes(generatedReportId)) {
+          generatedReportIds.push(generatedReportId);
+          
+          // 保存更新后的已生成报告ID列表
+          localStorage.setItem('generated_reports', JSON.stringify(generatedReportIds));
+          console.log('已更新生成的报告ID列表:', generatedReportIds);
+          
+          // 如果事件中包含报告数据，直接添加到reports数组
+          if (generatedReport) {
+            // 检查报告是否已存在于reports数组中
+            setReports(prevReports => {
+              const reportExists = prevReports.some(report => report.id === generatedReport.id);
+              
+              if (!reportExists) {
+                console.log('添加新报告到列表:', generatedReport.id);
+                return [...prevReports, { ...generatedReport, type: 'report' }];
+              }
+              
+              console.log('报告已存在，不重复添加:', generatedReport.id);
+              return prevReports;
+            });
+          } else {
+            // 如果事件中没有报告数据，则从localStorage重新加载所有报告
+            try {
+              const reportDataJson = localStorage.getItem('task_reports');
+              if (reportDataJson) {
+                const reportData = JSON.parse(reportDataJson);
+                if (Array.isArray(reportData)) {
+                  // 找到新生成的报告
+                  const newReport = reportData.find(report => report.id === generatedReportId);
+                  
+                  if (newReport) {
+                    // 检查新报告是否已存在于reports数组中
+                    setReports(prevReports => {
+                      const reportExists = prevReports.some(report => report.id === generatedReportId);
+                      
+                      if (!reportExists) {
+                        console.log('从localStorage添加新报告到列表:', generatedReportId);
+                        return [...prevReports, { ...newReport, type: 'report' }];
+                      }
+                      
+                      console.log('报告已存在，不重复添加:', generatedReportId);
+                      return prevReports;
+                    });
+                  }
+                }
+              }
+            } catch (error) {
+              console.error('从localStorage加载报告数据失败:', error);
+            }
+          }
+          
+          // 增加刷新触发器的值，触发AssetList组件刷新
+          setRefreshTrigger(prev => prev + 1);
+        } else {
+          console.log('报告ID已存在于生成列表中，不重复添加:', generatedReportId);
+        }
+      }
+    };
+    
     // 添加事件监听
     window.addEventListener('reportsUpdated', handleReportsUpdated);
+    window.addEventListener('reportGenerated', handleReportGenerated);
     
     // 组件卸载时移除事件监听
     return () => {
       window.removeEventListener('reportsUpdated', handleReportsUpdated);
+      window.removeEventListener('reportGenerated', handleReportGenerated);
     };
   }, []);
   
@@ -83,9 +217,9 @@ const AssetsPage = () => {
   useEffect(() => {
     const handleStorageChange = (e) => {
       // 监听报告相关的存储变化
-      if (e.key === 'task_reports' || e.key === 'reports_last_updated' || e.key === 'reports_force_update') {
+      if (e.key === 'task_reports' || e.key === 'reports_last_updated' || e.key === 'reports_force_update' || e.key === 'generated_reports') {
         console.log(`AssetsPage: 检测到localStorage变化: ${e.key}`);
-        loadLocalReports();
+    
         setRefreshTrigger(prev => prev + 1);
       }
     };
@@ -99,54 +233,11 @@ const AssetsPage = () => {
     };
   }, []);
   
-  // 加载本地报告数据
-  const loadLocalReports = () => {
-    try {
-      // 从localStorage获取报告数据
-      const reportsJson = localStorage.getItem('task_reports');
-      if (reportsJson) {
-        const reportData = JSON.parse(reportsJson);
-        if (Array.isArray(reportData) && reportData.length > 0) {
-          console.log('加载到本地报告数据:', reportData.length);
-          
-          // 确保报告数据格式正确
-          const formattedReports = reportData.map(report => ({
-            ...report,
-            type: 'report', // 确保type字段设置为report
-            id: report.id || `report-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-          }));
-          
-          setReports(formattedReports);
-          console.log('报告数据详情:', formattedReports);
-        } else {
-          console.log('未找到报告数据或数据为空数组');
-          setReports([]);
-        }
-      } else {
-        console.log('localStorage中不存在task_reports键');
-        setReports([]);
-      }
-    } catch (error) {
-      console.error('加载本地报告数据失败:', error);
-      setReports([]);
-    }
-  };
+
   
-  // 初始加载本地报告数据
-  useEffect(() => {
-    loadLocalReports();
-  }, []);
+ 
   
-  // 定期检查报告更新
-  useEffect(() => {
-    const checkReportsInterval = setInterval(() => {
-      loadLocalReports();
-    }, 60000); // 每分钟检查一次
-    
-    return () => {
-      clearInterval(checkReportsInterval);
-    };
-  }, []);
+
   
   // 获取本地备份数据
   const getFallbackData = () => {
@@ -302,6 +393,47 @@ const AssetsPage = () => {
     if (assets.length === 0 && !loading) {
       getFallbackData();
     }
+    
+    // 初始化加载报告数据
+    try {
+      const reportDataJson = localStorage.getItem('task_reports');
+      const generatedReportsJson = localStorage.getItem('generated_reports');
+      
+      let generatedReportIds = [];
+      if (generatedReportsJson) {
+        try {
+          const parsedIds = JSON.parse(generatedReportsJson);
+          if (Array.isArray(parsedIds)) {
+            generatedReportIds = parsedIds;
+            console.log('初始化时，已生成报告ID列表:', generatedReportIds);
+          }
+        } catch (e) {
+          console.error('解析generated_reports失败:', e);
+        }
+      }
+      
+      if (reportDataJson) {
+        const reportData = JSON.parse(reportDataJson);
+        if (Array.isArray(reportData) && reportData.length > 0) {
+          console.log('初始化时，从localStorage加载到报告数据:', reportData.length, '条');
+          
+          // 过滤和格式化报告数据
+          const formattedReports = reportData
+            .filter(report => generatedReportIds.length === 0 || generatedReportIds.includes(report.id))
+            .map(report => ({
+              ...report,
+              type: 'report'
+            }));
+          
+          if (formattedReports.length > 0) {
+            console.log('初始化时，设置报告数据:', formattedReports.length, '条');
+            setReports(formattedReports);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('初始化加载报告数据失败:', error);
+    }
   }, []);
   
   // 参数改变时重新加载数据
@@ -322,7 +454,11 @@ const AssetsPage = () => {
         
         <div className={styles.assetPageBackground}>
           <AssetList 
-            assets={[...assets, ...reports]}
+            assets={[
+              // 过滤assets中的报告类型，避免与reports中的数据重复
+              ...assets.filter(asset => asset.type !== 'report'),
+              ...reports
+            ]}
             loading={loading}
             total={pagination.total}
             currentPage={pagination.page}

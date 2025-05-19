@@ -130,9 +130,6 @@
   color: var(--color-text-base);
 }
 
-.task-detail-item {
-  margin-bottom: 6px;
-}
 
 .task-detail-label {
   font-weight: 500;
@@ -143,8 +140,8 @@
 
 .task-detail-value {
   color: #71727a;
-  font-size: 13px;
-  line-height: 1.3;
+  font-size: 12px;
+  line-height: 1.2;
   word-break: break-word;
 }
 

@@ -7,8 +7,7 @@ import api from "./api"
 import endpoints from "./endpoints"
 import { getCurrentUser } from "./authService"
 import { processTaskCard, processTasksResponse } from "../utils/dataTransformer"
-import { modelEvaluationData } from "../mocks/data"
-import { taskCardsData } from "../mocks/data"
+import { taskCardsData, modelEvaluationData } from "../mocks/data"
 import { filterCardsByConditions } from "../mocks/filterData"
 
 // 判断是否使用本地模拟数据
@@ -32,6 +31,35 @@ function convertApiOperatorToUi(apiOp) {
 
 const taskService = {
   /**
+   * 获取所有模型评估数据
+   * @returns {Object} - 包含所有模型评估数据的对象
+   */
+  getAllModelEvaluations: async () => {
+    try {
+      // 如果使用本地模拟数据
+      if (USE_MOCK_DATA) {
+        console.log("使用本地模拟数据获取模型评估数据");
+        return modelEvaluationData;
+      }
+      
+      // 这里可以添加真实API调用
+      // const response = await api.get(
+      //   endpoints.models.evaluations,
+      //   {},
+      //   'GetModelEvaluationsResponse'
+      // );
+      // return response;
+      
+      // 暂时返回mock数据
+      return modelEvaluationData;
+    } catch (error) {
+      console.error("获取模型评估数据失败:", error);
+      // 如果API调用失败，仍然返回mock数据
+      return modelEvaluationData;
+    }
+  },
+
+  /**
    * 获取任务列表 (API规范: GET /v1/syntrust/tasks)
    * @param {Object} params - 查询参数，包括tab, pagination, filter, sort
    * @returns {Promise} - 任务列表数据，包含card和pagination
@@ -53,6 +81,21 @@ const taskService = {
         
         // 复制一份任务卡片数据，避免修改原始数据
         let data = JSON.parse(JSON.stringify(taskCardsData));
+        
+        // 从localStorage中获取导入的任务
+        try {
+          const importedTasksJson = localStorage.getItem('imported_tasks');
+          if (importedTasksJson) {
+            const importedTasks = JSON.parse(importedTasksJson);
+            if (Array.isArray(importedTasks) && importedTasks.length > 0) {
+              console.log(`从localStorage中获取到${importedTasks.length}条导入任务数据`);
+              // 将导入的任务添加到数据前面
+              data = [...importedTasks, ...data];
+            }
+          }
+        } catch (error) {
+          console.error('从localStorage获取导入任务失败:', error);
+        }
         
         // 应用筛选条件 - 如果有筛选参数
         if (filterParams) {
@@ -220,6 +263,51 @@ const taskService = {
    */
   getTaskDetail: async (id) => {
     try {
+      // 如果使用本地模拟数据
+      if (USE_MOCK_DATA) {
+        console.log(`使用本地模拟数据获取任务详情, ID: ${id}`);
+        
+        // 从taskCardsData中查找对应ID的任务，同时支持字符串和数字格式的ID比较
+        const { taskCardsData } = require("../mocks/data");
+        const mockTask = taskCardsData.find(task => 
+          task.id === id || task.id === id.toString() || task.id.toString() === id
+        );
+        
+        if (mockTask) {
+          console.log("找到匹配的mock任务:", mockTask);
+          // 确保返回的是对象而不是字符串
+          return { task: mockTask && typeof mockTask === 'object' ? mockTask : {} };
+        }
+        
+        // 如果没有找到对应ID的任务，返回一个基本的任务结构
+        console.log(`未找到ID为 ${id} 的任务，返回默认结构`);
+        return {
+          task: {
+            id: id,
+            title: `任务 ${id}`,
+            author: {
+              name: "系统",
+              avatar: null
+            },
+            source: "本地测试",
+            tags: ["测试", "示例"],
+            description: "这是一个示例任务，用于在API调用失败时显示",
+            chartData: {
+              radar: [
+                { name: "维度1", value: 80 },
+                { name: "维度2", value: 75 },
+                { name: "维度3", value: 85 }
+              ],
+              line: [
+                { month: "08", value: 70 },
+                { month: "09", value: 75 },
+                { month: "10", value: 80 }
+              ]
+            }
+          }
+        };
+      }
+      
       // 获取当前用户
       const currentUser = getCurrentUser();
       
@@ -235,8 +323,24 @@ const taskService = {
         'GetTaskResponse'
       );
       
+      // 确保response是对象
+      if (typeof response === 'string') {
+        try {
+          const parsedResponse = JSON.parse(response);
+          // 如果有task字段，处理数据
+          if (parsedResponse.task) {
+            parsedResponse.task = processTaskCard(parsedResponse.task);
+          }
+          return parsedResponse;
+        } catch (error) {
+          console.error("无法解析任务详情响应:", error);
+          // 返回一个基本对象结构
+          return { task: {} };
+        }
+      }
+      
       // 如果有task字段，处理数据
-      if (response.task) {
+      if (response && response.task) {
         response.task = processTaskCard(response.task);
       }
       
@@ -245,17 +349,15 @@ const taskService = {
       console.error(`获取任务详情失败 (ID: ${id}):`, error);
       
       // 返回mock数据，防止前端崩溃
-      // 从taskCardsData中查找对应ID的任务
+      // 从taskCardsData中查找对应ID的任务，同时支持字符串和数字格式的ID比较
       const { taskCardsData } = require("../mocks/data");
-      
-      // 尝试查找匹配ID的任务，同时支持字符串和数字格式的ID比较
       const mockTask = taskCardsData.find(task => 
         task.id === id || task.id === id.toString() || task.id.toString() === id
       );
       
       if (mockTask) {
         console.log("使用mock数据:", mockTask);
-        return { task: mockTask };
+        return { task: mockTask && typeof mockTask === 'object' ? mockTask : {} };
       }
       
       // 如果没有找到对应ID的任务，返回一个基本的任务结构
@@ -614,12 +716,39 @@ const taskService = {
 
   /**
    * 获取所有模型评估数据
-   * @returns {Object} - 所有模型的评估数据
+   * @returns {Promise} - 所有模型的评估数据
    */
-  getAllModelEvaluations: () => {
-    // 直接返回mock数据
-    return modelEvaluationData;
-  }
+  getAllModelEvaluations: async () => {
+    try {
+      if (USE_MOCK_DATA) {
+        console.log("使用本地模拟数据获取所有模型评估...");
+        // 返回模拟的模型评估数据
+        return modelEvaluationData;
+      }
+      
+      // 获取当前用户
+      const currentUser = getCurrentUser();
+      
+      // 构建请求参数
+      const requestParams = {
+        user_id: currentUser?.id || ""
+      };
+      
+      // 调用API
+      const response = await api.get(
+        endpoints.models.evaluations,
+        { params: requestParams },
+        'GetModelEvaluationsResponse'
+      );
+      
+      return response.models || {};
+    } catch (error) {
+      console.error("获取模型评估数据失败:", error);
+      // 发生错误时返回mock数据，防止UI崩溃
+      return modelEvaluationData;
+    }
+  },
+
 }
 
 export default taskService

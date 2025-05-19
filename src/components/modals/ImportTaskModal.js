@@ -20,6 +20,77 @@ const mockImportData = [
       name: "导入用户",
       avatar: null
     },
+    templateData: {
+      nodes: [
+        {
+          id: "start",
+          data: { label: "评估起点" },
+          position: { x: 250, y: 25 },
+          style: {
+            background: '#f0f7ff',
+            border: '1px solid #006ffd',
+            borderRadius: '8px',
+            padding: '12px 20px',
+            fontSize: '14px',
+            fontWeight: 'bold'
+          }
+        },
+        {
+          id: "GPT-4",
+          data: { label: "GPT-4" },
+          position: { x: 100, y: 150 },
+          style: {
+            background: '#fff',
+            border: '1px solid #d9d9d9',
+            borderRadius: '8px',
+            padding: '12px 20px',
+            fontSize: '14px'
+          }
+        },
+        {
+          id: "Claude",
+          data: { label: "Claude" },
+          position: { x: 250, y: 150 },
+          style: {
+            background: '#fff',
+            border: '1px solid #d9d9d9',
+            borderRadius: '8px',
+            padding: '12px 20px',
+            fontSize: '14px'
+          }
+        },
+        {
+          id: "DeepSeek",
+          data: { label: "DeepSeek" },
+          position: { x: 400, y: 150 },
+          style: {
+            background: '#fff',
+            border: '1px solid #d9d9d9',
+            borderRadius: '8px',
+            padding: '12px 20px',
+            fontSize: '14px'
+          }
+        },
+        {
+          id: "agent-2",
+          data: { label: "agent-2" },
+          position: { x: 550, y: 150 },
+          style: {
+            background: '#fff',
+            border: '1px solid #d9d9d9',
+            borderRadius: '8px',
+            padding: '12px 20px',
+            fontSize: '14px'
+          }
+        }
+      ],
+      edges: [
+        { id: "e-start-GPT-4", source: "start", target: "GPT-4", animated: true, style: { stroke: '#006ffd' } },
+        { id: "e-start-Claude", source: "start", target: "Claude", animated: true, style: { stroke: '#006ffd' } },
+        { id: "e-start-DeepSeek", source: "start", target: "DeepSeek", animated: true, style: { stroke: '#006ffd' } },
+        { id: "e-start-agent-2", source: "start", target: "agent-2", animated: true, style: { stroke: '#006ffd' } }
+      ]
+    },
     source: "Excel导入",
     tags: ["UI测试", "自动化", "测试报告"],
     title: "Excel导入-自动化UI测试任务",
@@ -74,6 +145,77 @@ const mockImportData = [
     created_from: "Excel导入",
     created_at: { seconds: Math.floor(Date.now() / 1000) - 7200 },
     status: "进行中",
+    templateData: {
+      nodes: [
+        {
+          id: "start",
+          data: { label: "评估起点" },
+          position: { x: 250, y: 25 },
+          style: {
+            background: '#f0f7ff',
+            border: '1px solid #006ffd',
+            borderRadius: '8px',
+            padding: '12px 20px',
+            fontSize: '14px',
+            fontWeight: 'bold'
+          }
+        },
+        {
+          id: "GPT-4",
+          data: { label: "GPT-4" },
+          position: { x: 100, y: 150 },
+          style: {
+            background: '#fff',
+            border: '1px solid #d9d9d9',
+            borderRadius: '8px',
+            padding: '12px 20px',
+            fontSize: '14px'
+          }
+        },
+        {
+          id: "Claude",
+          data: { label: "Claude" },
+          position: { x: 250, y: 150 },
+          style: {
+            background: '#fff',
+            border: '1px solid #d9d9d9',
+            borderRadius: '8px',
+            padding: '12px 20px',
+            fontSize: '14px'
+          }
+        },
+        {
+          id: "DeepSeek",
+          data: { label: "DeepSeek" },
+          position: { x: 400, y: 150 },
+          style: {
+            background: '#fff',
+            border: '1px solid #d9d9d9',
+            borderRadius: '8px',
+            padding: '12px 20px',
+            fontSize: '14px'
+          }
+        },
+        {
+          id: "agent-2",
+          data: { label: "agent-2" },
+          position: { x: 550, y: 150 },
+          style: {
+            background: '#fff',
+            border: '1px solid #d9d9d9',
+            borderRadius: '8px',
+            padding: '12px 20px',
+            fontSize: '14px'
+          }
+        }
+      ],
+      edges: [
+        { id: "e-start-GPT-4", source: "start", target: "GPT-4", animated: true, style: { stroke: '#006ffd' } },
+        { id: "e-start-Claude", source: "start", target: "Claude", animated: true, style: { stroke: '#006ffd' } },
+        { id: "e-start-DeepSeek", source: "start", target: "DeepSeek", animated: true, style: { stroke: '#006ffd' } },
+        { id: "e-start-agent-2", source: "start", target: "agent-2", animated: true, style: { stroke: '#006ffd' } }
+      ]
+    },
     author: {
       id: "import_user_2",
       name: "导入用户",
@@ -108,6 +250,77 @@ const mockImportData = [
         ]
       }
     ],
+    templateData: {
+      nodes: [
+        {
+          id: "start",
+          data: { label: "评估起点" },
+          position: { x: 250, y: 25 },
+          style: {
+            background: '#f0f7ff',
+            border: '1px solid #006ffd',
+            borderRadius: '8px',
+            padding: '12px 20px',
+            fontSize: '14px',
+            fontWeight: 'bold'
+          }
+        },
+        {
+          id: "GPT-4",
+          data: { label: "GPT-4" },
+          position: { x: 100, y: 150 },
+          style: {
+            background: '#fff',
+            border: '1px solid #d9d9d9',
+            borderRadius: '8px',
+            padding: '12px 20px',
+            fontSize: '14px'
+          }
+        },
+        {
+          id: "Claude",
+          data: { label: "Claude" },
+          position: { x: 250, y: 150 },
+          style: {
+            background: '#fff',
+            border: '1px solid #d9d9d9',
+            borderRadius: '8px',
+            padding: '12px 20px',
+            fontSize: '14px'
+          }
+        },
+        {
+          id: "DeepSeek",
+          data: { label: "DeepSeek" },
+          position: { x: 400, y: 150 },
+          style: {
+            background: '#fff',
+            border: '1px solid #d9d9d9',
+            borderRadius: '8px',
+            padding: '12px 20px',
+            fontSize: '14px'
+          }
+        },
+        {
+          id: "agent-2",
+          data: { label: "agent-2" },
+          position: { x: 550, y: 150 },
+          style: {
+            background: '#fff',
+            border: '1px solid #d9d9d9',
+            borderRadius: '8px',
+            padding: '12px 20px',
+            fontSize: '14px'
+          }
+        }
+      ],
+      edges: [
+        { id: "e-start-GPT-4", source: "start", target: "GPT-4", animated: true, style: { stroke: '#006ffd' } },
+        { id: "e-start-Claude", source: "start", target: "Claude", animated: true, style: { stroke: '#006ffd' } },
+        { id: "e-start-DeepSeek", source: "start", target: "DeepSeek", animated: true, style: { stroke: '#006ffd' } },
+        { id: "e-start-agent-2", source: "start", target: "agent-2", animated: true, style: { stroke: '#006ffd' } }
+      ]
+    },
     chartData: {
       radar: [
         { name: "数据完整性", value: 86 },
@@ -213,8 +426,9 @@ const ImportTaskModal = ({ visible, onCancel, onSuccess }) => {
       
       // 为每个预设任务生成唯一ID以确保不会冲突
       const timestamp = Date.now()
+      const importedTasks = []
       
-      // 将预设的mock数据添加到taskCardsData数组的前面
+      // 处理每个预设任务数据
       mockImportData.forEach((task, index) => {
         // 为每个任务生成唯一ID（使用时间戳和索引组合）
         const uniqueId = `import_task_${timestamp}_${index}`
@@ -222,8 +436,40 @@ const ImportTaskModal = ({ visible, onCancel, onSuccess }) => {
           ...task,
           id: uniqueId
         }
+        
+        // 添加到导入任务列表
+        importedTasks.push(taskWithUniqueId)
+        
+        // 同时添加到taskCardsData数组中(保持原有功能)
         taskCardsData.unshift(taskWithUniqueId)
       })
+      
+      // 将导入的任务保存到localStorage中
+      try {
+        // 获取现有任务数据
+        const existingTasksJson = localStorage.getItem('imported_tasks') || '[]'
+        const existingTasks = JSON.parse(existingTasksJson)
+        
+        // 合并新导入的任务
+        const updatedTasks = [...importedTasks, ...existingTasks]
+        
+        // 保存回localStorage
+        localStorage.setItem('imported_tasks', JSON.stringify(updatedTasks))
+        
+        // 设置最后更新时间，用于触发Storage事件
+        localStorage.setItem('tasks_last_imported', Date.now().toString())
+        
+        // 触发自定义事件，通知TaskPage组件刷新数据
+        const importEvent = new CustomEvent('tasksImported', {
+          detail: { 
+            tasks: importedTasks,
+            timestamp: Date.now() 
+          }
+        })
+        window.dispatchEvent(importEvent)
+      } catch (error) {
+        console.error('保存导入任务到localStorage失败:', error)
+      }
       
       message.success("导入成功：已添加3条任务数据")
       

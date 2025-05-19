@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Button, Popover, message, Input, Modal, Table, Checkbox, Space, Progress, Tooltip } from "antd"
+import { taskCardsData } from "../../mocks/data"
 import { FilterOutlined, GroupOutlined, SearchOutlined, PlusOutlined, ImportOutlined, FileTextOutlined } from "@ant-design/icons"
 import FilterCard from "./FilterCard"
 import GroupCard from "./GroupCard"
@@ -10,6 +11,7 @@ import SortIcon from "../icons/SortIcon"
 import { VIEW_TYPES } from "../../utils/viewManager"
 import { addViewToMenu, getMenuData } from "../../utils/menuManager"
 import { initialFilterState, normalizeFieldName, filterCardsByConditions, processCardFieldValue } from "../../mocks/filterData"
+import { demoReport, generateTaskReports, saveReportsToStorage } from "../../mocks/reportData"
 import { useLocation, useNavigate } from "react-router-dom"
 import { useRef } from "react"
 import CreateTaskModal from "../modals/CreateTaskModal"
@@ -61,16 +63,8 @@ const FilterSystem = ({ onFilterChange, onSortChange, onViewChange, onImportSucc
   // 模拟获取可用于生成报告的任务
   useEffect(() => {
     if (reportModalVisible && isTaskPage) {
-      // 模拟从API获取已完成的任务数据
-      const mockCompletedTasks = [
-        { id: '1', title: '分析用户反馈数据', status: 'completed', result: '已完成分析' },
-        { id: '2', title: '生成月度销售报告', status: 'completed', result: '销售额增长15%' },
-        { id: '3', title: '优化推荐算法', status: 'completed', result: '准确率提升8%' },
-        { id: '4', title: '用户行为分析', status: 'completed', result: '用户留存率提升' },
-        { id: '5', title: '数据可视化报告', status: 'completed', result: '生成了10张图表' },
-      ];
-      
-      setAvailableTasks(mockCompletedTasks);
+      // 直接使用taskCardsData作为mockCompletedTasks
+      setAvailableTasks(taskCardsData);
     }
   }, [reportModalVisible, isTaskPage]);
   
@@ -93,25 +87,33 @@ const FilterSystem = ({ onFilterChange, onSortChange, onViewChange, onImportSucc
       ),
     },
     {
-      title: '任务ID',
-      dataIndex: 'id',
-    },
-    {
       title: '任务名称',
       dataIndex: 'title',
+      ellipsis: true,
     },
     {
-      title: '任务状态',
-      dataIndex: 'status',
-      render: (status) => (
-        <span style={{ color: status === 'completed' ? '#52c41a' : '#1890ff' }}>
-          {status === 'completed' ? '已完成' : status}
-        </span>
+      title: '问题',
+      dataIndex: 'prompt',
+      ellipsis: true,
+    },
+    {
+      title: '回答',
+      dataIndex: 'response_summary',
+      ellipsis: true,
+    },
+    {
+      title: '得分',
+      dataIndex: 'score',
+      render: (score) => (
+        <span>{typeof score === 'number' ? score.toFixed(1) : score}</span>
       ),
     },
     {
-      title: '结果摘要',
-      dataIndex: 'result',
+      title: '置信度',
+      dataIndex: 'credibility',
+      render: (credibility) => (
+        <span>{typeof credibility === 'number' ? credibility.toFixed(1) : credibility}</span>
+      ),
     },
   ];
   
@@ -603,125 +605,61 @@ const FilterSystem = ({ onFilterChange, onSortChange, onViewChange, onImportSucc
       setReportProgress(100);
       
       try {
-        // 直接在FilterSystem组件中生成报告
-        console.log('直接在FilterSystem中生成报告，选中的任务ID:', selectedTaskIds);
+        // 使用从mocks/reportData导入的函数生成报告
+        console.log('使用generateTaskReports生成报告，选中的任务ID:', selectedTaskIds);
         
-        // 存储生成的报告
-        let generatedReports = [];
+        // 使用导入的generateTaskReports函数生成报告
+        const generatedReports = generateTaskReports(selectedTaskIds, availableTasks);
         
-        if (isDemo) {
-          // 创建演示报告
-          const demoReportId = `report-demo-${Date.now()}`;
-          const timestamp = new Date().toISOString();
-          generatedReports = [
-            {
-              id: demoReportId,
-              taskId: 'demo-123',
-              name: '演示报告 - 系统性能分析',
-              title: '演示报告 - 系统性能分析',
-              type: 'report',
-              content: '这是一个演示报告，用于展示报告功能。实际报告将包含更详细的分析数据和评估结果。',
-              created_at: timestamp,
-              createdAt: timestamp,
-              created_by: '系统',
-              created_from: '演示数据',
-              response_summary: '系统性能分析表明，当前配置下性能表现良好，响应时间在可接受范围内。',
-              summary: '系统性能分析表明，当前配置下性能表现良好，响应时间在可接受范围内。',
-              keywords: ['演示', '系统性能', '分析报告'],
-              dimensions: ['性能', '响应时间', '资源利用率'],
-              chartData: {
-                radar: [
-                  { name: "准确性", value: 85 },
-                  { name: "流畅性", value: 90 },
-                  { name: "创新性", value: 70 },
-                  { name: "可靠性", value: 80 },
-                  { name: "安全性", value: 95 }
-                ],
-                line: [
-                  { month: "1月", value: 65 },
-                  { month: "2月", value: 70 },
-                  { month: "3月", value: 75 },
-                  { month: "4月", value: 80 },
-                  { month: "5月", value: 85 },
-                  { month: "6月", value: 90 }
-                ]
-              },
-              sourceTask: {
-                id: 'demo-123',
-                title: '系统性能分析',
-                status: 'completed',
-                result: '性能良好'
-              }
+        // 使用导入的saveReportsToStorage函数保存报告
+        saveReportsToStorage(generatedReports);
+        
+        // 更新generated_reports，确保报告ID能被正确识别为已生成
+        try {
+          // 获取现有的已生成报告ID列表
+          const generatedReportsJson = localStorage.getItem('generated_reports') || '[]';
+          let generatedReportIds = JSON.parse(generatedReportsJson);
+          
+          if (!Array.isArray(generatedReportIds)) {
+            generatedReportIds = [];
+          }
+          
+          // 添加新报告ID，避免重复
+          const newReportIds = generatedReports.map(report => report.id);
+          let updated = false;
+          
+          newReportIds.forEach(id => {
+            if (!generatedReportIds.includes(id)) {
+              generatedReportIds.push(id);
+              updated = true;
             }
-          ];
-        } else {
-          // 为每个选中的任务生成报告
-          generatedReports = selectedTaskIds.map(taskId => {
-            // 查找任务数据
-            const taskData = availableTasks.find(task => task.id === taskId);
-            if (!taskData) {
-              console.warn(`找不到任务数据: ${taskId}`);
-              return null;
-            }
-            
-            const reportId = `report-${Date.now()}-${taskId}`;
-            const timestamp = new Date().toISOString();
-            const reportTitle = `${taskData.title} - 分析报告`;
-            
-            // 创建报告对象
-            return {
-              id: reportId,
-              taskId: taskId,
-              name: reportTitle,
-              title: reportTitle,
-              type: 'report',
-              content: `这是任务 "${taskData.title}" 的分析报告，评估结果: ${taskData.result}`,
-              created_at: timestamp,
-              createdAt: timestamp,
-              created_by: '系统',
-              created_from: '任务分析',
-              response_summary: `${taskData.title}分析报告显示，${taskData.result}`,
-              summary: `${taskData.title}分析报告显示，${taskData.result}`,
-              keywords: ['任务分析', taskData.title, '报告'],
-              dimensions: ['评估', '分析', '性能'],
-              chartData: {
-                radar: [
-                  { name: "准确性", value: 85 + Math.floor(Math.random() * 10) },
-                  { name: "流畅性", value: 90 - Math.floor(Math.random() * 10) },
-                  { name: "创新性", value: 70 + Math.floor(Math.random() * 15) },
-                  { name: "可靠性", value: 80 + Math.floor(Math.random() * 10) },
-                  { name: "安全性", value: 95 - Math.floor(Math.random() * 5) }
-                ],
-                line: [
-                  { month: "1月", value: 65 + Math.floor(Math.random() * 10) },
-                  { month: "2月", value: 70 + Math.floor(Math.random() * 10) },
-                  { month: "3月", value: 75 + Math.floor(Math.random() * 10) },
-                  { month: "4月", value: 80 + Math.floor(Math.random() * 10) },
-                  { month: "5月", value: 85 + Math.floor(Math.random() * 10) },
-                  { month: "6月", value: 90 + Math.floor(Math.random() * 5) }
-                ]
-              },
-              sourceTask: taskData
-            };
-          }).filter(report => report !== null); // 过滤掉null值
+          });
+          
+          // 只有在有新ID添加时才更新存储
+          if (updated) {
+            localStorage.setItem('generated_reports', JSON.stringify(generatedReportIds));
+            console.log('已更新generated_reports，添加了新的报告ID');
+          }
+        } catch (error) {
+          console.error('更新generated_reports失败:', error);
         }
-        
-        // 保存报告数据到localStorage
-        const existingReportsJson = localStorage.getItem('task_reports') || '[]';
-        const existingReports = JSON.parse(existingReportsJson);
-        
-        // 添加新生成的报告
-        const updatedReports = [...existingReports, ...generatedReports];
-        
-        // 保存回localStorage
-        localStorage.setItem('task_reports', JSON.stringify(updatedReports));
-        console.log(`已生成 ${generatedReports.length} 份报告并保存，报告详情:`, generatedReports);
         
         // 触发自定义事件，通知所有相关组件刷新报告数据
         const reportEvent = new CustomEvent('reportsUpdated', {
           detail: { timestamp: Date.now(), reports: generatedReports }
         });
         window.dispatchEvent(reportEvent);
+        
+        // 对每个报告单独触发reportGenerated事件
+        generatedReports.forEach(report => {
+          const reportGeneratedEvent = new CustomEvent('reportGenerated', {
+            detail: {
+              reportId: report.id,
+              report: report
+            }
+          });
+          window.dispatchEvent(reportGeneratedEvent);
+        });
         
         // 更新localStorage中的一个特殊标记，以触发Storage事件
         localStorage.setItem('reports_last_updated', Date.now().toString());

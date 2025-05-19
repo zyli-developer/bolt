@@ -52,8 +52,6 @@ const DownloadReportModal = ({
         credibility: 85,
         prompt: "这是默认提示内容",
         response: "这是默认响应内容",
-        creator: "系统",
-        source: "报告生成器",
         tags: ["报告"]
       };
 
@@ -66,9 +64,7 @@ const DownloadReportModal = ({
           title: report.name || report.title || `报告 ${index + 1}`,
           prompt: report.prompt || report.question || defaultValues.prompt,
           response: report.response_summary || report.summary || report.response || defaultValues.response,
-          agent: report.agent || report.created_by || '未知代理',
           score: Number(report.score || report.rating || defaultValues.score).toFixed(1),
-          reason: report.reason || '无原因描述',
           credibility: Number(report.credibility || report.confidence || defaultValues.score).toFixed(0),
           credibilityChange: report.credibilityChange || report.scoreChange || '+0%',
           createdAt: report.created_at ? 
@@ -78,8 +74,6 @@ const DownloadReportModal = ({
                       new Date(report.created_at).toLocaleString() : 
                       '未知日期') : 
                      new Date().toLocaleString(),
-          creator: report.created_by || defaultValues.creator,
-          source: report.created_from || defaultValues.source,
           tags: Array.isArray(report.tags) ? report.tags : 
                 Array.isArray(report.keywords) ? report.keywords : defaultValues.tags,
         };
@@ -259,15 +253,11 @@ const DownloadReportModal = ({
             <tr>
               <th>序号</th>
               <th>报告标题</th>
-              <th>代理</th>
               <th>问题</th>
               <th>答案</th>
               <th>评分</th>
-              <th>原因</th>
               <th>可信度</th>
               <th>创建时间</th>
-              <th>创建者</th>
-              <th>来源</th>
             </tr>
           </thead>
           <tbody>
@@ -275,15 +265,11 @@ const DownloadReportModal = ({
             <tr>
               <td>${report.index}</td>
               <td>${report.title}</td>
-              <td>${report.agent}</td>
               <td style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${report.prompt}">${report.prompt}</td>
               <td style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${report.response}">${report.response}</td>
               <td class="score-cell" style="color: var(--color-success);">${report.score}</td>
-              <td style="max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${report.reason}">${report.reason}</td>
               <td>${report.credibility}%</td>
               <td>${report.createdAt}</td>
-              <td>${report.creator}</td>
-              <td>${report.source}</td>
             </tr>
             `).join('')}
           </tbody>
@@ -335,16 +321,16 @@ const DownloadReportModal = ({
     
     try {
       // 获取选中报告的原始数据
-      const selectedReports = selectedRowKeys
-        .map(key => reportDataMap[key])
-        .filter(Boolean);
+      const selectedReports = selectedRowKeys.map(key => {
+        // 优先从reportDataMap中获取完整的报告数据
+        return reportDataMap[key] || reports.find(r => r.key === key)?.originalData;
+      }).filter(Boolean);
       
       if (selectedReports.length === 0) {
         message.warning('选中的报告数据无效');
         return;
       }
 
-      // 查看原始数据便于调试
       console.log('选中的报告原始数据:', selectedReports);
       
       // 生成单个HTML文件包含所有选中的报告
@@ -355,7 +341,7 @@ const DownloadReportModal = ({
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `选中报告_${new Date().toISOString().split('T')[0]}.html`;
+      a.download = `Syntrust报告_${new Date().toISOString().split('T')[0]}.html`;
       
       // 触发下载
       document.body.appendChild(a);
@@ -376,7 +362,10 @@ const DownloadReportModal = ({
   const handleDownloadAllReports = () => {
     try {
       // 获取所有报告原始数据
-      const allReports = reports.map(report => reportDataMap[report.key]).filter(Boolean);
+      const allReports = reports.map(report => {
+        // 优先使用reportDataMap中的完整数据
+        return reportDataMap[report.key] || report.originalData || report;
+      }).filter(Boolean);
       
       if (allReports.length === 0) {
         message.warning('没有可下载的报告数据');
@@ -391,7 +380,7 @@ const DownloadReportModal = ({
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `所有报告_${new Date().toISOString().split('T')[0]}.html`;
+      a.download = `Syntrust所有报告_${new Date().toISOString().split('T')[0]}.html`;
       
       // 触发下载
       document.body.appendChild(a);
@@ -411,29 +400,38 @@ const DownloadReportModal = ({
   // 定义下载报告模态框的列配置
   const columns = [
     {
-      title: '报告名称',
+      title: '标题',
       dataIndex: 'name',
       key: 'name',
+      render: (text, record) => <Text ellipsis={{ tooltip: text || record.title }}>{text || record.title}</Text>,
+    },
+    {
+      title: '问题',
+      dataIndex: 'prompt',
+      key: 'prompt',
+      width: 180,
       render: (text) => <Text ellipsis={{ tooltip: text }}>{text}</Text>,
     },
     {
-      title: '创建人',
-      dataIndex: 'creator',
-      key: 'creator',
-      width: 100,
+      title: '回答',
+      dataIndex: 'response',
+      key: 'response',
+      width: 180,
+      render: (text, record) => <Text ellipsis={{ tooltip: text || record.response_summary }}>{text || record.response_summary}</Text>,
     },
     {
-      title: '创建来源',
-      dataIndex: 'createdFrom',
-      key: 'createdFrom',
-      width: 120,
-      render: (text) => <Tag color={colorToken.colorPrimaryBg} style={{color: colorToken.colorPrimary}}>{text}</Tag>,
+      title: '评分',
+      dataIndex: 'score',
+      key: 'score',
+      width: 80,
+      render: (text) => <Text style={{ color: 'var(--color-success)' }}>{text}</Text>,
     },
     {
-      title: '创建时间',
-      dataIndex: 'createdAt',
-      key: 'createdAt',
-      width: 120,
+      title: '可信度',
+      dataIndex: 'credibility',
+      key: 'credibility',
+      width: 80,
+      render: (text) => <Text>{text}%</Text>,
     },
   ];
 
@@ -463,7 +461,44 @@ const DownloadReportModal = ({
       <Table
         rowSelection={rowSelection}
         columns={columns}
-        dataSource={reports}
+        dataSource={reports.map(report => {
+          // 获取报告的原始数据 - 可能存储在reportDataMap中
+          const originalReport = reportDataMap[report.key] || report;
+          
+          // 从step数组中提取评分和可信度信息
+          const firstStep = originalReport.step && Array.isArray(originalReport.step) ? originalReport.step[0] : null;
+          const firstScore = firstStep?.score && Array.isArray(firstStep.score) 
+            ? firstStep.score[0] 
+            : (firstStep?.score || null);
+          
+          // 智能提取评分
+          const scoreValue = originalReport.score || 
+            (firstScore?.score ? parseFloat(firstScore.score).toFixed(1) : '0.0');
+          
+          // 智能提取可信度
+          let credibility = '';
+          if (originalReport.credibility) {
+            credibility = typeof originalReport.credibility === 'number' ? 
+              originalReport.credibility.toFixed(0) : originalReport.credibility.toString().replace('%', '');
+          } else if (firstScore?.confidence) {
+            const confValue = parseFloat(firstScore.confidence);
+            credibility = (confValue > 1 ? confValue : confValue * 100).toFixed(0);
+          } else {
+            credibility = '0';
+          }
+          
+          return {
+            key: report.key,
+            name: report.name,
+            // 从原始报告数据中提取问题和回答
+            prompt: originalReport.prompt || originalReport.question || '未提供问题',
+            response: originalReport.response_summary || originalReport.summary || report.summary || '未提供回答',
+            score: scoreValue,
+            credibility: credibility,
+            // 保存原始数据引用，用于下载时使用
+            originalData: originalReport
+          };
+        })}
         pagination={{ pageSize: 5 }}
         scroll={{ y: 300 }}
         size="small"

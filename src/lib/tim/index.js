@@ -58,5 +58,8 @@ export function createConversation(type, id) {
   throw new Error(`不支持的会话类型: ${type}`);
 }
 
+// 导出群组操作相关函数
+export * from './group';
+
 // 默认导出SDK核心功能
 export default core; 

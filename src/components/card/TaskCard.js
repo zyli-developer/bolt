@@ -207,6 +207,8 @@ const TaskCard = ({ task, onTaskUpdate }) => {
                       return "进行中";
                     case "completed":
                       return "已完成";
+                    case "pending_approval":
+                      return "待审批";
                     default:
                       return currentStatus;
                   }
@@ -322,7 +324,7 @@ const TaskCard = ({ task, onTaskUpdate }) => {
           )}
 
           <div className="task-chart-container">
-            <div className="task-chart-title">置信度爬升曲线</div>
+            <div className="task-chart-title">可信度爬升曲线</div>
             <div className="task-chart">
               <ResponsiveContainer width="100%" height={130}>
                 <AreaChart data={task.chartData?.line || []} margin={{ top: 3, right: 3, left: 0, bottom: 3 }}>

@@ -3,7 +3,7 @@ import { createStyles } from 'antd-style';
 const useStyles = createStyles(({ css }) => {
   return {
     scoreSection: css`
-      background: #EAF2FF;
+      background: var(--color-primary-bg);
       padding: 16px;
       border-radius: 12px;
       margin-bottom: 24px;
@@ -20,17 +20,17 @@ const useStyles = createStyles(({ css }) => {
     `,
     scoreIcon: css`
       margin-left: 4px;
-      color: #8f9098;
+      color: var(--color-text-tertiary);
     `,
     scoreContent: css`
       font-size: 14px;
-      color: #8f9098;
+      color: var(--color-text-tertiary);
     `,
     scoreContentRow: css`
       margin-top: 4px;
     `,
     scoreLink: css`
-      color: #006FFD;
+      color: var(--color-primary);
     `,
     taskInfoSection: css`
       margin-bottom: 24px;
@@ -41,7 +41,7 @@ const useStyles = createStyles(({ css }) => {
     `,
     infoLabel: css`
       width: 80px;
-      color: #8f9098;
+      color: var(--color-text-tertiary);
     `,
     infoContent: css`
       flex: 1;
@@ -74,7 +74,7 @@ const useStyles = createStyles(({ css }) => {
     `,
     annotationIcon: css`
       margin-left: 4px;
-      color: #8f9098;
+      color: var(--color-text-tertiary);
     `,
     annotationTable: css`
       margin-top: 8px;
@@ -85,7 +85,7 @@ const useStyles = createStyles(({ css }) => {
       justify-content: center;
     `,
     avatarNumber: css`
-      background: #006ffd;
+      background: var(--color-primary);
       font-size: 12px;
     `,
     attachmentContainer: css`
@@ -98,7 +98,7 @@ const useStyles = createStyles(({ css }) => {
       white-space: nowrap;
     `,
     attachmentLink: css`
-      color: #006ffd;
+      color: var(--color-primary);
     `,
     modifierInfo: css`
       display: flex;
@@ -106,11 +106,11 @@ const useStyles = createStyles(({ css }) => {
       gap: 8px;
     `,
     modifierTime: css`
-      color: #8f9098;
+      color: var(--color-text-tertiary);
       font-size: 12px;
     `,
     warningIcon: css`
-      color: #faad14;
+      color: var(--color-warning);
     `,
   };
 });

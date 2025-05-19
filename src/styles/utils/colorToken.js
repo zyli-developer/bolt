@@ -4,7 +4,7 @@ const colorToken = {
   colorPrimaryHover: '#4CA75E',
   colorPrimaryActive: '#3E8C4C',
   colorPrimaryRgb: '88, 189, 109', // RGB值，用于rgba函数
-  colorChatBg: 'var(--color-chat-bg)',
+  colorChatBg: '#E7F0EC',
   // 重色
   colorHeavy: '#00474A',
   // 辅助色

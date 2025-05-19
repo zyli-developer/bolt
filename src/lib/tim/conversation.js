@@ -18,7 +18,33 @@ export async function getConversationList(options) {
 
   try {
     const imResponse = await tim.getConversationList(options);
-    return imResponse.data.conversationList;
+    
+    // 检查响应和数据是否存在
+    if (!imResponse || !imResponse.data) {
+      console.warn('获取会话列表响应数据为空');
+      return [];
+    }
+    
+    // 确保conversationList是数组
+    if (!Array.isArray(imResponse.data.conversationList)) {
+      console.warn('会话列表不是数组类型:', typeof imResponse.data.conversationList);
+      return [];
+    }
+    
+    // 对每个会话进行预处理，确保关键字段存在
+    return imResponse.data.conversationList.map(conversation => {
+      // 确保会话对象中的关键属性存在
+      if (!conversation) return null;
+      
+      // 确保profile对象存在
+      if (conversation.type === 'GROUP' && !conversation.groupProfile) {
+        conversation.groupProfile = { name: `群聊 ${conversation.groupID || '未知'}` };
+      } else if (conversation.type === 'C2C' && !conversation.userProfile) {
+        conversation.userProfile = { userID: conversation.userID || '未知用户' };
+      }
+      
+      return conversation;
+    }).filter(Boolean); // 过滤掉null值
   } catch (error) {
     console.error('获取会话列表失败', error);
     return [];

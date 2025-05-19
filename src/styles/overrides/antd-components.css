@@ -34,6 +34,7 @@
 /* 表格样式 */
 .ant-table-content table {
   border-radius: 8px;
+  width: 100% !important;
 }
 
 .ant-table-thead > tr > th {

@@ -53,6 +53,8 @@ const CommentsList = ({
 
   // 获取注释显示的文本内容
   const getDisplayText = (item) => {
+    if (!item) return '';
+    
     // 如果是节点相关的注释，尝试从节点中获取标签
     if ((contextType === 'node' || contextType === 'template') && item.nodeId && nodes.length > 0) {
       const node = nodes.find(node => node.id === item.nodeId);
@@ -67,6 +69,7 @@ const CommentsList = ({
 
   // 生成唯一ID，如果项目没有ID则使用索引
   const getItemId = (item, index) => {
+    if (!item) return `comment-${index}`;
     return item.id || `comment-${index}`;
   };
 
@@ -84,37 +87,50 @@ const CommentsList = ({
       const date = new Date(timeString);
       return isNaN(date.getTime()) 
         ? timeString 
-        : `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}, ${date.getDate().toString().padStart(2, '0')}/${(date.getMonth()+1).toString().padStart(2, '0')}/${date.getFullYear()}`;
+        : `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}, ${date.getDate().toString().padStart(2, '0')}/${(date.getMonth()+1).toString().padStart(2, '0')}`;
     } catch (e) {
-      return timeString;
+      return '';
     }
   };
 
   // 获取作者首字母
   const getAuthorInitial = (author) => {
-    if (!author) return 'U';
+    if (!author) return '';
     
     if (typeof author === 'string') {
-      return author.charAt(0) || 'U';
+      return author.charAt(0) || '';
     } else if (author.name) {
-      return author.name.charAt(0) || 'U';
+      return author.name.charAt(0) || '';
     } else {
-      return 'U';
+      return '';
     }
   };
   
   // 获取作者名称
   const getAuthorName = (author) => {
-    if (!author) return 'Unknown';
+    if (!author) return '';
     
     if (typeof author === 'string') {
       return author;
     } else if (author.name) {
       return author.name;
     } else {
-      return 'Unknown';
+      return '';
     }
   };
+  
+  // 如果没有评论数据，不渲染任何内容
+  if (commentsArray.length === 0) {
+    return (
+      <div className="comments-list" style={{...customStyles.container}}>
+        {title && (
+          <div className="comments-list-title" style={customStyles.title}>
+            {title}
+          </div>
+        )}
+      </div>
+    );
+  }
   
   return (
     <div className="comments-list" style={customStyles.container}>
@@ -124,13 +140,8 @@ const CommentsList = ({
         </div>
       )}
       
-      {commentsArray.length === 0 ? (
-        <div className="comments-list-empty" style={customStyles.empty}>
-          暂无观点
-        </div>
-      ) : (
         <div className="comments-content">
-          {commentsArray.map((item, index) => (
+        {commentsArray.filter(item => item && (item.text || item.content || item.selectedText || item.summary)).map((item, index) => (
             <div 
               className="comment-item" 
               key={getItemId(item, index)} 
@@ -172,15 +183,15 @@ const CommentsList = ({
             </div>
                   
                   {/* 附件区域 */}
-                  {item.attachments?.length > 0 && (
+                  {Array.isArray(item.attachments) && item.attachments.length > 0 && (
                     <div className="comment-attachments">
                       <div className="attachments-header">
                         <PaperClipOutlined /> 附件 ({item.attachments.length})
                       </div>
                       <div className="attachments-list">
-                        {item.attachments.map((file, idx) => (
+                        {item.attachments.filter(file => file && file.name).map((file, idx) => (
                           <Tag key={idx} className="attachment-tag">
-                            <a href={file.url} target="_blank" rel="noopener noreferrer">
+                            <a href={file.url || '#'} target="_blank" rel="noopener noreferrer">
                               {file.name}
                             </a>
                           </Tag>
@@ -229,7 +240,6 @@ const CommentsList = ({
             </div>
           ))}
         </div>
-      )}
     </div>
   );
 };

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { Modal, Form, Input, Select, Button, message, Steps, DatePicker, Divider, Card, Avatar, Timeline } from "antd"
 import { UserOutlined, EditOutlined, CheckOutlined } from "@ant-design/icons"
+import { useNavigate } from "react-router-dom"
 import taskService from "../../services/taskService"
 import useStyles from "../../styles/components/modals/create-task-modal"
 import dayjs from 'dayjs'
@@ -16,6 +17,7 @@ const { Search } = Input
 const CreateTaskModal = ({ visible, onCancel, cardData }) => {
   const { styles } = useStyles()
   const [form] = Form.useForm()
+  const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
   const [currentStep, setCurrentStep] = useState(0)
   const [confirmSection, setConfirmSection] = useState('basicInfo')
@@ -84,42 +86,210 @@ const CreateTaskModal = ({ visible, onCancel, cardData }) => {
   const handleSubmit = async () => {
     try {
       setLoading(true)
-      // 验证所有步骤的必填字段
-      const allRequiredFields = [
-        ...getStepFieldNames(0),
-        ...getStepFieldNames(1),
-        ...getStepFieldNames(2),
-        ...getStepFieldNames(3)
-      ];
       
-      const values = await form.validateFields(allRequiredFields)
-
-      // 构建任务数据
+      // 1. 从data.js文件中获取explorationCardsData数据
+      let originalCardData = null;
+      
+      try {
+        // 导入explorationCardsData数据
+        const { explorationCardsData } = require("../../mocks/data");
+        console.log("加载explorationCardsData成功，共有", explorationCardsData.length, "条数据");
+        
+        // 根据当前cardData.id从explorationCardsData查找对应的完整数据
+        if (cardData && cardData.id) {
+          originalCardData = explorationCardsData.find(item => item.id === cardData.id);
+          if (originalCardData) {
+            console.log("成功从explorationCardsData找到ID为", cardData.id, "的原始数据");
+          } else {
+            console.log("未在explorationCardsData中找到ID为", cardData.id, "的数据");
+          }
+        }
+      } catch (error) {
+        console.error("加载或查找explorationCardsData数据出错:", error);
+      }
+      
+      // 2. 验证表单字段并获取表单数据
+      const values = await form.validateFields()
+      console.log("表单提交的所有值:", values)
+      
+      // 3. 使用找到的原始数据或现有cardData作为基础数据
+      const baseCardData = originalCardData || cardData || {};
+      // 构建任务数据，确保完全匹配explorationCardsData的数据结构
       const taskData = {
+        // 基本表单字段
         ...values,
+        
+        // 基本标识信息
+        id: `task_${Date.now()}`,
         createdAt: new Date().toISOString(),
+        created_at: { seconds: Math.floor(Date.now() / 1000) },
         status: "pending",
-        // 如果有cardData，则使用cardData的数据，否则使用默认值
-        sourceCardId: cardData?.id || null,
-        title: values.title || (cardData?.title || "新建任务"),
-        tags: cardData?.tags || [],
-        author: cardData?.author || null,
-        summary: cardData?.summary || "",
-        credibility: cardData?.credibility || 0,
-        score: cardData?.score || 0,
-        chartData: cardData?.chartData || null,
-        // 添加QA数据
+        sourceCardId: baseCardData.id || null,
+        
+        // 基本任务内容
+        title: values.title || (baseCardData.title || "新建任务"),
+        prompt: values.questionDescription || baseCardData.prompt || "",
+        response_summary: values.answerDescription || baseCardData.response_summary || "",
+        summary: values.description || baseCardData.summary || "",
+        description: values.description || baseCardData.description || "",
+        
+        // 创建者和标签信息
+        author: baseCardData.author ? JSON.parse(JSON.stringify(baseCardData.author)) : null,
+        created_by: baseCardData.author?.name || baseCardData.created_by || "当前用户",
+        created_from: baseCardData.source || baseCardData.created_from || "用户创建",
+        source: baseCardData.source || baseCardData.created_from || "用户创建",
+        tags: baseCardData.tags ? [...baseCardData.tags] : [],
+        
+        // 任务信息字段
+        priority: values.priority || baseCardData.priority || "中",
+        deadline: values.deadline ? values.deadline.format('YYYY-MM-DD') : (baseCardData.deadline || ""),
+        testTarget: values.testTarget || baseCardData.testTarget || "",
+        brand: values.brand || baseCardData.brand || "",
+        model: values.model || baseCardData.model || "",
+        version: values.version || baseCardData.version || "",
+        paramCount: values.paramCount || baseCardData.paramCount || "",
+        recommendPrecision: values.recommendPrecision || baseCardData.recommendPrecision || "",
+        
+        // 评分信息
+        credibility: baseCardData.credibility || 85.0,
+        credibilityChange: baseCardData.credibilityChange || "+0.0%",
+        score: baseCardData.score || 8.5,
+        scoreChange: baseCardData.scoreChange || "+0.0%",
+        
+        // QA数据
         qa: {
-          question: values.questionDescription,
-          answer: values.answerDescription
+          question: values.questionDescription || baseCardData.prompt,
+          answer: values.answerDescription || baseCardData.response_summary
         },
-        // 添加权限分配数据
+        
+        // 权限分配数据
         permissions: {
           sceneEditors: values.sceneEditors || [],
           templateEditors: values.templateEditors || [],
           viewpointEditors: values.viewpointEditors || []
+        },
+        
+        // 完整复制来自baseCardData的所有关键对象
+        // 步骤数据 - 强制确保深拷贝完整数组
+        step: (() => {
+          // 如果baseCardData存在且有step数据
+          if (baseCardData && baseCardData.step) {
+            const stepData = Array.isArray(baseCardData.step) ? 
+              baseCardData.step : [baseCardData.step]; // 确保是数组格式
+            
+            // 深拷贝所有step数据
+            return JSON.parse(JSON.stringify(stepData));
+          }
+          // 如果没有数据，返回一个默认结构的空数组
+          return [];
+        })(),
+        
+        // 注释数据 - 强制确保四个分类的数据完整复制
+        annotation: (() => {
+          // 如果baseCardData存在且有annotation数据
+          if (baseCardData && baseCardData.annotation) {
+            // 确保所有分类都存在，即使为空也要有数组
+            const annotationData = {
+              result: Array.isArray(baseCardData.annotation.result) ? 
+                JSON.parse(JSON.stringify(baseCardData.annotation.result)) : [],
+              qa: Array.isArray(baseCardData.annotation.qa) ? 
+                JSON.parse(JSON.stringify(baseCardData.annotation.qa)) : [],
+              scene: Array.isArray(baseCardData.annotation.scene) ? 
+                JSON.parse(JSON.stringify(baseCardData.annotation.scene)) : [],
+              template: Array.isArray(baseCardData.annotation.template) ? 
+                JSON.parse(JSON.stringify(baseCardData.annotation.template)) : []
+            };
+            return annotationData;
+          }
+          // 如果没有数据，返回一个默认结构的空对象
+          return {
+            result: [],
+            qa: [],
+            scene: [],
+            template: []
+          };
+        })(),
+        
+        // 场景数据 - 强制确保node和edge数组完整复制
+        scenario: (() => {
+          // 如果baseCardData存在且有scenario数据
+          if (baseCardData && baseCardData.scenario) {
+            // 确保node和edge数组都存在，即使为空也要有数组
+            const scenarioData = {
+              node: Array.isArray(baseCardData.scenario.node) ? 
+                JSON.parse(JSON.stringify(baseCardData.scenario.node)) : [],
+              edge: Array.isArray(baseCardData.scenario.edge) ? 
+                JSON.parse(JSON.stringify(baseCardData.scenario.edge)) : []
+            };
+            return scenarioData;
+          }
+          // 如果没有数据，返回一个默认结构的空对象
+          return {
+            node: [],
+            edge: []
+          };
+        })(),
+        
+        // 模板数据 - 强制确保nodes和edges数组完整复制
+        templateData: (() => {
+          // 如果baseCardData存在且有templateData数据
+          if (baseCardData && baseCardData.templateData) {
+            // 确保nodes和edges数组都存在，即使为空也要有数组
+            const templateDataCopy = {
+              nodes: Array.isArray(baseCardData.templateData.nodes) ? 
+                JSON.parse(JSON.stringify(baseCardData.templateData.nodes)) : [],
+              edges: Array.isArray(baseCardData.templateData.edges) ? 
+                JSON.parse(JSON.stringify(baseCardData.templateData.edges)) : []
+            };
+            return templateDataCopy;
+          }
+          // 如果没有数据，返回一个默认结构的空对象
+          return {
+            nodes: [],
+            edges: []
+          };
+        })(),
+        
+        // 图表数据
+        chartData: baseCardData.chartData ? JSON.parse(JSON.stringify(baseCardData.chartData)) : {
+          radar: [
+            { name: "维度1", weight: 0.80, value: 80 },
+            { name: "维度2", weight: 0.85, value: 85 },
+            { name: "维度3", weight: 0.75, value: 75 }
+          ],
+          line: [
+            { month: "11", value: 85 }
+          ]
+        },
+        
+        // agents配置
+        agents: baseCardData.agents ? JSON.parse(JSON.stringify(baseCardData.agents)) : {
+          overall: true,
+          agent1: true,
+          agent2: false
+        },
+        
+        // 其他特殊字段
+        // 处理优化数据
+        optimizationData: baseCardData.optimizationData ? JSON.parse(JSON.stringify(baseCardData.optimizationData)) : null,
+        
+        // 记录修改信息
+        lastModifiedBy: {
+          name: "当前用户",
+          avatar: "U"
+        },
+        modifiedTime: {
+          hour: new Date().toLocaleTimeString(),
+          date: new Date().toLocaleDateString()
         }
       }
+      
+      // 用于调试 - 打印完整结构
+      console.log("提交的完整任务数据:", {
+        source: baseCardData ? "explorationCardsData" : "cardData参数",
+        sourceId: baseCardData.id,
+        taskData: taskData
+      });
 
       // 调用保存任务接口
       const result = await taskService.createTask(taskData)
@@ -132,22 +302,68 @@ const CreateTaskModal = ({ visible, onCancel, cardData }) => {
         return String(maxId + 1)
       }
       
-      // 将新任务添加到mock数据中
-      const addTaskToMockData = () => {
+      // 将新任务添加到mock数据中并返回新ID
+      const addTaskToMockData = (sourceData) => {
         try {
           const { taskCardsData } = require("../../mocks/data")
           const newId = generateNumericId()
           
-          // 创建新任务对象，保持与现有数据结构一致
+          // 创建新任务对象，完全复制explorationCardsData的数据结构
           const newTask = {
+            // 基本标识信息
             id: newId,
-            prompt: values.questionDescription,
-            response_summary: values.answerDescription,
-            created_by: cardData?.author?.name || "当前用户",
-            created_from: cardData?.source || "用户创建",
+            
+            // 基本任务内容 (表单数据优先，sourceData其次)
+            prompt: values.questionDescription || sourceData.prompt || "",
+            response_summary: values.answerDescription || sourceData.response_summary || "",
+            created_by: sourceData.author?.name || sourceData.created_by || "当前用户",
+            created_from: sourceData.source || sourceData.created_from || "用户创建",
             created_at: { seconds: Math.floor(Date.now() / 1000) },
-            status: "进行中",
-            step: [
+            
+            // 基本任务信息
+            status: "running",
+            title: values.title || sourceData.title || "新建任务",
+            summary: values.description || sourceData.summary || "",
+            
+            // 作者和来源信息
+            author: sourceData.author ? JSON.parse(JSON.stringify(sourceData.author)) : {
+              id: "1",
+              name: "当前用户",
+              avatar: null
+            },
+            source: sourceData.source || sourceData.created_from || "用户创建",
+            
+            // 标签信息
+            tags: sourceData.tags ? [...sourceData.tags] : [],
+            
+            // 详细设置信息
+            priority: values.priority || sourceData.priority || "中",
+            deadline: values.deadline ? values.deadline.format('YYYY-MM-DD') : (sourceData.deadline || ""),
+            testTarget: values.testTarget || sourceData.testTarget || "",
+            brand: values.brand || sourceData.brand || "",
+            model: values.model || sourceData.model || "",
+            version: values.version || sourceData.version || "",
+            paramCount: values.paramCount || sourceData.paramCount || "",
+            recommendPrecision: values.recommendPrecision || sourceData.recommendPrecision || "",
+            
+            // 评分信息
+            credibility: sourceData.credibility || 85.0,
+            credibilityChange: sourceData.credibilityChange || "+0.0%",
+            score: sourceData.score || 8.5,
+            scoreChange: sourceData.scoreChange || "+0.0%",
+            
+            // 步骤数据 - 强制确保深拷贝完整数组
+            step: (() => {
+              // 如果sourceData存在且有step数据
+              if (sourceData && sourceData.step) {
+                const stepData = Array.isArray(sourceData.step) ? 
+                  sourceData.step : [sourceData.step]; // 确保是数组格式
+                
+                // 深拷贝所有step数据
+                return JSON.parse(JSON.stringify(stepData));
+              }
+              // 如果没有数据，返回一个默认结构的样例step数据
+              return [
               {
                 agent: "GPT-4",
                 score: [
@@ -166,21 +382,77 @@ const CreateTaskModal = ({ visible, onCancel, cardData }) => {
                 ],
                 reason: "初始创建的任务"
               }
-            ],
-            title: values.title,
-            author: {
-              id: cardData?.author?.id || "1",
-              name: cardData?.author?.name || "当前用户",
-              avatar: cardData?.author?.avatar || null
-            },
-            source: cardData?.source || "用户创建",
-            tags: cardData?.tags || [],
-            summary: values.description || "",
-            credibility: 85.0,
-            credibilityChange: "+0.0%",
-            score: 8.5,
-            scoreChange: "+0.0%",
-            chartData: cardData?.chartData || {
+              ];
+            })(),
+            
+            // 注释数据 - 强制确保四个分类的数据完整复制
+            annotation: (() => {
+              // 如果sourceData存在且有annotation数据
+              if (sourceData && sourceData.annotation) {
+                // 确保所有分类都存在，即使为空也要有数组
+                const annotationData = {
+                  result: Array.isArray(sourceData.annotation.result) ? 
+                    JSON.parse(JSON.stringify(sourceData.annotation.result)) : [],
+                  qa: Array.isArray(sourceData.annotation.qa) ? 
+                    JSON.parse(JSON.stringify(sourceData.annotation.qa)) : [],
+                  scene: Array.isArray(sourceData.annotation.scene) ? 
+                    JSON.parse(JSON.stringify(sourceData.annotation.scene)) : [],
+                  template: Array.isArray(sourceData.annotation.template) ? 
+                    JSON.parse(JSON.stringify(sourceData.annotation.template)) : []
+                };
+                return annotationData;
+              }
+              // 如果没有数据，返回一个默认结构的空对象
+              return {
+                result: [],
+                qa: [],
+                scene: [],
+                template: []
+              };
+            })(),
+            
+            // 场景数据 - 强制确保node和edge数组完整复制
+            scenario: (() => {
+              // 如果sourceData存在且有scenario数据
+              if (sourceData && sourceData.scenario) {
+                // 确保node和edge数组都存在，即使为空也要有数组
+                const scenarioData = {
+                  node: Array.isArray(sourceData.scenario.node) ? 
+                    JSON.parse(JSON.stringify(sourceData.scenario.node)) : [],
+                  edge: Array.isArray(sourceData.scenario.edge) ? 
+                    JSON.parse(JSON.stringify(sourceData.scenario.edge)) : []
+                };
+                return scenarioData;
+              }
+              // 如果没有数据，返回一个默认结构的空对象
+              return {
+                node: [],
+                edge: []
+              };
+            })(),
+            
+            // 模板数据 - 强制确保nodes和edges数组完整复制
+            templateData: (() => {
+              // 如果sourceData存在且有templateData数据
+              if (sourceData && sourceData.templateData) {
+                // 确保nodes和edges数组都存在，即使为空也要有数组
+                const templateDataCopy = {
+                  nodes: Array.isArray(sourceData.templateData.nodes) ? 
+                    JSON.parse(JSON.stringify(sourceData.templateData.nodes)) : [],
+                  edges: Array.isArray(sourceData.templateData.edges) ? 
+                    JSON.parse(JSON.stringify(sourceData.templateData.edges)) : []
+                };
+                return templateDataCopy;
+              }
+              // 如果没有数据，返回一个默认结构的空对象
+              return {
+                nodes: [],
+                edges: []
+              };
+            })(),
+            
+            // 图表数据 - 确保radar和line数组完整
+            chartData: sourceData.chartData ? JSON.parse(JSON.stringify(sourceData.chartData)) : {
               radar: [
                 { name: "维度1", weight: 0.80, value: 80 },
                 { name: "维度2", weight: 0.85, value: 85 },
@@ -190,28 +462,61 @@ const CreateTaskModal = ({ visible, onCancel, cardData }) => {
                 { month: "11", value: 85 }
               ]
             },
-            agents: {
+            
+            // agents配置
+            agents: sourceData.agents ? JSON.parse(JSON.stringify(sourceData.agents)) : {
               overall: true,
               agent1: true,
               agent2: false
-            }
+            },
+            
+            // 附加属性 - 记录修改相关信息
+            lastModifiedBy: {
+              name: "当前用户",
+              avatar: "U"
+            },
+            modifiedTime: {
+              hour: new Date().toLocaleTimeString(),
+              date: new Date().toLocaleDateString()
+            },
+            
+            // 记录原卡片ID
+            sourceCardId: cardData?.id || null
           }
           
           // 将新任务添加到taskCardsData
           taskCardsData.unshift(newTask)
           
+          // 将完整的新任务对象保存到localStorage，确保页面刷新后数据不丢失
+          localStorage.setItem(`task_${newId}`, JSON.stringify(newTask))
+          
+          // 设置标记，通知AppSidebar激活任务菜单
+          localStorage.setItem('activate_tasks_menu', 'true')
+          
           console.log("新任务已添加到mock数据", newTask)
+          return newId
         } catch (error) {
           console.error("添加任务到mock数据失败", error)
+          return null
         }
       }
       
-      // 添加到mock数据
-      addTaskToMockData()
+      // 修改完整数据源引用，确保addTaskToMockData也使用完整的原始数据
+      const newId = addTaskToMockData(baseCardData)
 
       message.success("任务创建成功")
       form.resetFields()
       onCancel()
+      
+      // 使用navigate跳转到任务列表页面，并传递需要刷新列表的信息
+      // 设置refreshList和newTaskId状态，使TaskPage能够加载新创建的任务
+      navigate('/tasks', {
+        state: {
+          refreshList: true,
+          newTaskId: newId,
+          activateTasksMenu: true
+        }
+      });
     } catch (error) {
       console.error("创建任务失败:", error)
       message.error("创建任务失败，请重试")
@@ -223,8 +528,8 @@ const CreateTaskModal = ({ visible, onCancel, cardData }) => {
   const handleNext = async () => {
     try {
       // 验证当前步骤的表单字段
-      const stepFieldNames = getStepFieldNames(currentStep);
-      await form.validateFields(stepFieldNames);
+      // 不限制验证字段，获取所有表单值
+      await form.validateFields();
       setCurrentStep(currentStep + 1)
     } catch (error) {
       console.error("表单验证失败:", error)
@@ -242,8 +547,12 @@ const CreateTaskModal = ({ visible, onCancel, cardData }) => {
   const handleSaveAndNext = async () => {
     try {
       // 验证当前步骤的表单字段
-      const stepFieldNames = getStepFieldNames(currentStep);
-      await form.validateFields(stepFieldNames);
+      // 不限制验证字段，获取所有表单值
+      await form.validateFields();
+      
+      // 获取完整表单数据
+      const formData = form.getFieldsValue();
+      console.log("当前表单数据:", formData);
       
       // 这里可以添加保存逻辑
       message.success("保存成功");
@@ -260,13 +569,20 @@ const CreateTaskModal = ({ visible, onCancel, cardData }) => {
   const getStepFieldNames = (step) => {
     switch (step) {
       case 0:
-        return ['title', 'description', 'priority', 'testTarget'];
+        // 基本信息步骤 - 包含所有可能的基本字段
+        return [
+          'title', 'description', 'priority', 'testTarget', 'targetDescription',
+          'deadline', 'brand', 'model', 'version', 'paramCount', 'recommendPrecision'
+        ];
       case 1:
+        // QA步骤 - 问题和答案描述
         return ['questionDescription', 'answerDescription'];
       case 2:
+        // 权限分配步骤 - 编辑权限设置
         return ['sceneEditors', 'templateEditors', 'viewpointEditors'];
       case 3:
-        return []; // 第四步的字段
+        // 确认步骤 - 可能需要的额外字段
+        return ['confirmNotes', 'tags'];
       default:
         return [];
     }

@@ -17,7 +17,7 @@ const { Title } = Typography;
 /**
  * QA优化界面组件
  */
-const QASection = ({ isEditable = false, taskId, prompt, response }) => {
+const QASection = ({ isEditable = false, taskId, prompt, response, comments = [], onAddAnnotation }) => {
   const { styles } = useStyles();
   
   const [annotations, setAnnotations] = useState([]);
@@ -26,8 +26,8 @@ const QASection = ({ isEditable = false, taskId, prompt, response }) => {
   const [loading, setLoading] = useState(true);
   const [qaContent, setQAContent] = useState({
     title: "问答详情",
-    content: prompt && response ? 
-      `问：${prompt || ''}\n\n答：${response || ''}` :
+    content: response ? 
+      `${response}` :
       "暂无问答内容"
   });
   const contentRef = useRef(null);
@@ -95,25 +95,32 @@ const QASection = ({ isEditable = false, taskId, prompt, response }) => {
   }, []);
 
   useEffect(() => {
-    // 只获取注释，不再获取QA内容
+    if (comments && comments.length > 0) {
+      // 如果提供了comments属性，直接使用它
+      setAnnotations(comments);
+      setLoading(false);
+    } else {
+      // 否则从服务获取注释
     fetchAnnotations().finally(() => {
       setLoading(false);
     });
-  }, []);
+    }
+  }, [comments]);
 
   // 当从优化上下文获取到注释数据时，更新本地状态
   useEffect(() => {
-    if (currentOptimizationStep === 1 && currentStepComments && currentStepComments.length > 0) {
+    // 同时支持字符串'qa'和数字1两种形式的步骤标识符
+    if ((currentOptimizationStep === 'qa' || currentOptimizationStep === 1) && currentStepComments && currentStepComments.length > 0) {
       setAnnotations(currentStepComments);
     }
   }, [currentOptimizationStep, currentStepComments]);
 
   // 添加effect监听props变化，更新qaContent
   useEffect(() => {
-    if (prompt || response) {
+    if (response) {
       setQAContent({
         title: "问答详情",
-        content: `问：${prompt || ''}\n\n答：${response || ''}`
+        content: `${response}`
       });
     }
   }, [prompt, response]);
@@ -121,11 +128,15 @@ const QASection = ({ isEditable = false, taskId, prompt, response }) => {
   const fetchAnnotations = async () => {
     try {
       const data = await annotationService.getAnnotations();
-      setAnnotations(data);
+      
+      // 过滤注释数据，只保留step为'qa'的注释
+      const qaAnnotations = data.filter(annotation => annotation.step === 'qa');
+      setAnnotations(qaAnnotations);
       
       // 将获取到的注释也同步到全局状态
-      if (currentOptimizationStep === 1) {
-        setStepComments(1, data);
+      // 支持字符串'qa'和数字1两种形式的步骤标识符
+      if (currentOptimizationStep === 'qa' || currentOptimizationStep === 1) {
+        setStepComments('qa', qaAnnotations);
       }
     } catch (error) {
       message.error('获取注释失败');
@@ -180,17 +191,24 @@ const QASection = ({ isEditable = false, taskId, prompt, response }) => {
       const annotationData = {
         ...data,
         selectedText: data.selectedText,
-        id: `annotation-${Date.now()}` // 确保有唯一ID
+        id: data.id || `annotation-${Date.now()}`, // 如果有id则保留，否则创建新id
+        step: 'qa' // 明确标记为QA节的注释，与task.annotation.qa对应
       };
 
+      // 首先调用服务保存
       await annotationService.addAnnotation(annotationData);
 
       // 更新本地状态
       setAnnotations(prev => [...prev, annotationData]);
       
-      // 同时更新全局状态
-      if (currentOptimizationStep === 1) {
+      // 同时更新全局状态，支持字符串'qa'和数字1两种形式的步骤标识符
+      if (currentOptimizationStep === 'qa' || currentOptimizationStep === 1) {
         addComment(annotationData);
+      }
+      
+      // 如果父组件提供了onAddAnnotation函数，调用它将注释添加到task中
+      if (onAddAnnotation && typeof onAddAnnotation === 'function') {
+        onAddAnnotation(annotationData);
       }
       
       // 关闭模态框
@@ -205,6 +223,7 @@ const QASection = ({ isEditable = false, taskId, prompt, response }) => {
       
       message.success('添加注释成功');
     } catch (error) {
+      console.error('添加注释失败:', error);
       message.error('添加注释失败');
     }
   };
@@ -217,9 +236,9 @@ const QASection = ({ isEditable = false, taskId, prompt, response }) => {
       const updatedAnnotations = annotations.filter(item => item.id !== id);
       setAnnotations(updatedAnnotations);
       
-      // 同时更新全局状态
-      if (currentOptimizationStep === 1) {
-        setStepComments(1, updatedAnnotations);
+      // 同时更新全局状态，支持字符串'qa'和数字1两种形式的步骤标识符
+      if (currentOptimizationStep === 'qa' || currentOptimizationStep === 1) {
+        setStepComments('qa', updatedAnnotations);
       }
       
       message.success('删除注释成功');
@@ -258,7 +277,7 @@ const QASection = ({ isEditable = false, taskId, prompt, response }) => {
           <Title level={5} className={styles.headerTitle}>{qaContent.title}</Title>
           {isEditable && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Button 
+              {/* <Button 
                 type="text" 
                 icon={<UnorderedListOutlined />} 
                 className={`${styles.actionButton} ${isMultiSelectActive ? 'active' : ''}`}
@@ -274,7 +293,7 @@ const QASection = ({ isEditable = false, taskId, prompt, response }) => {
                   }
                 }}
                 title={isMultiSelectActive ? "关闭连续选择" : "连续选择"}
-              />
+              /> */}
               <Button 
                 type="text" 
                 icon={<PlusOutlined />} 
@@ -283,13 +302,13 @@ const QASection = ({ isEditable = false, taskId, prompt, response }) => {
               >
                 添加观点
               </Button>
-              <Button 
+              {/* <Button 
                 type="text" 
                 icon={<EyeOutlined />} 
                 className={styles.actionButton}
               >
                 预览
-              </Button>
+              </Button> */}
             </div>
           )}
         </div>
@@ -333,7 +352,8 @@ const QASection = ({ isEditable = false, taskId, prompt, response }) => {
       )}
       </div>
 
-      {/* 右侧注释列表 */}
+      {/* 右侧注释列表 - 只有当有注释数据时才显示 */}
+      {annotations && annotations.length > 0 && (
       <div className="qa-sidebar-container" style={{ 
         width: '320px', 
         flexShrink: 0,
@@ -352,6 +372,7 @@ const QASection = ({ isEditable = false, taskId, prompt, response }) => {
           title="观点列表"
         />
       </div>
+      )}
 
       {/* 添加注释的 Modal */}
       <AnnotationModal
@@ -369,6 +390,7 @@ const QASection = ({ isEditable = false, taskId, prompt, response }) => {
         onSave={handleSaveAnnotation}
         selectedText={selectedModalText}
         initialContent={selectedModalText}
+        step="qa"
       />
       
       {/* 讨论对话框 */}

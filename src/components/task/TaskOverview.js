@@ -1,11 +1,38 @@
-import React, { useState } from 'react';
-import { Avatar, Tag, Table, CaretDownOutlined, CaretRightOutlined } from 'antd';
+import React, { useState, useMemo } from 'react';
+import { Avatar, Tag, Table } from 'antd';
+import { CaretDownOutlined, CaretRightOutlined } from '@ant-design/icons';
 import useStyles from '../../styles/components/task/TaskOverview';
 
-const TaskOverview = ({ task, annotationData }) => {
+const TaskOverview = ({ task, annotationData, isOptimizationMode }) => {
   const { styles } = useStyles();
   const [isScoreExpanded, setIsScoreExpanded] = useState(false);
   const [isAnnotationExpanded, setIsAnnotationExpanded] = useState(true);
+
+  // 合并所有注释数据
+  const mergedAnnotationData = useMemo(() => {
+    // 确保返回值始终是数组
+    if (!task) return Array.isArray(annotationData) ? annotationData : [];
+    
+    // 如果task.annotation不存在或为空，使用传入的annotationData
+    if (!task.annotation) {
+      return Array.isArray(annotationData) ? annotationData : [];
+    }
+
+    // 从task.annotation中获取所有类别的注释
+    const allAnnotations = [];
+    
+    // 遍历annotation对象的所有属性（result、qa、scene、template等）
+    Object.keys(task.annotation).forEach(key => {
+      const categoryAnnotations = task.annotation[key];
+      // 确保是数组再添加
+      if (Array.isArray(categoryAnnotations)) {
+        allAnnotations.push(...categoryAnnotations);
+      }
+    });
+
+    // 如果没有找到任何注释，使用传入的annotationData（确保是数组）
+    return allAnnotations.length > 0 ? allAnnotations : (Array.isArray(annotationData) ? annotationData : []);
+  }, [task, annotationData]);
 
   // 注释表格列定义
   const annotationColumns = [
@@ -14,9 +41,9 @@ const TaskOverview = ({ task, annotationData }) => {
       dataIndex: 'no',
       key: 'no',
       width: 50,
-      render: (text) => (
+      render: (text, record, index) => (
         <div className={styles.avatarContainer}>
-          <Avatar size={24} className={styles.avatarNumber}>{text}</Avatar>
+          <Avatar size={24} className={styles.avatarNumber}>{text || (index + 1)}</Avatar>
         </div>
       ),
     },
@@ -26,6 +53,7 @@ const TaskOverview = ({ task, annotationData }) => {
       key: 'title',
       width: 100,
       ellipsis: true,
+      render: (text, record) => text || record.summary || '未命名注释',
     },
     {
       title: '内容',
@@ -33,9 +61,9 @@ const TaskOverview = ({ task, annotationData }) => {
       key: 'content',
       width: 200,
       ellipsis: true,
-      render: (text) => (
-        <div title={text}>
-          <a href="#" className={styles.attachmentLink}>{text}</a>
+      render: (text, record) => (
+        <div title={text || record.selectedText || record.text}>
+          <a href="#" className={styles.attachmentLink}>{text || record.selectedText || record.text || '无内容'}</a>
         </div>
       ),
     },
@@ -47,11 +75,14 @@ const TaskOverview = ({ task, annotationData }) => {
       ellipsis: true,
       render: (attachments) => (
         <div className={styles.attachmentContainer}>
-          {attachments.map((file, index) => (
-            <Tag key={index} className={styles.attachmentTag}>
-              <a href={file.url} className={styles.attachmentLink}>{file.name}</a>
-            </Tag>
-          ))}
+          {Array.isArray(attachments) && attachments.length > 0 ? 
+            attachments.map((file, index) => (
+              <Tag key={index} className={styles.attachmentTag}>
+                <a href={file.url} className={styles.attachmentLink}>{file.name}</a>
+              </Tag>
+            )) : 
+            <span style={{ color: 'var(--color-text-tertiary)' }}>无附件</span>
+          }
         </div>
       ),
     },
@@ -60,12 +91,32 @@ const TaskOverview = ({ task, annotationData }) => {
       dataIndex: 'lastModifiedBy',
       key: 'lastModifiedBy',
       width: 100,
-      render: (modifier) => (
-        <div className={styles.modifierInfo}>
-          <Avatar size={24}>{modifier.avatar}</Avatar>
-          <span>{modifier.name}</span>
-        </div>
-      ),
+      render: (modifier, record) => {
+        const author = modifier || record.author;
+        const name = author ? (typeof author === 'string' ? author : author.name) : '未知';
+        
+        // 安全处理avatar值
+        let avatarValue = '?';
+        if (author && typeof author !== 'string') {
+          // 检查avatar是否为字符串或null
+          if (typeof author.avatar === 'string' || author.avatar === null) {
+            avatarValue = author.avatar || name.charAt(0) || '?';
+          } else {
+            // avatar是对象或其他类型，使用名字首字母
+            avatarValue = name.charAt(0) || '?';
+          }
+        } else {
+          // author是字符串或不存在，使用名字首字母
+          avatarValue = name.charAt(0) || '?';
+        }
+        
+        return (
+          <div className={styles.modifierInfo}>
+            <Avatar size={24}>{avatarValue}</Avatar>
+            <span>{name}</span>
+          </div>
+        );
+      },
     },
     {
       title: '修改时间',
@@ -73,12 +124,37 @@ const TaskOverview = ({ task, annotationData }) => {
       key: 'modifiedTime',
       width: 86,
       align: 'right',
-      render: (time) => (
-        <div className={styles.modifierTime}>
-          <div>{time.hour}</div>
-          <div>{time.date}</div>
-        </div>
-      ),
+      render: (time, record) => {
+        // 如果有modifiedTime对象，使用它
+        if (time && time.hour && time.date) {
+          return (
+            <div className={styles.modifierTime}>
+              <div>{time.hour}</div>
+              <div>{time.date}</div>
+            </div>
+          );
+        }
+        
+        // 否则尝试从time或updatedAt字段解析时间
+        const timeString = time || record.time || record.updatedAt;
+        if (!timeString) return <span style={{ color: 'var(--color-text-tertiary)' }}>未知时间</span>;
+        
+        try {
+          const date = new Date(timeString);
+          if (isNaN(date.getTime())) {
+            return <span style={{ color: 'var(--color-text-tertiary)' }}>{timeString}</span>;
+          }
+          
+          return (
+            <div className={styles.modifierTime}>
+              <div>{`${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`}</div>
+              <div>{`${date.getMonth()+1}/${date.getDate()}`}</div>
+            </div>
+          );
+        } catch (e) {
+          return <span style={{ color: 'var(--color-text-tertiary)' }}>{timeString}</span>;
+        }
+      },
     },
   ];
 
@@ -116,8 +192,8 @@ const TaskOverview = ({ task, annotationData }) => {
         <div className={styles.infoRow}>
           <div className={styles.infoLabel}>创建人</div>
           <div className={styles.authorInfo}>
-            <Avatar size={24}>{task.author?.name?.charAt(0)}</Avatar>
-            <span>{task.author?.name}</span>
+            <Avatar size={24}>{task.author?.name ? task.author.name.charAt(0) : '?'}</Avatar>
+            <span>{task.author?.name || '未知'}</span>
           </div>
         </div>
         <div className={styles.infoRow}>
@@ -127,37 +203,41 @@ const TaskOverview = ({ task, annotationData }) => {
         <div className={styles.infoRow}>
           <div className={styles.infoLabel}>关键词</div>
           <div className={styles.tagContainer}>
-            {task.tags.map((tag, index) => (
+            {task.tags && Array.isArray(task.tags) ? task.tags.map((tag, index) => (
               <Tag key={index} className={styles.tag}>{tag}</Tag>
-            ))}
+            )) : null}
           </div>
         </div>
       </div>
 
-      {/* 注释表格区域 */}
-      <div className={styles.annotationSection}>
-        <div 
-          className={styles.annotationHeader}
-          onClick={() => setIsAnnotationExpanded(!isAnnotationExpanded)}
-        >
-          <span className={styles.annotationTitle}>注释</span>
-          {isAnnotationExpanded ? 
-            <CaretDownOutlined className={styles.annotationIcon} /> :
-            <CaretRightOutlined className={styles.annotationIcon} />
-          }
+      {/* 注释表格区域 - 仅在优化模式下显示 */}
+      {(isOptimizationMode || mergedAnnotationData.length > 0) && (
+        <div className={styles.annotationSection}>
+          <div 
+            className={styles.annotationHeader}
+            onClick={() => setIsAnnotationExpanded(!isAnnotationExpanded)}
+          >
+            <span className={styles.annotationTitle}>注释</span>
+            {isAnnotationExpanded ? 
+              <CaretDownOutlined className={styles.annotationIcon} /> :
+              <CaretRightOutlined className={styles.annotationIcon} />
+            }
+          </div>
+          
+          {isAnnotationExpanded && (
+            <Table
+              columns={annotationColumns}
+              dataSource={mergedAnnotationData}
+              pagination={false}
+              size="small"
+              className={styles.annotationTable}
+              locale={{ emptyText: '暂无注释数据' }}
+              rowKey={(record, index) => record.id || record.key || `annotation-${index}`}
+              rowClassName={() => styles.tableRow}
+            />
+          )}
         </div>
-        
-        {isAnnotationExpanded && (
-          <Table
-            columns={annotationColumns}
-            dataSource={annotationData}
-            pagination={false}
-            size="small"
-            className={styles.annotationTable}
-            scroll={{ x: 676 }}
-          />
-        )}
-      </div>
+      )}
     </>
   );
 };

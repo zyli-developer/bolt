@@ -16,7 +16,7 @@ import { OptimizationContext } from '../../contexts/OptimizationContext';
 const { Title } = Typography;
 const { TextArea } = Input;
 
-const TemplateSection = ({ isEditable = false, taskId, steps }) => {
+const TemplateSection = ({ isEditable = false, taskId, steps, comments = [], onAddAnnotation }) => {
   const { styles } = useStyles();
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
@@ -32,6 +32,7 @@ const TemplateSection = ({ isEditable = false, taskId, steps }) => {
   const [newNodeContent, setNewNodeContent] = useState('');
   const [discussModalVisible, setDiscussModalVisible] = useState(false);
   const [selectedText, setSelectedText] = useState('');
+  // 移除重复的annotationModalVisible状态，只使用modalVisible
 
   // 引入全局优化上下文
   const { 
@@ -49,9 +50,17 @@ const TemplateSection = ({ isEditable = false, taskId, steps }) => {
         // 如果steps是对象且包含templateData属性
         setNodes(steps.templateData.nodes);
         setEdges(steps.templateData.edges);
+        
+        if (comments && comments.length > 0) {
+          // 如果提供了comments属性，直接使用它
+          setAnnotations(comments);
+          setLoading(false);
+        } else {
+          // 否则从服务获取注释
         fetchAnnotations().finally(() => {
           setLoading(false);
         });
+        }
       } else if (Array.isArray(steps) && steps.length > 0) {
         // 将steps数组数据转换为React Flow所需的格式
         // 创建一个简单的流程图，每个step作为一个节点
@@ -80,9 +89,17 @@ const TemplateSection = ({ isEditable = false, taskId, steps }) => {
 
         setNodes(flowNodes);
         setEdges(flowEdges);
+        
+        if (comments && comments.length > 0) {
+          // 如果提供了comments属性，直接使用它
+          setAnnotations(comments);
+          setLoading(false);
+        } else {
+          // 否则从服务获取注释
         fetchAnnotations().finally(() => {
           setLoading(false);
         });
+        }
       } else {
         // 如果steps为空或无效格式，则从服务获取数据
         Promise.all([
@@ -143,12 +160,17 @@ const TemplateSection = ({ isEditable = false, taskId, steps }) => {
     }
   }, [steps, taskId]);
 
-  // 当从优化上下文获取到注释数据时，更新本地状态
+  // 当从props获取到comments或从优化上下文获取到注释数据时，更新本地状态
   useEffect(() => {
-    if (currentOptimizationStep === 3 && currentStepComments && currentStepComments.length > 0) {
+    // 优先使用从props传入的comments
+    if (comments && comments.length > 0) {
+      setAnnotations(comments);
+    } 
+    // 如果没有props传入comments但有来自上下文的数据，则使用上下文数据
+    else if (currentOptimizationStep === 3 && currentStepComments && currentStepComments.length > 0) {
       setAnnotations(currentStepComments);
     }
-  }, [currentOptimizationStep, currentStepComments]);
+  }, [comments, currentOptimizationStep, currentStepComments]);
 
   useEffect(() => {
     const handleGlobalClick = (e) => {
@@ -239,32 +261,68 @@ const TemplateSection = ({ isEditable = false, taskId, steps }) => {
 
   const handleSaveAnnotation = async (data) => {
     try {
-      if (!selectedNode) {
-        message.error('请选择一个节点');
+      // 验证data参数
+      if (!data) {
+        message.error('注释数据不能为空');
         return;
       }
 
+      // 确保content存在，即使summary为空也可以保存
+      if (!data.content && !data.selectedText) {
+        message.error('请输入注释内容');
+        return;
+      }
+
+      // 创建注释数据对象
       const annotationData = {
         ...data,
-        nodeId: selectedNode.id,
-        id: `annotation-${Date.now()}` // 确保有唯一ID
+        nodeId: selectedNode?.id, // 可能没有选中节点
+        id: `annotation-${Date.now()}`, // 确保有唯一ID
+        step: 'template', // 明确标记为模板节的注释，与task.annotation.template对应
+        time: new Date().toISOString(), // 添加ISO格式的时间戳
+        // 添加默认作者信息
+        author: data.author || {
+          name: '当前用户',
+          avatar: '当'
+        }
       };
 
+      // 如果没有摘要，则使用内容的前20个字符作为摘要
+      if (!annotationData.summary && annotationData.content) {
+        annotationData.summary = annotationData.content.substring(0, 20) + (annotationData.content.length > 20 ? '...' : '');
+      }
+
+      // 调用API保存注释
       await annotationService.addAnnotation(annotationData);
 
       // 更新本地状态
       setAnnotations(prev => [...prev, annotationData]);
       
-      // 同时更新全局状态
+      // 同时更新全局状态 - 模板优化对应步骤3
       if (currentOptimizationStep === 3) {
         addComment(annotationData);
       }
       
+      // 如果父组件提供了onAddAnnotation函数，调用它将注释添加到task中
+      if (onAddAnnotation && typeof onAddAnnotation === 'function') {
+        onAddAnnotation(annotationData);
+      }
+      
+      // 关闭模态框并清除状态
       setModalVisible(false);
       setSelectedNode(null);
+      setSelectedText('');
       message.success('添加注释成功');
     } catch (error) {
-      message.error('添加注释失败');
+      console.error('添加注释失败:', error);
+      // 提供更具体的错误信息
+      if (error.response) {
+        message.error(`添加注释失败: ${error.response.data?.message || error.message}`);
+      } else if (error.request) {
+        message.error('网络请求失败，请检查网络连接');
+      } else {
+        message.error(`添加注释失败: ${error.message}`);
+      }
     }
   };
 
@@ -369,7 +427,20 @@ const TemplateSection = ({ isEditable = false, taskId, steps }) => {
         <div className={styles.flowChartHeader}>
           <Title level={5} className={styles.headerTitle}>模板详情</Title>
           {isEditable ? (
-            <Button type="text" icon={<EyeOutlined />}>预览</Button>
+            // <Button type="text" icon={<EyeOutlined />}>预览</Button>
+            <Button 
+                type="text" 
+                icon={<PlusOutlined />} 
+                className={styles.actionButton}
+                onClick={() => {
+                  // 点击添加观点按钮时，清空已选节点，直接打开模态框
+                  setSelectedNode(null);
+                  setSelectedText('');
+                  setModalVisible(true);
+                }}
+              >
+                添加观点
+              </Button>
           ) : null}
         </div>
         
@@ -390,7 +461,8 @@ const TemplateSection = ({ isEditable = false, taskId, steps }) => {
               zoomOnScroll={false}
               panOnScroll={false}
               panOnDrag={true}
-              preventScrolling={true}
+              preventScrolling={false}
+              onWheelCapture={(e) => e.stopPropagation()}
             >
               <Background />
               <Controls />
@@ -399,7 +471,8 @@ const TemplateSection = ({ isEditable = false, taskId, steps }) => {
         </div>
       </div>
 
-      {/* 右侧注释列表 */}
+      {/* 右侧注释列表 - 只有当有注释数据时才显示 */}
+      {annotations && annotations.length > 0 && (
       <div className="template-sidebar-container" style={{ 
         width: '320px', 
         flexShrink: 0,
@@ -419,6 +492,7 @@ const TemplateSection = ({ isEditable = false, taskId, steps }) => {
           nodes={nodes}
         />
       </div>
+      )}
 
       {/* 右键菜单 */}
       {contextMenu && (
@@ -439,7 +513,9 @@ const TemplateSection = ({ isEditable = false, taskId, steps }) => {
           setSelectedNode(null);
         }}
         onSave={handleSaveAnnotation}
-        selectedText={selectedNode?.data.label || ''}
+        selectedText={selectedNode?.data.label || selectedText || ''}
+        initialContent={selectedNode?.data.label || selectedText || ''}
+        step="template"
       />
 
       {/* 编辑节点的 Modal */}
@@ -501,6 +577,8 @@ const TemplateSection = ({ isEditable = false, taskId, steps }) => {
         onClose={() => setDiscussModalVisible(false)}
         selectedText={selectedText}
       />
+
+
     </div>
   );
 };

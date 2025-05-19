@@ -230,7 +230,7 @@ const CardItem = ({ card }) => {
               <div className="metric-item">
                 <div className="metric-value" style={{ fontSize: '20px' }}>{safeCard.credibility.toFixed(1)}%</div>
                 <div className="metric-info">
-                  <div className="metric-label">Credibility</div>
+                  <div className="metric-label">可信度</div>
                   <div className={`metric-change ${(safeCard.credibilityChange || '').startsWith("+") ? "positive" : "negative"}`}>
                     {safeCard.credibilityChange || '+0%'}
                   </div>
@@ -240,7 +240,7 @@ const CardItem = ({ card }) => {
               <div className="metric-item">
                 <div className="metric-value" style={{ fontSize: '20px' }}>{safeCard.score.toFixed(1)}</div>
                 <div className="metric-info">
-                  <div className="metric-label">Score</div>
+                  <div className="metric-label">评分</div>
                   <div className={`metric-change ${(safeCard.scoreChange || '').startsWith("+") ? "positive" : "negative"}`}>
                     {safeCard.scoreChange || '+0%'}
                   </div>
@@ -347,7 +347,7 @@ const CardItem = ({ card }) => {
 
           {/* Line chart */}
           <div className={`line-chart-container ${showRadarChart ? "with-radar" : ""}`}>
-            <div className="line-chart-title">置信度爬升曲线</div>
+            <div className="line-chart-title">可信度爬升曲线</div>
             <div className="line-chart">
               <ResponsiveContainer width="100%" height={130}>
                 <AreaChart data={generateUniqueLineData} margin={{ top: 3, right: 3, left: 0, bottom: 3 }}>
