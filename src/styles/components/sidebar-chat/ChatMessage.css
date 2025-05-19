@@ -74,9 +74,9 @@
 }
 
 /* 删除旧的分割线样式 */
-.session-divider-line {
+/* .session-divider-line {
   display: none;
-}
+} */
 
 /* 会话ID信息 */
 .session-divider-footer {

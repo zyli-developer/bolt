@@ -3,6 +3,8 @@
  */
 import * as TIM from '../lib/tim';
 import { formatDate } from '../utils/dateUtils';
+// 导入群组操作相关函数
+import { createGroup as timCreateGroup } from '../lib/tim/group';
 
 // IM配置
 const TIM_CONFIG = {
@@ -94,10 +96,22 @@ export async function getChatUsers() {
     // 获取会话列表
     const conversationList = await TIM.getConversationList();
     
-    console.log('获取到会话列表', { count: conversationList.length });
+    console.log('获取到会话列表', { count: conversationList?.length || 0 });
+    
+    // 如果conversationList为空或不是数组，返回空数组
+    if (!conversationList || !Array.isArray(conversationList) || conversationList.length === 0) {
+      console.log('会话列表为空');
+      return [];
+    }
     
     // 转换为ChatContext需要的格式
     const users = conversationList.map(conversation => {
+      // 确保conversation对象有效
+      if (!conversation) {
+        console.warn('发现无效的会话对象');
+        return null;
+      }
+      
       const isGroup = conversation.type === 'GROUP';
       const profile = isGroup ? conversation.groupProfile : conversation.userProfile;
       
@@ -111,24 +125,36 @@ export async function getChatUsers() {
         console.log(`从conversationID(${conversation.conversationID})提取ID: ${id}`);
       }
       
+      // 确保我们有一个有效的ID
+      if (!id) {
+        console.warn('无法获取有效的用户/群组ID，跳过此会话');
+        return null;
+      }
+      
+      // 安全地访问profile属性
+      const name = isGroup 
+        ? (profile?.name || `群聊 ${id}`)
+        : (profile?.nick || profile?.userID || id);
+      
       return {
         id: id, // 纯ID
-        name: isGroup ? profile.name : (profile.nick || profile.userID || id),
-        avatar: profile.avatar,
-        status: profile.statusType === 'Online' ? 'active' : 'offline',
+        name: name,
+        avatar: profile?.avatar || null,
+        status: profile?.statusType === 'Online' ? 'active' : 'offline',
         conversationID: conversation.conversationID, // 保留原始会话ID
         unreadCount: conversation.unreadCount || 0,
         lastMessage: conversation.lastMessage?.messageForShow || '',
         type: isGroup ? 'group' : 'user'
       };
-    });
+    }).filter(user => user !== null); // 过滤掉无效的用户
     
     console.log('转换后的用户列表', { count: users.length });
     
     return users;
   } catch (error) {
     console.error('获取聊天用户列表失败', error);
-    throw error;
+    // 出错时返回空数组而不是抛出异常，避免中断UI流程
+    return [];
   }
 }
 
@@ -432,8 +458,22 @@ export async function createNewChat(type, params) {
       if (params.isJoin && params.groupID) {
         conversation = await TIM.createGroupConversation(params.groupID);
       } else if (params.name) {
-        // 以后可实现创建群组功能
-        throw new Error("创建新群组功能尚未实现");
+        // 创建新群组并自动添加默认成员
+        const result = await TIM.createGroupWithDefaultMembers({
+          name: params.name,
+          addDefaultMembers: true // 自动添加默认机器人成员
+        });
+        
+        // 确保result.group存在并有效
+        if (!result || !result.group) {
+          throw new Error("创建群组失败，未返回有效的群组信息");
+        }
+        
+        // 获取群组会话
+        conversation = await TIM.createGroupConversation(result.group.groupID);
+        
+        // 添加一个标志表示群成员已添加
+        conversation.defaultMembersAdded = true;
       } else {
         throw new Error("群组参数不正确");
       }
@@ -441,18 +481,45 @@ export async function createNewChat(type, params) {
       throw new Error(`不支持的会话类型: ${type}`);
     }
     
+    // 确保conversation对象有效
+    if (!conversation) {
+      throw new Error("会话创建失败，返回了空的会话对象");
+    }
+    
     // 转换为ChatContext需要的格式
     const isGroup = type === 'GROUP';
+    
+    // 安全获取profile
     const profile = isGroup ? conversation.groupProfile : conversation.userProfile;
     
-    // 确保返回正确的conversationID
+    // 安全获取ID
+    const id = isGroup ? (conversation.groupID || '') : (conversation.userID || '');
+    if (!id) {
+      console.warn('无法获取有效的会话ID，使用备用ID');
+    }
+    
+    // 备用会话ID，从conversationID提取
+    let backupId = '';
+    if (conversation.conversationID) {
+      const prefix = conversation.conversationID.startsWith('C2C') ? 'C2C' : 'GROUP';
+      backupId = conversation.conversationID.substring(prefix.length);
+    }
+    
+    // 使用id或备用id
+    const finalId = id || backupId;
+    
+    // 安全组装返回对象
     return {
-      id: isGroup ? conversation.groupID : conversation.userID,
-      name: isGroup ? profile?.name || `群聊 ${conversation.groupID}` : profile?.nick || conversation.userID,
+      id: finalId,
+      name: isGroup 
+        ? (profile?.name || `群聊 ${finalId}`) 
+        : (profile?.nick || profile?.userID || finalId),
       avatar: profile?.avatar || null,
       status: 'active',
       conversationID: conversation.conversationID,
-      type: isGroup ? 'group' : 'user'
+      type: isGroup ? 'group' : 'user',
+      // 传递群成员添加状态
+      defaultMembersAdded: conversation.defaultMembersAdded || false
     };
   } catch (error) {
     console.error('创建新会话失败', error);

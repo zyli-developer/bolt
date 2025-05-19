@@ -755,9 +755,9 @@ body.multi-select-temp {
  
 }
 
-.session-divider-line {
+/* .session-divider-line {
   display: none;
-}
+} */
 
 .session-divider::before,
 .session-divider::after {

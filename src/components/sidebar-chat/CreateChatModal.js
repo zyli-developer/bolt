@@ -1,7 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { CloseOutlined, SearchOutlined, PlusOutlined, UserAddOutlined } from "@ant-design/icons"
+import { CloseOutlined, PlusOutlined, UserAddOutlined } from "@ant-design/icons"
+import { notification } from "antd"
 import "./CreateChatModal.css"
 
 const CreateChatModal = ({ onClose, onCreate }) => {
@@ -13,9 +14,6 @@ const CreateChatModal = ({ onClose, onCreate }) => {
 
   // Group chat state
   const [groupName, setGroupName] = useState("")
-  const [groupType, setGroupType] = useState("work") // 'work', 'public', or 'meeting'
-  const [searchQuery, setSearchQuery] = useState("")
-  const [selectedMembers, setSelectedMembers] = useState([])
   
   // Join group state
   const [groupId, setGroupId] = useState("")
@@ -24,23 +22,24 @@ const CreateChatModal = ({ onClose, onCreate }) => {
     if (!userId.trim()) return
 
     onCreate("C2C", { userID: userId })
+    // 创建后显示提示
+    notification.success({
+      message: "创建成功",
+      description: `已成功创建与用户 ${userId} 的会话`
+    })
   }
 
   const handleCreateGroupChat = () => {
-    if (!groupName.trim() || selectedMembers.length === 0) {
-      // 为了演示，我们允许创建没有成员的群组
-      onCreate("GROUP", {
-        name: groupName,
-        type: groupType,
-        memberList: selectedMembers.length > 0 ? selectedMembers : [{ userID: "demo-user-1" }],
-      })
-      return
-    }
+    if (!groupName.trim()) return
 
     onCreate("GROUP", {
       name: groupName,
-      type: groupType,
-      memberList: selectedMembers,
+    })
+    
+    // 创建成功后显示提示
+    notification.success({
+      message: "创建成功",
+      description: `已成功创建群聊 ${groupName}，默认成员已自动添加`
     })
   }
   
@@ -51,6 +50,12 @@ const CreateChatModal = ({ onClose, onCreate }) => {
       groupID: groupId,
       isJoin: true
     })
+    
+    // 加入后显示提示
+    notification.success({
+      message: "加入成功",
+      description: `已成功加入群聊 ${groupId}`
+    })
   }
 
   const handleCreate = () => {
@@ -58,22 +63,10 @@ const CreateChatModal = ({ onClose, onCreate }) => {
       handleCreateSingleChat()
     } else {
       if (groupAction === "create") {
-      handleCreateGroupChat()
+        handleCreateGroupChat()
       } else {
         handleJoinGroupChat()
       }
-    }
-  }
-
-  const handleSearch = () => {
-    // 模拟搜索用户
-    if (searchQuery.trim()) {
-      const mockUser = {
-        userID: `user-${Date.now()}`,
-        nick: searchQuery,
-      }
-      setSelectedMembers([...selectedMembers, mockUser])
-      setSearchQuery("")
     }
   }
 
@@ -134,93 +127,20 @@ const CreateChatModal = ({ onClose, onCreate }) => {
               </div>
               
               {groupAction === "create" ? (
-            <div className="group-chat-form">
-              <div className="form-group">
-                <label htmlFor="groupName">群组名称</label>
-                <input
-                  id="groupName"
-                  type="text"
-                  value={groupName}
-                  onChange={(e) => setGroupName(e.target.value)}
-                  placeholder="输入群组名称"
-                />
-              </div>
-
-              <div className="form-group">
-                <label>群组类型</label>
-                <div className="radio-group">
-                  <label className="radio-label">
+                <div className="group-chat-form">
+                  <div className="form-group">
+                    <label htmlFor="groupName">群组名称</label>
                     <input
-                      type="radio"
-                      name="groupType"
-                      value="work"
-                      checked={groupType === "work"}
-                      onChange={() => setGroupType("work")}
+                      id="groupName"
+                      type="text"
+                      value={groupName}
+                      onChange={(e) => setGroupName(e.target.value)}
+                      placeholder="输入群组名称"
                     />
-                    工作群
-                  </label>
-                  <label className="radio-label">
-                    <input
-                      type="radio"
-                      name="groupType"
-                      value="public"
-                      checked={groupType === "public"}
-                      onChange={() => setGroupType("public")}
-                    />
-                    公开群
-                  </label>
-                  <label className="radio-label">
-                    <input
-                      type="radio"
-                      name="groupType"
-                      value="meeting"
-                      checked={groupType === "meeting"}
-                      onChange={() => setGroupType("meeting")}
-                    />
-                    会议群
-                  </label>
-                </div>
-              </div>
-
-              <div className="form-group">
-                    <label>添加群成员</label>
-                <div className="search-container">
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="搜索用户"
-                        onKeyPress={(e) => e.key === "Enter" && handleSearch()}
-                  />
-                  <button className="search-button" onClick={handleSearch}>
-                    <SearchOutlined />
-                  </button>
-                </div>
-
-                    <div className="search-results">
-                {selectedMembers.length === 0 ? (
-                        <p className="search-placeholder">搜索并添加群成员</p>
-                ) : (
-                  <div className="selected-members">
-                    <div className="member-list">
-                      {selectedMembers.map((member) => (
-                        <div key={member.userID} className="member-item">
-                                {member.nick}
-                          <button
-                            className="remove-member"
-                                  onClick={() =>
-                                    setSelectedMembers(selectedMembers.filter((m) => m.userID !== member.userID))
-                                  }
-                          >
-                            ×
-                          </button>
-                        </div>
-                      ))}
-                    </div>
                   </div>
-                )}
-              </div>
-            </div>
+                  <div className="form-tip">
+                    创建群聊后将自动添加默认成员，无需手动添加
+                  </div>
                 </div>
               ) : (
                 <div className="join-group-form">
