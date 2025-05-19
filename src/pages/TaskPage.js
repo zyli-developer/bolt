@@ -341,6 +341,69 @@ const TaskPage = () => {
     setForceRefresh(prev => prev + 1);
   };
 
+  // 添加导入任务事件监听
+  useEffect(() => {
+    // 处理任务导入事件
+    const handleTasksImported = (event) => {
+      const { tasks, timestamp } = event.detail;
+      if (tasks && Array.isArray(tasks)) {
+        console.log('收到导入任务事件，导入任务数量:', tasks.length);
+        
+        // 添加导入的任务到当前任务列表中
+        setTasks(prevTasks => {
+          // 将新导入的任务添加到列表前面
+          return [...tasks, ...prevTasks];
+        });
+        
+        // 提示用户导入成功
+        message.success(`成功导入 ${tasks.length} 条任务数据`);
+      }
+    };
+    
+    // 处理localStorage变化事件
+    const handleStorageChange = (e) => {
+      if (e.key === 'tasks_last_imported') {
+        console.log('检测到导入任务数据更新');
+        try {
+          // 从localStorage获取导入的任务数据
+          const importedTasksJson = localStorage.getItem('imported_tasks');
+          if (importedTasksJson) {
+            const importedTasks = JSON.parse(importedTasksJson);
+            
+            // 避免重复导入 - 只获取最新的3条记录(假设每次导入3条)
+            const recentTasks = importedTasks.slice(0, 3);
+            
+            // 更新任务列表
+            setTasks(prevTasks => {
+              // 检查任务是否已存在
+              const newTasks = recentTasks.filter(importedTask => 
+                !prevTasks.some(existingTask => existingTask.id === importedTask.id)
+              );
+              
+              // 如果有新任务，添加到列表前面
+              if (newTasks.length > 0) {
+                return [...newTasks, ...prevTasks];
+              }
+              return prevTasks;
+            });
+          }
+        } catch (error) {
+          console.error('处理导入任务数据失败:', error);
+        }
+      }
+    };
+    
+    // 添加事件监听
+    window.addEventListener('tasksImported', handleTasksImported);
+    window.addEventListener('storage', handleStorageChange);
+    
+    // 组件卸载时移除监听
+    return () => {
+      window.removeEventListener('tasksImported', handleTasksImported);
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
+
   // 处理生成报告
   const handleGenerateReport = (selectedTaskIds) => {
     console.log('生成报告的任务ID:', selectedTaskIds);

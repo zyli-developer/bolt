@@ -121,7 +121,15 @@ const CommentsList = ({
   
   // 如果没有评论数据，不渲染任何内容
   if (commentsArray.length === 0) {
-    return null;
+    return (
+      <div className="comments-list" style={{...customStyles.container}}>
+        {title && (
+          <div className="comments-list-title" style={customStyles.title}>
+            {title}
+          </div>
+        )}
+      </div>
+    );
   }
   
   return (

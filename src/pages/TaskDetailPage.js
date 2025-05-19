@@ -766,6 +766,7 @@ const TaskDetailPage = () => {
               <TaskOverview 
                 task={task} 
                 annotationData={annotationData}
+                isOptimizationMode={isOptimizeMode}
                     />
                   )}
           </>
@@ -1010,7 +1011,8 @@ const TaskDetailPage = () => {
         toggleModelPanel={toggleModelPanel}
         getModelColor={getModelColor}
         onAddAnnotation={addAnnotationToTask}
-                    />
+        isOptimizeMode={isOptimizeMode}
+      />
     );
   };
 
@@ -1173,7 +1175,85 @@ const TaskDetailPage = () => {
 
   // 添加生成报告的处理函数
   const handleGenerateReport = () => {
-    message.info("报告生成功能正在开发中...");
+    try {
+      // 生成唯一的报告ID
+      const reportId = `report-${id}-${Date.now()}`;
+      
+      // 创建报告数据
+      const reportData = {
+        id: reportId,
+        title: `${task.title} 报告`,
+        prompt: task.prompt,
+        response_summary: task.response_summary,
+        type: 'report',
+        source: task.source,
+        author: task.author,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        tags: [...(task.tags || []), '报告'],
+        status: 'completed',
+        score: enhancedChartData.radar?.[0]?.value || 85,
+        credibility: enhancedChartData.radar?.[1]?.value || 80,
+        models: selectedModels,
+        chartData: task.chartData || enhancedChartData,
+        evaluationData: evaluationData
+      };
+      
+      // 获取现有报告数据
+      let existingReports = [];
+      try {
+        const existingReportsJson = localStorage.getItem('task_reports');
+        if (existingReportsJson) {
+          existingReports = JSON.parse(existingReportsJson);
+          if (!Array.isArray(existingReports)) {
+            existingReports = [];
+          }
+        }
+      } catch (e) {
+        console.error('解析已有报告数据失败:', e);
+      }
+      
+      // 添加新报告
+      const updatedReports = [...existingReports, reportData];
+      
+      // 保存到localStorage
+      localStorage.setItem('task_reports', JSON.stringify(updatedReports));
+      localStorage.setItem('reports_last_updated', new Date().toISOString());
+      
+      // 触发报告生成事件
+      const reportGeneratedEvent = new CustomEvent('reportGenerated', {
+        detail: {
+          reportId: reportId,
+          report: reportData
+        }
+      });
+      window.dispatchEvent(reportGeneratedEvent);
+      
+      // 获取已生成的报告ID列表
+      let generatedReportIds = [];
+      try {
+        const generatedReportsJson = localStorage.getItem('generated_reports');
+        if (generatedReportsJson) {
+          generatedReportIds = JSON.parse(generatedReportsJson);
+          if (!Array.isArray(generatedReportIds)) {
+            generatedReportIds = [];
+          }
+        }
+      } catch (e) {
+        console.error('解析已生成报告ID列表失败:', e);
+      }
+      
+      // 添加新报告ID到已生成列表
+      if (!generatedReportIds.includes(reportId)) {
+        generatedReportIds.push(reportId);
+        localStorage.setItem('generated_reports', JSON.stringify(generatedReportIds));
+      }
+      
+      message.success("报告已生成，可在资产页面查看");
+    } catch (error) {
+      console.error("生成报告失败:", error);
+      message.error("生成报告失败，请重试");
+    }
   };
 
   // 渲染底部按钮

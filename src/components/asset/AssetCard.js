@@ -7,11 +7,11 @@ import { useAssetStyles } from '../../styles/components/assets'
 import {   StarOutlined,   StarFilled,   SendOutlined,   MessageOutlined,   DeleteOutlined,  UserOutlined,  EyeOutlined } from '@ant-design/icons'
 import ResultPage from '../task/ResultPage'
 // 引入reportData.js模块
-import { demoReport, generateTaskReports } from '../../mocks/reportData'
+// import { demoReport, generateTaskReports } from '../../mocks/reportData'
 
 const { Text, Title } = Typography
 
-/** * 资产卡片组件 * @param {Object} asset - 资产数据 * @param {Function} onClick - 点击卡片的回调函数 */const AssetCard = ({ asset, onClick }) => {
+/** * 资产卡片组件 * @param {Object} asset - 资产数据 * @param {Boolean} onClick - 是否可点击 */const AssetCard = ({ asset, onClick }) => {
   const { styles } = useAssetStyles()
   const navigate = useNavigate()
   const [isFavorite, setIsFavorite] = useState(false)
@@ -27,6 +27,9 @@ const { Text, Title } = Typography
   
   // 获取报告数据
   useEffect(() => {
+    // 只有当资产是报告类型或onClick为true时才加载报告数据
+    if (asset?.type !== 'report' && !onClick) return;
+
     const loadReportData = () => {
       try {
         let report = null;
@@ -47,16 +50,16 @@ const { Text, Title } = Typography
           // 如果localStorage中没有匹配的报告，则使用reportData.js中的数据
           if (asset?.type === 'report') {
             // 如果是演示报告
-            if (asset?.id === demoReport.id || (asset?.title && asset?.title.includes('演示'))) {
+            if ( asset?.title && asset?.title.includes('演示')) {
               console.log('使用演示报告数据');
-              report = demoReport;
+             
             } else {
               // 生成一个基于当前资产的报告
               console.log('生成报告数据');
-              const generatedReports = generateTaskReports([asset?.id], [asset]);
-              if (generatedReports && generatedReports.length > 0) {
-                report = generatedReports[0];
-              }
+              // const generatedReports = generateTaskReports([asset?.id], [asset]);
+              // if (generatedReports && generatedReports.length > 0) {
+              //   report = generatedReports[0];
+              // }
             }
           }
         }
@@ -109,15 +112,31 @@ const { Text, Title } = Typography
             // 设置默认选择的模型
             const modelKeys = Object.keys(modelsData);
             if (modelKeys.length > 0) {
+              // 优先使用报告中指定的models（如果存在）
+              if (report.models && Array.isArray(report.models) && report.models.length > 0) {
+                // 确保指定的模型存在于评估数据中
+                const validModels = report.models.filter(model => modelKeys.includes(model));
+                if (validModels.length > 0) {
+                  setSelectedModels(validModels);
+                  setSelectedModel(validModels[0]);
+                  console.log('使用报告中指定的模型:', validModels);
+                  return; // 找到并设置了有效的模型，不执行后续代码
+                }
+              }
+              
+              // 如果报告中没有指定有效的models，则回退到默认选择前两个模型
               setSelectedModels(modelKeys.slice(0, 2));
               setSelectedModel(modelKeys[0]);
+              console.log('使用默认的前两个模型:', modelKeys.slice(0, 2));
             }
           }
           
           // 设置图表数据
-          if (report.chartData) {
-            // 格式化雷达图数据
+          // 处理雷达图数据 - 直接使用report.chartData.radar
+          if (report.chartData && report.chartData.radar) {
+            // 格式化雷达图数据 - 直接使用原始数据
             const radarData = report.chartData.radar.map(item => {
+              // 先保留基本数据结构
               const formattedItem = { name: item.name, value: item.value };
               
               // 为每个模型添加对应的数据点
@@ -130,18 +149,63 @@ const { Text, Title } = Typography
               return formattedItem;
             });
             
-            // 格式化折线图数据
-            const lineData = report.chartData.line.map(item => {
-              const formattedItem = { month: item.month, value: item.value };
-              
-              // 为每个模型添加对应的数据点
-              Object.keys(modelsData).forEach((modelKey, index) => {
-                const offset = 0.9 + (index * 0.05);
-                formattedItem[modelKey] = Math.round(item.value * offset);
+            // 处理折线图数据 - 使用report.step中的agent和score.confidence
+            let lineData = [];
+            
+            // 检查是否有step数据
+            if (report.step && Array.isArray(report.step) && report.step.length > 0) {
+              // 从step中提取agent和confidence数据
+              lineData = report.step.map(step => {
+                // 基本数据项
+                const item = {
+                  month: step.agent || "未知模型", // X轴使用agent名称
+                  value: 0 // 默认值
+                };
+                
+                // 提取confidence值
+                if (step.score) {
+                  if (Array.isArray(step.score) && step.score.length > 0) {
+                    // 如果score是数组
+                    const scoreData = step.score[0];
+                    item.value = scoreData.confidence 
+                      ? Math.round(parseFloat(scoreData.confidence) * 100) 
+                      : 75; // 默认值
+                  } else if (typeof step.score === 'object' && step.score.confidence) {
+                    // 如果score是对象
+                    item.value = Math.round(parseFloat(step.score.confidence) * 100);
+                  } else if (typeof step.score === 'number') {
+                    // 如果score直接是数字
+                    item.value = Math.round(step.score * 100);
+                  }
+                }
+                
+                // 添加该模型自己的数据点
+                const modelKey = step.agent?.toLowerCase().replace(/\s+/g, '') || "default";
+                item[modelKey] = item.value;
+                
+                // 为其他模型添加虚拟数据点(略低于主要值)，确保图表显示合理
+                Object.keys(modelsData).forEach((otherKey) => {
+                  if (otherKey !== modelKey) {
+                    item[otherKey] = Math.max(10, Math.round(item.value * 0.85));
+                  }
+                });
+                
+                return item;
               });
-              
-              return formattedItem;
-            });
+            } else if (report.chartData.line) {
+              // 如果没有step数据，但有原始的line数据，则使用原始数据作为后备
+              lineData = report.chartData.line.map(item => {
+                const formattedItem = { month: item.month, value: item.value };
+                
+                // 为每个模型添加对应的数据点
+                Object.keys(modelsData).forEach((modelKey, index) => {
+                  const offset = 0.9 + (index * 0.05);
+                  formattedItem[modelKey] = Math.round(item.value * offset);
+                });
+                
+                return formattedItem;
+              });
+            }
             
             setEnhancedChartData({
               radar: radarData,
@@ -182,7 +246,7 @@ const { Text, Title } = Typography
       window.removeEventListener('reportsUpdated', handleReportsUpdate);
       window.removeEventListener('storage', handleStorageChange);
     };
-  }, [asset]);
+  }, [asset, onClick]);
   
   // 如果没有资产数据，显示空卡片
   if (!asset) {
@@ -208,8 +272,10 @@ const { Text, Title } = Typography
 
   // 处理点击卡片事件
   const handleCardClick = () => {
-    // 所有类型的卡片都可以点击，显示结果页面模态框
-    setModalVisible(true)
+    // 只有当onClick为true时才响应点击
+    if (onClick) {
+      setModalVisible(true);
+    }
   }
 
   // 处理收藏按钮点击
@@ -292,14 +358,14 @@ const { Text, Title } = Typography
   return (
     <>
       <Card 
-        className={styles.assetCard} 
-        hoverable={true} 
+        className={`${styles.assetCard} ${onClick ? styles.clickableCard : styles.nonClickableCard}`} 
+        hoverable={onClick} 
         onClick={handleCardClick}
       >
         <div className={styles.cardContainer}>
           {/* 头部信息 */}
           <div className={styles.cardHeader}>
-            <Title level={5} className={styles.cardTitle}>{safeAsset.name}</Title>
+            <Title level={5} className={`${styles.cardTitle} ${onClick ? styles.clickableTitle : styles.nonClickableTitle}`}>{safeAsset.name}</Title>
             
             {/* 操作按钮 */}
             <div className={styles.cardActions}>

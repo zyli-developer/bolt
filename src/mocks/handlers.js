@@ -559,7 +559,8 @@ export const handlers = [
                 { latitude: "准确性", weight: 0.90 }
               ]
             }
-          ]
+          ],
+          reason: "初始化任务评估"
         }
       ]
     }

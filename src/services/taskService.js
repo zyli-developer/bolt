@@ -82,6 +82,21 @@ const taskService = {
         // 复制一份任务卡片数据，避免修改原始数据
         let data = JSON.parse(JSON.stringify(taskCardsData));
         
+        // 从localStorage中获取导入的任务
+        try {
+          const importedTasksJson = localStorage.getItem('imported_tasks');
+          if (importedTasksJson) {
+            const importedTasks = JSON.parse(importedTasksJson);
+            if (Array.isArray(importedTasks) && importedTasks.length > 0) {
+              console.log(`从localStorage中获取到${importedTasks.length}条导入任务数据`);
+              // 将导入的任务添加到数据前面
+              data = [...importedTasks, ...data];
+            }
+          }
+        } catch (error) {
+          console.error('从localStorage获取导入任务失败:', error);
+        }
+        
         // 应用筛选条件 - 如果有筛选参数
         if (filterParams) {
           console.log("应用筛选条件:", filterParams);

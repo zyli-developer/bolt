@@ -54,6 +54,7 @@ import TemplateSection from "../components/template/TemplateSection"
 import TestConfirmation from "../components/task/TestConfirmation"
 // 导入提交结果组件
 import SubmitResultSection from "../components/task/SubmitResultSection"
+import ResultPage from "../components/task/ResultPage" // 添加ResultPage组件导入
 
 // 导入样式覆盖
 import "../styles/overrides/qa.css"
@@ -1373,6 +1374,89 @@ const CardDetailPage = () => {
     setIsDetailsExpanded(!isDetailsExpanded);
   };
 
+  // 处理生成报告
+  const handleGenerateReport = () => {
+    try {
+      // 生成唯一的报告ID
+      const reportId = `report-${card.id}-${Date.now()}`;
+      
+      // 创建报告数据
+      const reportData = {
+        id: reportId,
+        title: `${card.title} 报告`,
+        prompt: card.prompt,
+        response_summary: card.response_summary || card.summary,
+        type: 'report',
+        source: card.source,
+        author: card.author,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        tags: [...(card.tags || []), '报告'],
+        status: 'completed',
+        score: enhancedChartData.radar?.[0]?.value || 85,
+        credibility: enhancedChartData.radar?.[1]?.value || 80,
+        models: selectedModels,
+        chartData: card.chartData || enhancedChartData,
+        evaluationData: evaluationData
+      };
+      
+      // 获取现有报告数据
+      let existingReports = [];
+      try {
+        const existingReportsJson = localStorage.getItem('task_reports');
+        if (existingReportsJson) {
+          existingReports = JSON.parse(existingReportsJson);
+          if (!Array.isArray(existingReports)) {
+            existingReports = [];
+          }
+        }
+      } catch (e) {
+        console.error('解析已有报告数据失败:', e);
+      }
+      
+      // 添加新报告
+      const updatedReports = [...existingReports, reportData];
+      
+      // 保存到localStorage
+      localStorage.setItem('task_reports', JSON.stringify(updatedReports));
+      localStorage.setItem('reports_last_updated', new Date().toISOString());
+      
+      // 触发报告生成事件
+      const reportGeneratedEvent = new CustomEvent('reportGenerated', {
+        detail: {
+          reportId: reportId,
+          report: reportData
+        }
+      });
+      window.dispatchEvent(reportGeneratedEvent);
+      
+      // 获取已生成的报告ID列表
+      let generatedReportIds = [];
+      try {
+        const generatedReportsJson = localStorage.getItem('generated_reports');
+        if (generatedReportsJson) {
+          generatedReportIds = JSON.parse(generatedReportsJson);
+          if (!Array.isArray(generatedReportIds)) {
+            generatedReportIds = [];
+          }
+        }
+      } catch (e) {
+        console.error('解析已生成报告ID列表失败:', e);
+      }
+      
+      // 添加新报告ID到已生成列表
+      if (!generatedReportIds.includes(reportId)) {
+        generatedReportIds.push(reportId);
+        localStorage.setItem('generated_reports', JSON.stringify(generatedReportIds));
+      }
+      
+      message.success("报告已生成，可在资产页面查看");
+    } catch (error) {
+      console.error("生成报告失败:", error);
+      message.error("生成报告失败，请重试");
+    }
+  };
+
   if (loading) {
     return (
       <div className={`card-detail-page ${isChatOpen ? "chat-open" : "chat-closed"}`}>
@@ -1580,208 +1664,26 @@ const CardDetailPage = () => {
               {currentOptimizationStep === 0 ? (
                 // 结果质询界面
                 <>
-                  {/* 左侧和中间区域 - 与原评估区域相同 */}
-                  <div style={{ flex: comments.length > 0 ? 2 : 3, display: "flex", flexDirection: "row", gap: "4px" }}>
-                    {/* 左侧评估区域 */}
-                    <div className="evaluation-left-section" style={{ flex: 1, gap: "4px" }}>
-                      <div className="evaluation-section" style={{ padding: "8px" }}>
-                        <div className="evaluation-header" style={{ marginBottom: "8px" }}>
-                          <div className="evaluation-title" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                            <span style={{ fontSize: "14px", fontWeight: "500" }}>评估结果</span>
-                            <Select
-                              mode="multiple"
-                              value={selectedModels}
-                              onChange={handleModelChange}
-                              className="model-selector"
-                              maxTagCount={2}
-                              maxTagTextLength={10}
-                              style={{ minWidth: "200px", flex: 1 }}
-                              dropdownRender={(menu) => (
-                                <>
-                                  <div className="select-all-option" onClick={() => handleSelectAll(selectedModels.length < modelOptions.length)} style={{ padding: "4px 8px" }}>
-                                    <Checkbox checked={selectedModels.length === modelOptions.length}>
-                                      全选
-                                    </Checkbox>
-                                  </div>
-                                  {menu}
-                                </>
-                              )}
-                            >
-                            
-                            </Select>
-                          </div>
-                        </div>
-
-                        <div className="evaluation-model-info" style={{ gap: "4px", height: "320px", ...hideScrollbarStyle }}>
-                          {selectedModels.map(modelKey => (
-                            <div className="model-panel" key={modelKey} style={{ marginBottom: "4px" }}>
-                              <div className="model-panel-header" onClick={() => toggleModelPanel(modelKey)} style={{ padding: "8px" }}>
-                                <div className="model-panel-left">
-                                  <Avatar size={32} className="model-avatar" style={{ background: getModelColor(modelKey) }}>
-                                    {evaluationData[modelKey]?.name.charAt(0)}
-                                  </Avatar>
-                                  <div className="model-info">
-                                    <div className="model-name" style={{ fontSize: "14px" }}>
-                                      {evaluationData[modelKey]?.name}
-                                      <span className="model-usage" style={{ fontSize: "12px", marginLeft: "4px" }}>128k</span>
-                                    </div>
-                                    <div className="model-tags" style={{ gap: "4px" }}>
-                                      {evaluationData[modelKey]?.tags.map((tag, index) => (
-                                        <span key={index} className="model-tag" style={{ padding: "0 4px", fontSize: "11px" }}>
-                                          {tag}
-                                        </span>
-                                      ))}
-                                    </div>
-                                  </div>
-                                </div>
-                                <div className="model-panel-icon">
-                                  {expandedModel === modelKey ? <MinusOutlined /> : <PlusOutlined />}
-                                </div>
-                              </div>
-                              
-                              {expandedModel === modelKey && (
-                                <div className={`model-panel-content ${isOptimizationMode ? 'optimization-mode' : ''}`} style={{ padding: "0 8px 8px" }}>
-                                  <div className={`evaluation-content ${isOptimizationMode ? 'optimization-mode' : ''}`} style={{ padding: "8px" }}>
-                                    <p className="evaluation-text" style={{ fontSize: "12px", margin: 0, lineHeight: "1.4" }}>{evaluationData[modelKey]?.description}</p>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* 中部图表区域 */}
-                    <div className="evaluation-right-section" style={{ gap: "4px", flex: 1 }}>
-                      {/* 折线图区域 */}
-                      <div className="line-chart-section" style={{ padding: "8px" }}>
-                        <div className="chart-legend" style={{ marginBottom: "8px", gap: "8px" }}>
-                          {selectedModels.map(modelKey => (
-                            <div className="legend-item" key={modelKey} style={{ gap: "4px" }}>
-                              <span className="legend-color" style={{ backgroundColor: getModelColor(modelKey), width: "10px", height: "10px" }}></span>
-                              <span className="legend-label" style={{ fontSize: "12px" }}>{evaluationData[modelKey]?.name}</span>
-                            </div>
-                          ))}
-                        </div>
-
-                        <div className="line-chart-container" style={{ height: "150px", marginTop: "4px" }}>
-                          <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart 
-                              data={enhancedChartData.line} 
-                              margin={{ top: 2, right: 5, left: 0, bottom: 2 }}
-                            >
-                              {/* 渐变定义 */}
-                              <defs>
-                                {Object.keys(evaluationData).map(modelKey => (
-                                  <linearGradient key={modelKey} id={`color${modelKey}`} x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor={getModelColor(modelKey)} stopOpacity={0.2}/>
-                                    <stop offset="95%" stopColor={getModelColor(modelKey)} stopOpacity={0}/>
-                                  </linearGradient>
-                                ))} 
-                              </defs>
-                              <CartesianGrid 
-                                vertical={false} 
-                                horizontal={true}
-                                stroke="#f0f0f0"
-                              />
-                              <XAxis 
-                                dataKey="month" 
-                                axisLine={false}
-                                tickLine={false}
-                                tick={{ fontSize: 10, fill: '#8f9098' }}
-                              />
-                              <YAxis 
-                                hide={true}
-                                domain={[0, 'dataMax + 20']}
-                                tickFormatter={(value) => `${Math.round(value)}%`}
-                              />
-                              <RechartsTooltip 
-                                cursor={false}
-                                formatter={(value, name) => [`${Math.round(value)}%`, evaluationData[name]?.name || name]}
-                                labelFormatter={(label) => `版本: ${label}`}
-                                contentStyle={{
-                                  background: '#fff',
-                                  border: 'none',
-                                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                                  borderRadius: '4px',
-                                  padding: '4px 8px'
-                                }}
-                              />
-                              {selectedModels.map(modelKey => (
-                                <Area
-                                  key={modelKey}
-                                  type="monotone"
-                                  dataKey={modelKey}
-                                  name={evaluationData[modelKey]?.name}
-                                  stroke={getModelColor(modelKey)}
-                                  strokeWidth={1.5}
-                                  fill={`url(#color${modelKey})`}
-                                  dot={false}
-                                />
-                              ))}
-                            </AreaChart>
-                          </ResponsiveContainer>
-                        </div>
-                      </div>
-
-                      {/* 评分和雷达图区域 */}
-                      <div className="score-radar-section" style={{ gap: "8px", padding: "8px" }}>
-                        <div className="metrics-section" style={{ gap: "8px", minWidth: "150px" }}>
-                          <div className="metric-item" style={{ padding: "8px" }}>
-                            <div className="metric-label" style={{ fontSize: "12px", marginBottom: "4px" }}>综合得分</div>
-                            <div className="metric-value" style={{ fontSize: "20px" }}>{currentEvaluation.score}</div>
-                            <div className={`metric-change ${currentEvaluation.scoreChange.startsWith("+") ? "positive" : "negative"}`} style={{ fontSize: "12px" }}>
-                              {currentEvaluation.scoreChange}
-                            </div>
-                          </div>
-
-                          <div className="metric-item" style={{ padding: "8px" }}>
-                            <div className="metric-label" style={{ fontSize: "12px", marginBottom: "4px" }}>各维度得分</div>
-                            <div className="metric-value" style={{ fontSize: "20px" }}>{currentEvaluation.credibility}%</div>
-                            <div className={`metric-change ${currentEvaluation.credibilityChange.startsWith("+") ? "positive" : "negative"}`} style={{ fontSize: "12px" }}>
-                              {currentEvaluation.credibilityChange}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* 雷达图 */}
-                        <div className="radar-chart-content" style={{ height: "220px" }}>
-                          <ResponsiveContainer width="100%" height="100%">
-                            <RadarChart data={enhancedChartData.radar}>
-                              <PolarGrid stroke="#e0e0e0" />
-                              <PolarAngleAxis dataKey="name" tick={{ fontSize: 10, fill: "#8f9098" }} />
-                              <PolarRadiusAxis domain={[0, radarMaxValue]} tick={{ fontSize: 9, fill: "#8f9098" }} axisLine={false} />
-                              <RechartsTooltip 
-                                formatter={(value, name) => [`${value}%`, evaluationData[name]?.name || name]}
-                                labelFormatter={(label) => `维度: ${label}`}
-                                contentStyle={{
-                                  background: '#fff',
-                                  border: 'none',
-                                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                                  borderRadius: '4px',
-                                  padding: '4px 8px'
-                                }}
-                              />
-                              {selectedModels.map(modelKey => (
-                                <Radar 
-                                  key={modelKey}
-                                  name={evaluationData[modelKey]?.name} 
-                                  dataKey={modelKey} 
-                                  stroke={getModelColor(modelKey)} 
-                                  fill={getModelColor(modelKey)} 
-                                  fillOpacity={0.2} 
-                                />
-                              ))}
-                            </RadarChart>
-                          </ResponsiveContainer>
-                        </div>
-                      </div>
-                    </div>
+                  {/* 左侧评估结果区域 - 使用ResultPage组件 */}
+                  <div style={{ flex: comments.length > 0 ? 2 : 3, display: "flex", flexDirection: "column", gap: "4px" }}>
+                    <ResultPage 
+                      task={card}
+                      enhancedChartData={enhancedChartData}
+                      evaluationData={evaluationData}
+                      selectedModels={selectedModels}
+                      selectedModel={selectedModel}
+                      expandedModel={expandedModel}
+                      radarMaxValue={radarMaxValue}
+                      handleModelChange={handleModelChange}
+                      handleSelectAll={handleSelectAll}
+                      toggleModelPanel={toggleModelPanel}
+                      getModelColor={getModelColor}
+                      onAddAnnotation={addComment}
+                    />
                   </div>
                   
                   {/* 右侧注释列表 - 始终显示 */}
-                  <div className="comments-section" style={{ 
+                  {/* <div className="comments-section" style={{ 
                     flex: 1, 
                     backgroundColor: 'var(--color-bg-container)',
                     borderRadius: '8px',
@@ -1794,7 +1696,7 @@ const CardDetailPage = () => {
                       expandedId={expandedComment}
                       onToggleExpand={handleCommentToggle}
                     />
-                  </div>
+                  </div> */}
                 </>
               ) : currentOptimizationStep === 1 ? (
                 // QA优化界面
@@ -1865,9 +1767,7 @@ const CardDetailPage = () => {
               <>
                 <Button 
                   className="action-button generate-report-button"
-                  onClick={() => {
-                    message.info('生成报告功能开发中');
-                  }}
+                  onClick={handleGenerateReport}
                   style={{ 
                     borderRadius: '20px',
                     display: 'flex',

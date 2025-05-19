@@ -135,65 +135,12 @@ const AssetList = ({
     setDownloadModalVisible(true);
   }
   
-  // 加载本地报告数据的函数
-  const loadLocalReports = () => {
-    try {
-      // 从localStorage获取报告数据
-      const reportsJson = localStorage.getItem('task_reports');
-      if (reportsJson) {
-        const reports = JSON.parse(reportsJson);
-        if (Array.isArray(reports) && reports.length > 0) {
-          // 将报告数据添加到资产列表中
-          const reportAssets = reports.map(report => ({
-            ...report,
-            type: 'report',
-            // 确保必要字段存在
-            name: report.name || report.title || `报告 ${report.id}`,
-            title: report.title || report.name || `报告 ${report.id}`,
-            response_summary: report.response_summary || report.summary || report.content || '无报告内容',
-            summary: report.summary || report.response_summary || report.content || '无报告内容',
-            created_by: report.created_by || '系统',
-            created_from: report.created_from || '报告生成器',
-            keywords: Array.isArray(report.keywords) ? report.keywords : ['报告'],
-            dimensions: Array.isArray(report.dimensions) ? report.dimensions : ['分析']
-          }));
-          
-          // 更新本地报告数据
-          setLocalReports(reportAssets);
-          console.log('加载报告数据成功:', reportAssets.length);
-        } else {
-          // 如果没有报告数据，设置为空数组
-          setLocalReports([]);
-        }
-      } else {
-        // 如果localStorage中没有报告数据，设置为空数组
-        setLocalReports([]);
-      }
-    } catch (error) {
-      console.error('加载报告数据失败:', error);
-      setLocalReports([]);
-    }
-  };
-  
-  // 初始化报告数据
-  useEffect(() => {
-    loadLocalReports();
-  }, []);
-  
-  // 当refreshTrigger变化时重新加载报告数据
-  useEffect(() => {
-    if (refreshTrigger > 0) {
-      console.log('检测到刷新触发器变化，重新加载报告数据:', refreshTrigger);
-      loadLocalReports();
-    }
-  }, [refreshTrigger]);
-  
   // 添加对自定义reportsUpdated事件的监听
   useEffect(() => {
     const handleReportsUpdated = (e) => {
       console.log('收到报告更新事件:', e.detail);
       // 立即重新加载报告数据
-      loadLocalReports();
+      loadReportsFromLocalStorage();
     };
     
     // 添加事件监听
@@ -211,7 +158,7 @@ const AssetList = ({
       const lastUpdateTime = localStorage.getItem('reports_last_updated');
       if (lastUpdateTime) {
         console.log('检测到报告最后更新时间:', lastUpdateTime);
-        loadLocalReports();
+        loadReportsFromLocalStorage();
       }
     };
     
@@ -237,7 +184,7 @@ const AssetList = ({
     const handleTaskReportsChange = (e) => {
       if (e.key === 'task_reports') {
         console.log('检测到localStorage中的task_reports数据变化');
-        loadLocalReports();
+        loadReportsFromLocalStorage();
       }
     };
     
@@ -250,14 +197,123 @@ const AssetList = ({
     };
   }, []);
   
-  // 每30秒自动检查一次报告数据更新
+  // 添加从localStorage加载报告数据的函数
+  const loadReportsFromLocalStorage = () => {
+    try {
+      // 首先获取已生成的报告ID列表
+      const generatedReportIdsJson = localStorage.getItem('generated_reports');
+      let generatedReportIds = [];
+      
+      if (generatedReportIdsJson) {
+        try {
+          const parsedIds = JSON.parse(generatedReportIdsJson);
+          if (Array.isArray(parsedIds)) {
+            generatedReportIds = parsedIds;
+            console.log('已生成报告ID列表:', generatedReportIds);
+          }
+        } catch (e) {
+          console.error('解析generated_reports失败:', e);
+        }
+      }
+      
+      const reportDataJson = localStorage.getItem('task_reports');
+      if (reportDataJson) {
+        const reportData = JSON.parse(reportDataJson);
+        if (Array.isArray(reportData) && reportData.length > 0) {
+          console.log('从localStorage加载到报告数据:', reportData.length, '条');
+          
+          // 过滤出已标记为生成的报告
+          let formattedReports;
+          if (generatedReportIds.length > 0) {
+            // 如果有明确的已生成报告ID列表，则按照列表过滤
+            formattedReports = reportData
+              .filter(report => generatedReportIds.includes(report.id))
+              .map(report => ({
+                ...report,
+                type: 'report'
+              }));
+            console.log('已过滤报告数据:', formattedReports.length, '条');
+          } else {
+            // 如果没有已生成报告ID列表，则加载所有报告
+            formattedReports = reportData.map(report => ({
+              ...report,
+              type: 'report'
+            }));
+          }
+          
+          // 更新本地报告数据
+          setLocalReports(formattedReports);
+          
+          // 更新UI显示
+          // 由于状态更新是异步的，我们需要确保在下一个渲染周期中能看到新报告
+          setTimeout(() => {
+            // 如果报告区域已经折叠，自动展开
+            if (!expandedSections.report && formattedReports.length > 0) {
+              setExpandedSections(prev => ({
+                ...prev,
+                report: true
+              }));
+            }
+          }, 100);
+          
+          return formattedReports; // 返回加载的报告数据，方便调用者使用
+        } else {
+          console.log('localStorage中没有有效的报告数据');
+          setLocalReports([]);
+          return [];
+        }
+      } else {
+        console.log('localStorage中没有报告数据');
+        setLocalReports([]);
+        return [];
+      }
+    } catch (error) {
+      console.error('加载报告数据失败:', error);
+      setLocalReports([]);
+      return [];
+    }
+  };
+  
+  // 初始加载报告数据
   useEffect(() => {
-    const checkInterval = setInterval(() => {
-      loadLocalReports();
-    }, 30000); // 30秒
+    loadReportsFromLocalStorage();
+  }, []);
+  
+  // 添加对reportGenerated事件的监听
+  useEffect(() => {
+    const handleReportGenerated = (event) => {
+      console.log('收到reportGenerated事件:', event.detail);
+      
+      if (event.detail && event.detail.report) {
+        // 方法1：直接将新报告添加到本地报告列表中
+        const newReport = event.detail.report;
+        setLocalReports(prevReports => {
+          // 检查是否已存在相同ID的报告
+          const exists = prevReports.some(report => report.id === newReport.id);
+          if (exists) {
+            // 如果已存在，更新这个报告
+            return prevReports.map(report => 
+              report.id === newReport.id ? { ...newReport, type: 'report' } : report
+            );
+          } else {
+            // 如果不存在，添加到列表中
+            return [...prevReports, { ...newReport, type: 'report' }];
+          }
+        });
+        
+        message.success('新报告已生成，已添加到报告列表');
+      } else {
+        // 方法2：如果事件没有包含完整报告数据，则从localStorage重新加载
+        loadReportsFromLocalStorage();
+      }
+    };
     
+    // 添加事件监听
+    window.addEventListener('reportGenerated', handleReportGenerated);
+    
+    // 组件卸载时移除事件监听
     return () => {
-      clearInterval(checkInterval);
+      window.removeEventListener('reportGenerated', handleReportGenerated);
     };
   }, []);
   
@@ -301,7 +357,11 @@ const AssetList = ({
     return (
       <div className={styles.cardGrid}>
         {assets.map((asset, index) => (
-          <AssetCard key={asset.id || index} asset={asset} />
+          <AssetCard 
+            key={asset.id || index} 
+            asset={asset} 
+            onClick={asset.type === 'report' ? true : false} // 只有报告类型可以点击
+          />
         ))}
       </div>
     )

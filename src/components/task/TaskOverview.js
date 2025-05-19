@@ -3,7 +3,7 @@ import { Avatar, Tag, Table } from 'antd';
 import { CaretDownOutlined, CaretRightOutlined } from '@ant-design/icons';
 import useStyles from '../../styles/components/task/TaskOverview';
 
-const TaskOverview = ({ task, annotationData }) => {
+const TaskOverview = ({ task, annotationData, isOptimizationMode }) => {
   const { styles } = useStyles();
   const [isScoreExpanded, setIsScoreExpanded] = useState(false);
   const [isAnnotationExpanded, setIsAnnotationExpanded] = useState(true);
@@ -210,32 +210,34 @@ const TaskOverview = ({ task, annotationData }) => {
         </div>
       </div>
 
-      {/* 注释表格区域 */}
-      <div className={styles.annotationSection}>
-        <div 
-          className={styles.annotationHeader}
-          onClick={() => setIsAnnotationExpanded(!isAnnotationExpanded)}
-        >
-          <span className={styles.annotationTitle}>注释</span>
-          {isAnnotationExpanded ? 
-            <CaretDownOutlined className={styles.annotationIcon} /> :
-            <CaretRightOutlined className={styles.annotationIcon} />
-          }
+      {/* 注释表格区域 - 仅在优化模式下显示 */}
+      {(isOptimizationMode || mergedAnnotationData.length > 0) && (
+        <div className={styles.annotationSection}>
+          <div 
+            className={styles.annotationHeader}
+            onClick={() => setIsAnnotationExpanded(!isAnnotationExpanded)}
+          >
+            <span className={styles.annotationTitle}>注释</span>
+            {isAnnotationExpanded ? 
+              <CaretDownOutlined className={styles.annotationIcon} /> :
+              <CaretRightOutlined className={styles.annotationIcon} />
+            }
+          </div>
+          
+          {isAnnotationExpanded && (
+            <Table
+              columns={annotationColumns}
+              dataSource={mergedAnnotationData}
+              pagination={false}
+              size="small"
+              className={styles.annotationTable}
+              locale={{ emptyText: '暂无注释数据' }}
+              rowKey={(record, index) => record.id || record.key || `annotation-${index}`}
+              rowClassName={() => styles.tableRow}
+            />
+          )}
         </div>
-        
-        {isAnnotationExpanded && (
-          <Table
-            columns={annotationColumns}
-            dataSource={mergedAnnotationData}
-            pagination={false}
-            size="small"
-            className={styles.annotationTable}
-            locale={{ emptyText: '暂无注释数据' }}
-            rowKey={(record, index) => record.id || record.key || `annotation-${index}`}
-            rowClassName={() => styles.tableRow}
-          />
-        )}
-      </div>
+      )}
     </>
   );
 };

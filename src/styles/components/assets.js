@@ -201,13 +201,33 @@ export const useAssetStyles = createStyles(({ token, css }) => {
       background-color: #FFFFFF;
       transition: all 0.3s ease;
       
+      .ant-card-body {
+        padding: 10px;
+      }
+    `,
+    
+    // 可点击卡片样式
+    clickableCard: css`
+      cursor: pointer;
+      
       &:hover {
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         transform: translateY(-2px);
       }
+    `,
+    
+    // 不可点击卡片样式
+    nonClickableCard: css`
+      cursor: default;
+      background-color: #FAFAFA;
+      
+      &:hover {
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        transform: none;
+      }
       
       .ant-card-body {
-        padding: 10px;
+        opacity: 0.9;
       }
     `,
     
@@ -232,16 +252,30 @@ export const useAssetStyles = createStyles(({ token, css }) => {
       color: #18371D;
       margin: 0;
       padding: 0;
-      cursor: pointer;
       overflow: hidden;
       text-overflow: ellipsis;
       display: -webkit-box;
       -webkit-line-clamp: 1;
       -webkit-box-orient: vertical;
       max-width: 70%;
+    `,
+    
+    // 可点击标题样式
+    clickableTitle: css`
+      cursor: pointer;
       
       &:hover {
         color: #58BD6D;
+      }
+    `,
+    
+    // 不可点击标题样式
+    nonClickableTitle: css`
+      cursor: default;
+      color: rgba(24, 55, 29, 0.85);
+      
+      &:hover {
+        color: rgba(24, 55, 29, 0.85);
       }
     `,
     

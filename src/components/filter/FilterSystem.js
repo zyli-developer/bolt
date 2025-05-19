@@ -614,11 +614,52 @@ const FilterSystem = ({ onFilterChange, onSortChange, onViewChange, onImportSucc
         // 使用导入的saveReportsToStorage函数保存报告
         saveReportsToStorage(generatedReports);
         
+        // 更新generated_reports，确保报告ID能被正确识别为已生成
+        try {
+          // 获取现有的已生成报告ID列表
+          const generatedReportsJson = localStorage.getItem('generated_reports') || '[]';
+          let generatedReportIds = JSON.parse(generatedReportsJson);
+          
+          if (!Array.isArray(generatedReportIds)) {
+            generatedReportIds = [];
+          }
+          
+          // 添加新报告ID，避免重复
+          const newReportIds = generatedReports.map(report => report.id);
+          let updated = false;
+          
+          newReportIds.forEach(id => {
+            if (!generatedReportIds.includes(id)) {
+              generatedReportIds.push(id);
+              updated = true;
+            }
+          });
+          
+          // 只有在有新ID添加时才更新存储
+          if (updated) {
+            localStorage.setItem('generated_reports', JSON.stringify(generatedReportIds));
+            console.log('已更新generated_reports，添加了新的报告ID');
+          }
+        } catch (error) {
+          console.error('更新generated_reports失败:', error);
+        }
+        
         // 触发自定义事件，通知所有相关组件刷新报告数据
         const reportEvent = new CustomEvent('reportsUpdated', {
           detail: { timestamp: Date.now(), reports: generatedReports }
         });
         window.dispatchEvent(reportEvent);
+        
+        // 对每个报告单独触发reportGenerated事件
+        generatedReports.forEach(report => {
+          const reportGeneratedEvent = new CustomEvent('reportGenerated', {
+            detail: {
+              reportId: report.id,
+              report: report
+            }
+          });
+          window.dispatchEvent(reportGeneratedEvent);
+        });
         
         // 更新localStorage中的一个特殊标记，以触发Storage事件
         localStorage.setItem('reports_last_updated', Date.now().toString());

@@ -15,6 +15,7 @@ import {
 } from '@ant-design/icons';
 import AnnotationModal from '../../components/annotations/AnnotationModal';
 import { OptimizationContext } from '../../contexts/OptimizationContext';
+import CommentsList from '../common/CommentsList';
 import {
   Area,
   AreaChart,
@@ -44,34 +45,37 @@ const ResultPage = ({
   handleSelectAll,
   toggleModelPanel,
   getModelColor,
-  onAddAnnotation
+  onAddAnnotation,
+  isOptimizeMode = false
 }) => {
   const [annotationModalVisible, setAnnotationModalVisible] = useState(false);
-  const [selectedText, setSelectedText] = useState(''); // 添加用于保存选中文本的状态
+  const [selectedText, setSelectedText] = useState('');
+  const [expandedComment, setExpandedComment] = useState(null);
   
-  // 添加处理保存注释的方法
   const handleSaveAnnotation = async (data) => {
     try {
-      // 创建注释数据对象
       const annotationData = {
         ...data,
         selectedText: data.selectedText || selectedText,
-        id: `annotation-${Date.now()}`, // 确保有唯一ID
-        step: 'result', // 明确标记为结果质询的注释，与task.annotation.result对应
+        id: `annotation-${Date.now()}`,
+        step: 'result',
         time: new Date().toISOString()
       };
       
-      // 如果父组件提供了onAddAnnotation函数，调用它将注释添加到task中
       if (onAddAnnotation && typeof onAddAnnotation === 'function') {
+        if (!task.annotation) {
+          task.annotation = { result: [] };
+        } else if (!task.annotation.result) {
+          task.annotation.result = [];
+        }
+        
         onAddAnnotation(annotationData);
       }
       
-      // 同时更新全局状态 - 结果质询对应步骤0
-      if (currentOptimizationStep === 0) {
+      if (currentOptimizationStep === 0 || currentOptimizationStep === 'result') {
         addComment(annotationData);
       }
       
-      // 关闭模态框
       setAnnotationModalVisible(false);
       setSelectedText('');
       
@@ -82,53 +86,48 @@ const ResultPage = ({
     }
   };
   
-  // 引入全局优化上下文
   const { 
+    isOptimizationMode,
     currentOptimizationStep, 
     currentStepComments,
     addComment,
     setStepComments
   } = useContext(OptimizationContext);
-  // 从task.step中提取模型数据
+  
+  const handleCommentToggle = (id) => {
+    setExpandedComment(expandedComment === id ? null : id);
+  };
+
   const stepsData = useMemo(() => {
     if (!task || !task.step) {
       return [];
     }
     
-    // 确保steps是数组
     const steps = Array.isArray(task.step) ? task.step : [task.step];
     
-    // 提取模型信息
     return steps.filter(step => step && step.agent);
   }, [task]);
 
-  // 获取可用的模型选项
   const modelOptions = useMemo(() => {
-    // 如果有stepsData就使用它，否则回退到evaluationData
     if (stepsData && stepsData.length > 0) {
       return stepsData.map(step => {
-        // 将agent名称转为小写并移除空格作为key
         return step.agent.toLowerCase().replace(/\s+/g, '');
       });
     }
     return Object.keys(evaluationData || {});
   }, [stepsData, evaluationData]);
 
-  // 获取当前选中的评估数据
   const currentEvaluation = useMemo(() => {
-    // 尝试从stepsData中找到匹配的模型
     if (stepsData && stepsData.length > 0 && selectedModel) {
       const selectedStep = stepsData.find(step => 
         step.agent.toLowerCase().replace(/\s+/g, '') === selectedModel
       );
       
       if (selectedStep) {
-        // 确保score是字符串或数字，不是对象
-        let scoreValue = 70; // 默认值70而不是'N/A'
+        let scoreValue = 70;
         if (selectedStep.score) {
           if (Array.isArray(selectedStep.score) && selectedStep.score.length > 0) {
             const scoreObj = selectedStep.score[0];
-            // 处理score可能是对象的情况
             if (scoreObj && typeof scoreObj === 'object') {
               if (typeof scoreObj.score === 'string' || typeof scoreObj.score === 'number') {
                 scoreValue = scoreObj.score;
@@ -141,8 +140,7 @@ const ResultPage = ({
           }
         }
         
-        // 确保confidence是字符串或数字，不是对象
-        let confidenceValue = 75; // 默认值75而不是'N/A'
+        let confidenceValue = 75;
         if (selectedStep.score && Array.isArray(selectedStep.score) && selectedStep.score.length > 0) {
           const scoreObj = selectedStep.score[0];
           if (scoreObj && typeof scoreObj === 'object' && 
@@ -163,18 +161,16 @@ const ResultPage = ({
       }
     }
     
-    // 回退到evaluationData
     if (evaluationData && selectedModel && evaluationData[selectedModel]) {
       return evaluationData[selectedModel];
     } else if (evaluationData && Object.values(evaluationData).length > 0) {
       return Object.values(evaluationData)[0];
     }
     
-    // 如果没有任何数据，返回默认值
     return {
       name: '未知模型',
-      score: 70, // 默认值70而不是'N/A'
-      credibility: 75, // 默认值75而不是'N/A'
+      score: 70,
+      credibility: 75,
       scoreChange: '+0.0',
       credibilityChange: '+0.0',
       reason: '暂无数据',
@@ -182,13 +178,11 @@ const ResultPage = ({
     };
   }, [stepsData, selectedModel, evaluationData]);
 
-  // 生成用于折线图的数据
   const lineChartData = useMemo(() => {
     if (!stepsData || stepsData.length === 0) {
       return enhancedChartData?.line || [];
     }
     
-    // 收集所有版本信息
     const versionMap = {};
     
     stepsData.forEach(step => {
@@ -202,30 +196,23 @@ const ResultPage = ({
           versionMap[version] = { version };
         }
         
-        // 设置该版本下该模型的confidence值
         versionMap[version][modelKey] = parseFloat(scoreItem.confidence) * 100;
       });
     });
     
-    // 转换为数组
     return Object.values(versionMap);
   }, [stepsData, enhancedChartData]);
 
-  // 根据当前数据计算雷达图的最大值
   const calculatedRadarMaxValue = useMemo(() => {
     if (!enhancedChartData?.radar || enhancedChartData.radar.length === 0) {
-      return 100; // 如果没有数据，则默认为100
+      return 100;
     }
     
     let maxValue = 0;
     
-    // 遍历所有雷达图数据点
     enhancedChartData.radar.forEach(dataPoint => {
-      // 检查每个数据点的所有属性
       Object.keys(dataPoint).forEach(key => {
-        // 排除name属性，只考虑数值属性
         if (key !== 'name' && typeof dataPoint[key] === 'number') {
-          // 更新最大值
           if (dataPoint[key] > maxValue) {
             maxValue = dataPoint[key];
           }
@@ -233,7 +220,6 @@ const ResultPage = ({
       });
     });
     
-    // 向上取整到最接近的10的倍数，确保有一些边距
     return Math.ceil(maxValue / 10) * 10 + 10;
   }, [enhancedChartData]);
 
@@ -246,36 +232,36 @@ const ResultPage = ({
     );
   }
 
-  // 格式化得分显示，确保显示为字符串或数字
   const formatScore = (score) => {
-    if (score === undefined || score === null) return 70; // 返回默认值70而不是'N/A'
-    if (typeof score === 'object') return 70; // 如果是对象，返回默认值70而不是'N/A'
+    if (score === undefined || score === null) return 70;
+    if (typeof score === 'object') return 70;
     
-    // 尝试转换为数字并保留一位小数
     const numScore = parseFloat(score);
     if (!isNaN(numScore)) {
       return numScore.toFixed(1);
     }
     
-    return 70; // 如果无法转换为数字，返回默认值70
+    return 70;
   };
 
   return (
-    <div className="evaluation-charts-wrapper" style={{ gap: "4px", marginTop: "4px" }}>
+    <div className="evaluation-charts-wrapper" style={{ display: "flex", gap: "8px" }}>
       {/* 左侧评估区域 */}
-      <div className="evaluation-left-section" style={{ flex: "0 0 400px", gap: "4px" }}>
+      <div className="evaluation-left-section" style={{ 
+        flex: isOptimizeMode && task?.annotation?.result && Array.isArray(task.annotation.result) && task.annotation.result.length > 0 ? 1 : 1.5
+      }}>
         <div className="evaluation-section" style={{ padding: "8px" }}>
           <div className="evaluation-header" style={{ marginBottom: "8px" }}>
             <div className="evaluation-title" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <span style={{ fontSize: "14px", fontWeight: "500" }}>评估结果</span>
-              {/* <Button 
-                type="text" 
-                icon={<PlusOutlined />} 
-                style={{ fontSize: "12px" }}
-                onClick={() => setAnnotationModalVisible(true)}
-              >
-                添加观点
-              </Button> */}
+              <span style={{ 
+                fontSize: "16px", 
+                fontWeight: "600", 
+                color: "var(--color-text-base)",
+                whiteSpace: "nowrap",
+                flex: "0 0 auto",
+                padding: "4px 12px 4px 0",
+                borderRight: "1px solid var(--color-border-secondary)"
+              }}>评估结果</span>
               <Select
                 mode="multiple"
                 value={selectedModels || []}
@@ -296,7 +282,6 @@ const ResultPage = ({
                 )}
               >
                 {modelOptions.map(modelKey => {
-                  // 尝试从stepsData获取模型名称
                   const step = stepsData.find(s => s.agent.toLowerCase().replace(/\s+/g, '') === modelKey);
                   const displayName = step ? step.agent : (evaluationData[modelKey]?.name || modelKey);
                   
@@ -310,10 +295,8 @@ const ResultPage = ({
 
           <div className="evaluation-model-info" style={{ gap: "4px" }}>
             {Array.isArray(selectedModels) && selectedModels.map(modelKey => {
-              // 尝试从stepsData获取模型信息
               const step = stepsData.find(s => s.agent.toLowerCase().replace(/\s+/g, '') === modelKey);
               
-              // 如果找到step数据，使用它，否则回退到evaluationData
               const modelData = step ? {
                 name: step.agent,
                 tags: step.tags || [],
@@ -365,12 +348,13 @@ const ResultPage = ({
       </div>
 
       {/* 右侧图表区域 */}
-      <div className="evaluation-right-section" style={{ gap: "4px" }}>
-        {/* 折线图区域 */}
+      <div className="evaluation-right-section" style={{ 
+        gap: "4px", 
+        flex: isOptimizeMode && task?.annotation?.result && Array.isArray(task.annotation.result) && task.annotation.result.length > 0 ? 1 : 1.5
+      }}>
         <div className="line-chart-section" style={{ padding: "8px" }}>
           <div className="chart-legend" style={{ marginBottom: "8px", gap: "8px" }}>
             {Array.isArray(selectedModels) && selectedModels.map(modelKey => {
-              // 尝试从stepsData获取模型名称
               const step = stepsData.find(s => s.agent.toLowerCase().replace(/\s+/g, '') === modelKey);
               const displayName = step ? step.agent : (evaluationData[modelKey]?.name || modelKey);
               
@@ -389,7 +373,6 @@ const ResultPage = ({
                 data={lineChartData.length > 0 ? lineChartData : enhancedChartData?.line || []}
                 margin={{ top: 2, right: 5, left: 0, bottom: 2 }}
               >
-                {/* 渐变定义 */}
                 <defs>
                   {modelOptions.map(modelKey => (
                     <linearGradient key={modelKey} id={`color${modelKey}`} x1="0" y1="0" x2="0" y2="1">
@@ -447,7 +430,6 @@ const ResultPage = ({
           </div>
         </div>
 
-        {/* 评分和雷达图区域 */}
         <div className="score-radar-section" style={{ gap: "8px", padding: "8px" }}>
           <div className="metrics-section" style={{ gap: "8px", minWidth: "70px" }}>
             <div className="metric-item" style={{ padding: "8px" }}>
@@ -470,7 +452,6 @@ const ResultPage = ({
             </div>
           </div>
 
-          {/* 雷达图 - 使用计算出的最大值而不是传入的固定值 */}
           <div className="radar-chart-content" style={{ height: "220px" }}>
             <ResponsiveContainer width="100%" height="100%">
               <RadarChart data={enhancedChartData?.radar || []}>
@@ -512,39 +493,46 @@ const ResultPage = ({
         </div>
       </div>
 
-      {/* 添加观点对话框 */}
+      {/* 右侧注释列表 - 仅在优化模式下显示且有注释数据时显示 */}
+      {isOptimizeMode && 
+        task?.annotation?.result && 
+        Array.isArray(task.annotation.result) && (
+        <div className="comments-section" style={{ 
+          flex: 1, 
+          backgroundColor: 'var(--color-bg-container)',
+          borderRadius: '8px',
+          maxHeight: 'calc(100vh - 320px)',
+          overflow: 'hidden'
+        }}>
+          {task.annotation.result.length > 0 ? (
+            <CommentsList 
+              comments={task.annotation.result} 
+              title="注释列表"
+              expandedId={expandedComment}
+              onToggleExpand={handleCommentToggle}
+              customStyles={{
+                container: { height: '100%' }
+              }}
+            />
+          ) : (
+            <div style={{ 
+              padding: '20px', 
+              textAlign: 'center', 
+              color: 'var(--color-text-tertiary)',
+              fontSize: '14px' 
+            }}>
+              暂无注释数据
+            </div>
+          )}
+        </div>
+      )}
+
       <AnnotationModal
         visible={annotationModalVisible}
         onClose={() => setAnnotationModalVisible(false)}
-        onSave={(data) => {
-          try {
-            // 创建注释数据对象
-            const annotationData = {
-              ...data,
-              id: `annotation-${Date.now()}`, // 确保有唯一ID
-              step: 'result' // 标记为结果节的注释
-            };
-
-            // 同时更新全局状态
-            if (currentOptimizationStep === 0) {
-              addComment(annotationData);
-            }
-            
-            // 如果父组件提供了onAddAnnotation函数，调用它将注释添加到task中
-            if (onAddAnnotation && typeof onAddAnnotation === 'function') {
-              onAddAnnotation(annotationData);
-            }
-            
-            // 关闭模态框
-            setAnnotationModalVisible(false);
-            message.success('添加观点成功');
-          } catch (error) {
-            console.error('添加观点失败:', error);
-            message.error('添加观点失败');
-          }
-        }}
-        selectedText={""}
-        initialContent={""}
+        onSave={handleSaveAnnotation}
+        selectedText={selectedText}
+        initialContent={selectedText}
         step="result"
       />
     </div>
