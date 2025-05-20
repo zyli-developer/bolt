@@ -15,11 +15,10 @@ import { OptimizationContext } from '../../contexts/OptimizationContext';
 const { Title } = Typography;
 const { TextArea } = Input;
 
-const SceneSection = ({ isEditable = false, taskId, scenario, comments = [], onAddAnnotation, onScenarioUpdate = () => {} }) => {
+const SceneSection = ({ isEditable = false, taskId, scenario, comments = [], onAddAnnotation, onScenarioUpdate = () => {}, card }) => {
   const { styles } = useStyles();
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-  const [annotations, setAnnotations] = useState([]);
   const [expandedAnnotation, setExpandedAnnotation] = useState(null);
   const [selectedNode, setSelectedNode] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
@@ -106,10 +105,9 @@ const SceneSection = ({ isEditable = false, taskId, scenario, comments = [], onA
 
       setNodes(flowNodes);
       setEdges(flowEdges);
-      
+      console.log("comments", comments);
       if (comments && comments.length > 0) {
         // 如果提供了comments属性，直接使用它
-        setAnnotations(comments);
         setLoading(false);
       } else {
         // 否则从服务获取注释
@@ -195,11 +193,11 @@ const SceneSection = ({ isEditable = false, taskId, scenario, comments = [], onA
   useEffect(() => {
     // 优先使用从props传入的comments
     if (comments && comments.length > 0) {
-      setAnnotations(comments);
+      setLoading(false);
     } 
-    // 如果没有props传入comments但有来自上下文的数据，则使用上下文数据
-    else if (currentOptimizationStep === 2 && currentStepComments && currentStepComments.length > 0) {
-      setAnnotations(currentStepComments);
+    // 如果没有props传入comments但有来自上下文的数据，且当前为场景优化步骤，则使用上下文数据
+    else if (currentOptimizationStep === 'scene' && currentStepComments && currentStepComments.length > 0) {
+      setLoading(false);
     }
   }, [comments, currentOptimizationStep, currentStepComments]);
 
@@ -233,11 +231,10 @@ const SceneSection = ({ isEditable = false, taskId, scenario, comments = [], onA
   const fetchAnnotations = async () => {
     try {
       const data = await annotationService.getAnnotations();
-      setAnnotations(data);
       
       // 将获取到的注释也同步到全局状态
-      if (currentOptimizationStep === 2) {
-        setStepComments(2, data);
+      if (currentOptimizationStep === 'scene') {
+        setStepComments('scene', data);
       }
     } catch (error) {
       message.error('获取注释失败');
@@ -303,90 +300,33 @@ const SceneSection = ({ isEditable = false, taskId, scenario, comments = [], onA
 
   const handleSaveAnnotation = async (data, annotationType = 'scene') => {
     try {
-      // 验证data参数
-      if (!data) {
-        message.error('观点数据不能为空');
-        return;
-      }
-
-      // 确保text存在，即使summary为空也可以保存
-      if (!data.text && !data.selectedText) {
-        message.error('请输入观点内容');
-        return;
-      }
-
-      // 确保nodeId存在（如果是从节点上下文菜单打开的）
-      const finalNodeId = data.nodeId || selectedNode?.id;
-
-          // 创建注释数据对象，确保数据格式与CommentsList组件兼容
-      const annotationData = {
+      let annotationData = {
         ...data,
-      nodeId: finalNodeId, // 保存节点ID
-      // 如果数据中已有id则保留该id，如果没有id则认为是对当前场景的注释
-      id: data.id || null, // 不自动生成id，如果没有id则保持为null
-      // 确保step字段始终为'scene'
-      step: 'scene', // 标识为场景注释，与task.annotation.scene关联
-      // 确保时间格式正确
-      time: data.time || new Date().toLocaleString('zh-CN', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
-      }),
-      // 确保author格式正确
-      author: typeof data.author === 'string' ? data.author : (data.author?.name || '当前用户')
-    };
-
-      // 调用API保存注释
-      await annotationService.addAnnotation(annotationData);
-
-      // 更新本地状态
-      setAnnotations(prev => [...prev, annotationData]);
-      
-          // 同时更新全局状态 - 使用'scene'字符串标识，确保添加到正确的步骤
-    if (typeof addComment === 'function') {
-      // 传递带有step字段的注释，确保添加到'scene'类别
-        addComment(annotationData);
-      }
-      
-    // 如果父组件提供了onAddAnnotation函数，调用它将注释添加到task.annotation.scene中
-    if (onAddAnnotation && typeof onAddAnnotation === 'function') {
-      // 使用annotationData.step确保保存到scene分类
-      onAddAnnotation(annotationData);
-    }
-      
-      // 关闭模态框并清除状态
-      setModalVisible(false);
-      setSelectedNode(null);
-      setSelectedText('');
-      message.success('添加观点成功');
-    } catch (error) {
-      console.error('添加观点失败:', error);
-      // 提供更具体的错误信息
-      if (error.response) {
-        message.error(`添加观点失败: ${error.response.data?.message || error.message}`);
-      } else if (error.request) {
-        message.error('网络请求失败，请检查网络连接');
+        nodeId: selectedNode?.id,
+        step: 'scene',
+        id: `scene-annotation-${Date.now()}`
+      };
+      if (onAddAnnotation) {
+        onAddAnnotation(annotationData);
       } else {
-        message.error(`添加观点失败: ${error.message}`);
+        addComment(annotationData);
+        message.success('注释已添加');
       }
+      setModalVisible(false);
+      setContextMenu(null);
+    } catch (error) {
+      console.error('保存注释失败:', error);
+      message.error('添加注释失败，请重试');
     }
   };
 
   const handleDeleteAnnotation = async (id) => {
     try {
       await annotationService.deleteAnnotation(id);
-      
-      // 更新本地状态
-      const updatedAnnotations = annotations.filter(item => item.id !== id);
-      setAnnotations(updatedAnnotations);
-      
-      // 同时更新全局状态
-      if (currentOptimizationStep === 2) {
-        setStepComments(2, updatedAnnotations);
+      // 只操作全局
+      if (currentOptimizationStep === 'scene') {
+        setStepComments('scene', comments.filter(item => item.id !== id));
       }
-      
       message.success('删除注释成功');
     } catch (error) {
       message.error('删除注释失败');
@@ -545,6 +485,16 @@ const SceneSection = ({ isEditable = false, taskId, scenario, comments = [], onA
     );
   };
 
+  // 合并props.comments和card.annotation.scene，去重
+  const taskAnnotations = Array.isArray(card?.annotation?.scene) ? card.annotation.scene : [];
+  const filteredComments = Array.isArray(comments)
+    ? comments.filter(item => item.step === 'scene')
+    : [];
+  const mergedComments = [
+    ...taskAnnotations,
+    ...filteredComments.filter(c => !taskAnnotations.some(t => t.id === c.id))
+  ];
+
   if (loading) {
     return (
       <div className={styles.loadingContainer}>
@@ -606,26 +556,25 @@ const SceneSection = ({ isEditable = false, taskId, scenario, comments = [], onA
       </div>
 
       {/* 右侧注释列表 - 只有当有注释数据时才显示 */}
-      {annotations && annotations.length > 0 && (
-      <div className="scene-sidebar-container" style={{ 
-        width: '320px', 
-        flexShrink: 0,
-        overflowY: 'auto',
-        backgroundColor: '#fff',
-        borderRadius: '8px'
-      }}>
-        <CommentsList 
-          comments={annotations}
-          isEditable={isEditable}
-          expandedId={expandedAnnotation}
-          onToggleExpand={setExpandedAnnotation}
-          onMouseEnter={handleMouseEnter}
-          onDelete={handleDeleteAnnotation}
-          contextType="node"
-          title="场景观点"
-          nodes={nodes}
-        />
-      </div>
+      {mergedComments && mergedComments.length > 0 && (
+        <div className="scene-sidebar-container" style={{ 
+          width: '320px', 
+          flexShrink: 0,
+          overflowY: 'auto',
+          backgroundColor: '#fff',
+          borderRadius: '8px'
+        }}>
+          <CommentsList 
+            comments={mergedComments} 
+            isEditable={isEditable}
+            expandedId={expandedAnnotation}
+            onToggleExpand={setExpandedAnnotation}
+            onMouseEnter={handleMouseEnter}
+            onDelete={handleDeleteAnnotation}
+            contextType="node"
+            title="场景观点"
+          />
+        </div>
       )}
 
       {/* 右键菜单 */}

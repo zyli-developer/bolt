@@ -17,7 +17,7 @@ const { Title } = Typography;
 /**
  * QA优化界面组件
  */
-const QASection = ({ isEditable = false, taskId, prompt, response, comments = [], onAddAnnotation }) => {
+const QASection = ({ isEditable = false, taskId, prompt, response, comments = [], onAddAnnotation, card }) => {
   const { styles } = useStyles();
   
   const [annotations, setAnnotations] = useState([]);
@@ -261,6 +261,13 @@ const QASection = ({ isEditable = false, taskId, prompt, response, comments = []
     handleContextMenu(e);
   };
 
+  // 合并props.comments和card.annotation.qa，去重
+  const taskAnnotations = Array.isArray(card?.annotation?.qa) ? card.annotation.qa : [];
+  const mergedComments = [
+    ...taskAnnotations,
+    ...comments.filter(c => !taskAnnotations.some(t => t.id === c.id))
+  ];
+
   if (loading) {
     return (
       <div className={styles.loadingContainer}>
@@ -353,7 +360,7 @@ const QASection = ({ isEditable = false, taskId, prompt, response, comments = []
       </div>
 
       {/* 右侧注释列表 - 只有当有注释数据时才显示 */}
-      {annotations && annotations.length > 0 && (
+      {mergedComments && mergedComments.length > 0 && (
       <div className="qa-sidebar-container" style={{ 
         width: '320px', 
         flexShrink: 0,
@@ -362,7 +369,7 @@ const QASection = ({ isEditable = false, taskId, prompt, response, comments = []
         borderRadius: '8px'
       }}>   
         <CommentsList 
-          comments={annotations}
+          comments={mergedComments}
           isEditable={isEditable}
           expandedId={expandedAnnotation}
           onToggleExpand={setExpandedAnnotation}
