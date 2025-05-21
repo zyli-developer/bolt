@@ -60,6 +60,7 @@
   cursor: pointer;
   transition: background-color 0.2s;
   position: relative;
+  height: 40px;
 }
 
 .menu-item.collapsed {
@@ -154,6 +155,7 @@
   cursor: pointer;
   border-radius: 4px;
   margin-bottom: 2px;
+  height: 32px;
 }
 
 .submenu-item:hover {
@@ -223,7 +225,7 @@
   display: flex;
   align-items: center;
   padding: 0 16px 4px;
-  border-bottom: 1px solid #e8e9f1;
+  height: 30px;
 }
 
 .sidebar-logo.collapsed {
@@ -291,7 +293,7 @@
   bottom: 0;
   left: 0;
   right: 0;
-  border-top: 1px solid #e8e9f1;
+
   background-color: #fff;
   z-index: 10;
 }
