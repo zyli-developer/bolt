@@ -15,7 +15,7 @@ const endpoints = {
 
   // 探索相关 (API规范: /v1/syntrust/explorations)
   explorations: {
-    list: "/v1/syntrust/explorations",
+    list: "/v1/syntrust/explorations/search",
     detail: (id) => `/v1/syntrust/exploration/${id}`,
     search: "/v1/syntrust/explorations/search",
   },

@@ -11,7 +11,7 @@ import { explorationCardsData, taskCardsData } from "../mocks/data"
 import { filterCardsByConditions } from "../mocks/filterData"
 
 // 判断是否使用本地模拟数据
-const USE_MOCK_DATA = true;
+const USE_MOCK_DATA = false;
 
 const cardService = {
   /**
@@ -143,7 +143,7 @@ const cardService = {
         
         // 构建响应结构
         return {
-          card: paginatedData,
+          cards: paginatedData,
           pagination: {
             total: data.length,
             page: page,
@@ -189,9 +189,10 @@ const cardService = {
       }
       
       // 调用列表接口
-      const response = await api.get(
+      const response = await api.post(
         endpoints.explorations.list, 
-        { params: requestParams },
+        requestParams,
+        'GetExplorationsRequest',
         'GetExplorationsPageResponse'
       );
       
@@ -201,7 +202,7 @@ const cardService = {
       console.error("获取探索列表失败:", error);
       // 返回一个空的响应结构，避免前端报错
       return {
-        card: [],
+        cards: [],
         pagination: {
           total: 0,
           page: 1,
@@ -425,7 +426,7 @@ const cardService = {
         
         // 构建响应结构
         return {
-          card: paginatedData,
+          cards: paginatedData,
           pagination: {
             total: data.length,
             page: page,
@@ -481,7 +482,7 @@ const cardService = {
       console.error("获取任务列表失败:", error);
       // 返回一个空的响应结构，避免前端报错
       return {
-        card: [],
+        cards: [],
         pagination: {
           total: 0,
           page: 1,

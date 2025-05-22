@@ -233,9 +233,9 @@ export const processTaskCard = (task) => {
  */
 export const processExplorationsResponse = (response) => {
   // 如果响应为空或无效，返回默认结构
-  if (!response || !response.card) {
+  if (!response || !response.cards) {
     return {
-      card: [],
+      cards: [],
       pagination: {
         total: 0,
         page: 1,
@@ -245,12 +245,12 @@ export const processExplorationsResponse = (response) => {
   }
   
   // 处理卡片数据
-  const processedCards = Array.isArray(response.card) 
-    ? response.card.map(processExplorationCard)
+  const processedCards = Array.isArray(response.cards) 
+    ? response.cards.map(processExplorationCard)
     : [];
   
   return {
-    card: processedCards,
+    cards: processedCards,
     pagination: response.pagination || {
       total: 0,
       page: 1,
@@ -268,9 +268,9 @@ export const processExplorationsResponse = (response) => {
  */
 export const processTasksResponse = (response) => {
   // 如果响应为空或无效，返回默认结构
-  if (!response || !response.card) {
+  if (!response || !response.cards) {
     return {
-      card: [],
+      cards: [],
       pagination: {
         total: 0,
         page: 1,
@@ -280,12 +280,12 @@ export const processTasksResponse = (response) => {
   }
   
   // 处理卡片数据
-  const processedCards = Array.isArray(response.card) 
-    ? response.card.map(processTaskCard)
+  const processedCards = Array.isArray(response.cards) 
+    ? response.cards.map(processTaskCard)
     : [];
   
   return {
-    card: processedCards,
+    cards: processedCards,
     pagination: response.pagination || {
       total: 0,
       page: 1,

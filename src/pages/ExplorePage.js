@@ -239,15 +239,15 @@ const ExplorePage = () => {
       setCards((prevCards) => {
         // 如果是第一页或导航变化，直接使用新数据
         if (page === 1 || prevNav !== selectedNav) {
-          return response.card;
+          return response.cards;
         }
         // 否则追加新数据
-        return [...prevCards, ...response.card];
+        return [...prevCards, ...response.cards];
       });
       
       // 更新分页信息
       setTotalItems(response.pagination.total);
-      setHasMore(response.card.length > 0 && response.pagination.page * response.pagination.per_page < response.pagination.total);
+      setHasMore(response.cards.length > 0 && response.pagination.page * response.pagination.per_page < response.pagination.total);
       setPrevNav(selectedNav);
       setError(null);
     } catch (err) {

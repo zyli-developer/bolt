@@ -1,0 +1,715 @@
+{
+    "pagination": {
+        "total": 8,
+        "page": 1,
+        "per_page": 10
+    },
+    "cards": [
+        {
+            "id": "44444444-4444-4444-4444-444444444444",
+            "status": "pending",
+            "version": "1.0",
+            "prompt": "请审查这段Python代码并提供改进建议",
+            "step": [
+                {
+                    "id": "f314b4cb-e8c6-4a82-a185-c33e3eb026aa",
+                    "name": "代码审查",
+                    "status": "completed",
+                    "inserted_at": "2025-05-22T11:50:48Z",
+                    "updated_at": "2025-05-22T11:50:48Z",
+                    "executor_type": "agent",
+                    "agent": "AI Agent",
+                    "score": [
+                        {
+                            "reason": "代码质量评估",
+                            "version": "1.0",
+                            "description": "Python代码整体质量良好，但存在部分安全隐患和性能优化空间",
+                            "dimension": [
+                                {
+                                    "latitude": "代码质量",
+                                    "weight": 0.25
+                                },
+                                {
+                                    "latitude": "安全性",
+                                    "weight": 0.25
+                                },
+                                {
+                                    "latitude": "性能",
+                                    "weight": 0.25
+                                },
+                                {
+                                    "latitude": "可维护性",
+                                    "weight": 0.25
+                                }
+                            ],
+                            "confidence": 0.92,
+                            "score": 88,
+                            "consumed_points": 80
+                        }
+                    ]
+                },
+                {
+                    "id": "15cd60f8-b4d3-4b9d-b5ba-5af38367575a",
+                    "name": "语法检查",
+                    "status": "running",
+                    "inserted_at": "2025-05-22T11:50:48Z",
+                    "updated_at": "2025-05-22T11:50:48Z",
+                    "executor_type": "agent",
+                    "agent": "AI Agent",
+                    "score": [
+                        {
+                            "reason": "语法检查初始评估",
+                            "version": "1.0",
+                            "description": "开始进行Python代码语法检查，使用pylint静态分析工具",
+                            "dimension": [
+                                {
+                                    "latitude": "语法规范",
+                                    "weight": 0.5
+                                },
+                                {
+                                    "latitude": "代码风格",
+                                    "weight": 0.5
+                                }
+                            ],
+                            "confidence": 0.75,
+                            "score": 0.0,
+                            "consumed_points": 15
+                        },
+                        {
+                            "reason": "语法检查进行中",
+                            "version": "1.1",
+                            "description": "pylint静态分析进行中，已完成50%的代码检查，发现3处潜在问题",
+                            "dimension": [
+                                {
+                                    "latitude": "语法规范",
+                                    "weight": 0.5
+                                },
+                                {
+                                    "latitude": "代码风格",
+                                    "weight": 0.5
+                                }
+                            ],
+                            "confidence": 0.82,
+                            "score": 72.5,
+                            "consumed_points": 35
+                        }
+                    ]
+                },
+                {
+                    "id": "58801e79-3a89-4826-b729-0857bf14cbb8",
+                    "name": "单元测试",
+                    "status": "pending",
+                    "inserted_at": "2025-05-22T11:50:48Z",
+                    "updated_at": "2025-05-22T11:50:48Z",
+                    "executor_type": "agent",
+                    "agent": "AI Agent",
+                    "score": [
+                        {
+                            "reason": "单元测试评估准备",
+                            "version": "1.0",
+                            "description": "已准备好单元测试框架和测试用例，等待执行测试并收集覆盖率数据",
+                            "dimension": [
+                                {
+                                    "latitude": "测试覆盖率",
+                                    "weight": 0.3
+                                },
+                                {
+                                    "latitude": "测试质量",
+                                    "weight": 0.3
+                                },
+                                {
+                                    "latitude": "边界情况处理",
+                                    "weight": 0.2
+                                },
+                                {
+                                    "latitude": "文档完整性",
+                                    "weight": 0.2
+                                }
+                            ],
+                            "confidence": 0.85,
+                            "score": 0,
+                            "consumed_points": 45
+                        },
+                        {
+                            "reason": "单元测试首轮执行",
+                            "version": "1.1",
+                            "description": "首轮测试执行中，已完成基本功能测试，覆盖率达到65%",
+                            "dimension": [
+                                {
+                                    "latitude": "测试覆盖率",
+                                    "weight": 0.3
+                                },
+                                {
+                                    "latitude": "测试质量",
+                                    "weight": 0.3
+                                },
+                                {
+                                    "latitude": "边界情况处理",
+                                    "weight": 0.2
+                                },
+                                {
+                                    "latitude": "文档完整性",
+                                    "weight": 0.2
+                                }
+                            ],
+                            "confidence": 0.88,
+                            "score": 65,
+                            "consumed_points": 65
+                        }
+                    ]
+                }
+            ],
+            "like_count": 0,
+            "scenarios": [],
+            "is_public": true,
+            "created_by": "Admin User",
+            "created_from": "web",
+            "created_at": "2025-05-22T11:50:48Z",
+            "response_summary": "对Python代码进行安全性和性能审查"
+        },
+        {
+            "id": "55555555-5555-5555-5555-555555555555",
+            "status": "completed",
+            "version": "1.0",
+            "prompt": "本评估针对面向3-8岁儿童的AI语音交互玩具进行全面安全性分析，重点关注隐私保护、内容过滤和数据安全。评估发现该产品在语音识别准确性和响应速度方面表现优秀，但在数据存储加密和家长控制功能方面存在不足。",
+            "step": [
+                {
+                    "id": "5b582b76-3663-471d-9718-bcccc505c3b1",
+                    "name": "AI玩具综合评估",
+                    "status": "completed",
+                    "inserted_at": "2025-05-22T11:50:48Z",
+                    "updated_at": "2025-05-22T11:50:48Z",
+                    "executor_type": "agent",
+                    "agent": "AI Agent",
+                    "score": [
+                        {
+                            "reason": "综合评估结果良好，但在隐私保护和家长控制方面需要改进",
+                            "version": "1.0",
+                            "description": "该AI玩具在语音识别方面表现优秀，能够准确识别儿童的语音指令。安全性设计符合国际标准，无小零件脱落风险。交互体验流畅，响应速度快。",
+                            "dimension": [
+                                {
+                                    "latitude": "语音识别",
+                                    "weight": 0.17
+                                },
+                                {
+                                    "latitude": "内容安全",
+                                    "weight": 0.16
+                                },
+                                {
+                                    "latitude": "隐私保护",
+                                    "weight": 0.17
+                                },
+                                {
+                                    "latitude": "数据加密",
+                                    "weight": 0.17
+                                },
+                                {
+                                    "latitude": "家长控制",
+                                    "weight": 0.16
+                                },
+                                {
+                                    "latitude": "系统稳定",
+                                    "weight": 0.17
+                                }
+                            ],
+                            "confidence": 0.88,
+                            "score": 92,
+                            "consumed_points": 100
+                        }
+                    ]
+                }
+            ],
+            "like_count": 15,
+            "scenarios": [
+                {
+                    "id": "0a7c0988-9d89-4da3-b308-86af38828b44",
+                    "name": "AI玩具安全评估场景",
+                    "description": "针对儿童AI玩具的安全性和隐私保护评估",
+                    "dimensions": [
+                        {
+                            "id": "caecf82f-b8b7-410f-be70-6636550bd88a",
+                            "name": "语音识别",
+                            "description": "语音识别准确性和稳定性",
+                            "weight": 0.17
+                        },
+                        {
+                            "id": "d2554653-6910-4b8a-a5ff-dabc2dddb23b",
+                            "name": "内容安全",
+                            "description": "内容过滤和儿童保护",
+                            "weight": 0.16
+                        },
+                        {
+                            "id": "9246b65a-1d07-4fc0-b466-c80d08b86bb7",
+                            "name": "隐私保护",
+                            "description": "个人数据保护措施",
+                            "weight": 0.17
+                        },
+                        {
+                            "id": "5d099d9a-c98a-4813-bcad-6ef50360ad89",
+                            "name": "数据加密",
+                            "description": "数据传输和存储加密",
+                            "weight": 0.17
+                        },
+                        {
+                            "id": "47c7a324-8633-4a20-aae8-b4adb5132b00",
+                            "name": "家长控制",
+                            "description": "家长监控和限制功能",
+                            "weight": 0.16
+                        },
+                        {
+                            "id": "a05ceac0-bcf1-4cbc-baae-b7cb68ec71c8",
+                            "name": "系统稳定",
+                            "description": "系统稳定性和可靠性",
+                            "weight": 0.17
+                        }
+                    ]
+                }
+            ],
+            "is_public": true,
+            "created_by": "Test User 1",
+            "created_from": "web",
+            "created_at": "2025-05-22T11:50:48Z",
+            "response_summary": "针对面向3-8岁儿童的AI语音交互玩具进行全面安全性分析"
+        },
+        {
+            "id": "66666666-6666-6666-6666-666666666666",
+            "status": "completed",
+            "version": "1.0",
+            "prompt": "本研究评估了大型语言模型在医疗诊断辅助中的可靠性和伦理问题。研究表明，当前模型在常见疾病诊断建议方面准确率达到87%，但在罕见病识别和紧急情况处理方面存在明显不足。同时，模型在医疗隐私保护和知情同意等伦理方面需要进一步完善。",
+            "step": [
+                {
+                    "id": "c65e1b6d-2337-4a41-8ca6-0f6eeba1071c",
+                    "name": "医疗AI模型评估",
+                    "status": "completed",
+                    "inserted_at": "2025-05-22T11:50:48Z",
+                    "updated_at": "2025-05-22T11:50:48Z",
+                    "executor_type": "agent",
+                    "agent": "AI Agent",
+                    "score": [
+                        {
+                            "reason": "医疗AI模型在诊断准确性方面表现优秀，但在罕见病识别方面仍有不足",
+                            "version": "1.0",
+                            "description": "该模型在常见疾病诊断方面准确率高，但对罕见病例识别能力不足。在医患沟通方面表现良好，能提供清晰的解释。隐私保护措施完善，但知情同意机制有待加强。",
+                            "dimension": [
+                                {
+                                    "latitude": "医患沟通",
+                                    "weight": 0.16
+                                },
+                                {
+                                    "latitude": "诊断准确",
+                                    "weight": 0.18
+                                },
+                                {
+                                    "latitude": "罕见病识别",
+                                    "weight": 0.16
+                                },
+                                {
+                                    "latitude": "紧急处理",
+                                    "weight": 0.17
+                                },
+                                {
+                                    "latitude": "隐私保护",
+                                    "weight": 0.17
+                                },
+                                {
+                                    "latitude": "知情同意",
+                                    "weight": 0.16
+                                }
+                            ],
+                            "confidence": 0.87,
+                            "score": 85,
+                            "consumed_points": 120
+                        }
+                    ]
+                }
+            ],
+            "like_count": 27,
+            "scenarios": [
+                {
+                    "id": "14fb1edb-84cc-4390-bcb6-f533eaa62706",
+                    "name": "医疗AI评估场景",
+                    "description": "评估医疗辅助AI的可靠性与伦理问题",
+                    "dimensions": [
+                        {
+                            "id": "4d2c5681-0203-4d23-a10b-f563b7aeda0a",
+                            "name": "诊断准确",
+                            "description": "诊断的准确性",
+                            "weight": 0.0
+                        },
+                        {
+                            "id": "3cf6f271-6bad-442d-958d-29db6ebd29c7",
+                            "name": "罕见病识别",
+                            "description": "识别罕见疾病的能力",
+                            "weight": 0.0
+                        },
+                        {
+                            "id": "4c9dbe85-e75d-4c71-9046-df9881c76f04",
+                            "name": "紧急处理",
+                            "description": "紧急情况处理能力",
+                            "weight": 0.0
+                        },
+                        {
+                            "id": "b51e1fb9-66ff-479c-a827-7c6f5db1909f",
+                            "name": "隐私保护",
+                            "description": "病人隐私保护",
+                            "weight": 0.0
+                        },
+                        {
+                            "id": "e0fff493-85db-4872-bcdf-aa7741f372d0",
+                            "name": "知情同意",
+                            "description": "获取知情同意的机制",
+                            "weight": 0.0
+                        },
+                        {
+                            "id": "64fc5011-135e-42d4-8ecf-7bcd8e524bec",
+                            "name": "医患沟通",
+                            "description": "医患沟通效果",
+                            "weight": 0.0
+                        }
+                    ]
+                }
+            ],
+            "is_public": true,
+            "created_by": "Test User 2",
+            "created_from": "web",
+            "created_at": "2025-05-22T11:50:48Z",
+            "response_summary": "评估大型语言模型在医疗诊断辅助领域的应用"
+        },
+        {
+            "id": "23232323-2323-2323-2323-232323232323",
+            "status": "completed",
+            "version": "1.0",
+            "prompt": "",
+            "step": [
+                {
+                    "id": "f6095b8a-3297-446d-b44a-7b279a98c8ef",
+                    "name": "文学创作AI分析",
+                    "status": "completed",
+                    "inserted_at": "2025-05-22T11:50:48Z",
+                    "updated_at": "2025-05-22T11:50:48Z",
+                    "executor_type": "agent",
+                    "agent": "AI Agent",
+                    "score": [
+                        {
+                            "reason": "文学创作AI模型评估",
+                            "version": "1.0",
+                            "description": "GPT在文学创作中表现出较强的语言流畅性，但在情感深度和创新性上仍有不足",
+                            "dimension": [
+                                {
+                                    "latitude": "语言流畅性",
+                                    "weight": 0.2
+                                },
+                                {
+                                    "latitude": "情感表达",
+                                    "weight": 0.2
+                                },
+                                {
+                                    "latitude": "故事结构",
+                                    "weight": 0.2
+                                },
+                                {
+                                    "latitude": "创新性",
+                                    "weight": 0.2
+                                },
+                                {
+                                    "latitude": "文体多样性",
+                                    "weight": 0.2
+                                }
+                            ],
+                            "confidence": 0.9,
+                            "score": 83,
+                            "consumed_points": 95
+                        }
+                    ]
+                }
+            ],
+            "like_count": 42,
+            "scenarios": [
+                {
+                    "id": "e8effd3f-21c2-4114-bdcd-0169b1a97069",
+                    "name": "文学创作AI评估场景",
+                    "description": "评估AI在文学创作领域的应用和伦理边界",
+                    "dimensions": []
+                }
+            ],
+            "is_public": true,
+            "created_by": "Test User 2",
+            "created_from": "web",
+            "created_at": "2025-05-22T11:50:48Z",
+            "response_summary": "探索AI大语言模型在小说、诗歌等文学创作中的应用潜力与伦理限制"
+        },
+        {
+            "id": "34343434-3434-3434-3434-343434343434",
+            "status": "completed",
+            "version": "1.0",
+            "prompt": "",
+            "step": [
+                {
+                    "id": "22345205-72dc-49f4-b7af-27743f60ab99",
+                    "name": "多模态教育AI评估",
+                    "status": "completed",
+                    "inserted_at": "2025-05-22T11:50:48Z",
+                    "updated_at": "2025-05-22T11:50:48Z",
+                    "executor_type": "agent",
+                    "agent": "AI Agent",
+                    "score": [
+                        {
+                            "reason": "教育AI评估",
+                            "version": "1.0",
+                            "description": "多模态AI在教育场景中表现良好，图像识别准确率达到92%，语义理解能力适合K12教育场景",
+                            "dimension": [
+                                {
+                                    "latitude": "图像识别",
+                                    "weight": 0.2
+                                },
+                                {
+                                    "latitude": "语义理解",
+                                    "weight": 0.2
+                                },
+                                {
+                                    "latitude": "知识准确性",
+                                    "weight": 0.2
+                                },
+                                {
+                                    "latitude": "互动性",
+                                    "weight": 0.2
+                                },
+                                {
+                                    "latitude": "适应性",
+                                    "weight": 0.2
+                                }
+                            ],
+                            "confidence": 0.92,
+                            "score": 89,
+                            "consumed_points": 110
+                        }
+                    ]
+                }
+            ],
+            "like_count": 35,
+            "scenarios": [
+                {
+                    "id": "79404304-400d-44b1-8045-9e6bcbcf2308",
+                    "name": "教育辅助AI评估场景",
+                    "description": "评估多模态AI在教育领域的应用效果",
+                    "dimensions": []
+                }
+            ],
+            "is_public": true,
+            "created_by": "Test User 1",
+            "created_from": "web",
+            "created_at": "2025-05-22T11:50:48Z",
+            "response_summary": "评估结合图像识别与自然语言处理的AI系统在K12教育中的应用效果"
+        },
+        {
+            "id": "45454545-4545-4545-4545-454545454545",
+            "status": "completed",
+            "version": "1.0",
+            "prompt": "",
+            "step": [
+                {
+                    "id": "8a8e5122-ee1b-441f-b890-a5100437c8d5",
+                    "name": "代码自动化测试框架评估",
+                    "status": "completed",
+                    "inserted_at": "2025-05-22T11:50:48Z",
+                    "updated_at": "2025-05-22T11:50:48Z",
+                    "executor_type": "agent",
+                    "agent": "AI Agent",
+                    "score": [
+                        {
+                            "reason": "自动化测试框架评估",
+                            "version": "1.0",
+                            "description": "自动化测试框架测试覆盖率达到83%，能有效识别常见代码错误",
+                            "dimension": [
+                                {
+                                    "latitude": "测试覆盖率",
+                                    "weight": 0.25
+                                },
+                                {
+                                    "latitude": "错误检测",
+                                    "weight": 0.25
+                                },
+                                {
+                                    "latitude": "执行效率",
+                                    "weight": 0.25
+                                },
+                                {
+                                    "latitude": "易用性",
+                                    "weight": 0.25
+                                }
+                            ],
+                            "confidence": 0.85,
+                            "score": 83,
+                            "consumed_points": 90
+                        }
+                    ]
+                }
+            ],
+            "like_count": 19,
+            "scenarios": [
+                {
+                    "id": "a4c7009e-8483-4460-a1dc-e17f302267e8",
+                    "name": "代码测试自动化评估场景",
+                    "description": "评估AI在代码测试自动化中的应用",
+                    "dimensions": []
+                }
+            ],
+            "is_public": true,
+            "created_by": "Test User 2",
+            "created_from": "web",
+            "created_at": "2025-05-22T11:50:48Z",
+            "response_summary": "评估基于大语言模型的自动化测试框架在软件开发中的应用效果"
+        },
+        {
+            "id": "56565656-5656-5656-5656-565656565656",
+            "status": "in_progress",
+            "version": "1.0",
+            "prompt": "",
+            "step": [
+                {
+                    "id": "36d706c9-24d0-466b-937a-a8042a214682",
+                    "name": "幻觉现象数据收集",
+                    "status": "completed",
+                    "inserted_at": "2025-05-22T11:50:48Z",
+                    "updated_at": "2025-05-22T11:50:48Z",
+                    "executor_type": "agent",
+                    "agent": "AI Agent",
+                    "score": [
+                        {
+                            "reason": "幻觉现象分析",
+                            "version": "1.0",
+                            "description": "已收集350组幻觉现象案例，分类为事实性错误、逻辑矛盾和虚构内容三类",
+                            "dimension": [
+                                {
+                                    "latitude": "数据量",
+                                    "weight": 0.25
+                                },
+                                {
+                                    "latitude": "分类准确性",
+                                    "weight": 0.25
+                                },
+                                {
+                                    "latitude": "案例多样性",
+                                    "weight": 0.25
+                                },
+                                {
+                                    "latitude": "分析深度",
+                                    "weight": 0.25
+                                }
+                            ],
+                            "confidence": 0.94,
+                            "score": 91,
+                            "consumed_points": 140
+                        }
+                    ]
+                },
+                {
+                    "id": "398cfba5-ba29-463f-a111-4f0a4e407983",
+                    "name": "幻觉减缓策略测试",
+                    "status": "running",
+                    "inserted_at": "2025-05-22T11:50:48Z",
+                    "updated_at": "2025-05-22T11:50:48Z",
+                    "executor_type": "agent",
+                    "agent": "AI Agent",
+                    "score": [
+                        {
+                            "reason": "",
+                            "version": "1.0",
+                            "description": "",
+                            "dimension": [
+                                {
+                                    "latitude": "策略有效性",
+                                    "weight": 0.33
+                                },
+                                {
+                                    "latitude": "实施难度",
+                                    "weight": 0.33
+                                },
+                                {
+                                    "latitude": "性能影响",
+                                    "weight": 0.34
+                                }
+                            ],
+                            "confidence": 0.7,
+                            "score": 0.0,
+                            "consumed_points": 0
+                        }
+                    ]
+                }
+            ],
+            "like_count": 56,
+            "scenarios": [
+                {
+                    "id": "7647fafd-90fb-4050-afeb-c520c123c61e",
+                    "name": "LLM幻觉评估场景",
+                    "description": "评估和研究大语言模型的幻觉现象",
+                    "dimensions": []
+                }
+            ],
+            "is_public": true,
+            "created_by": "Admin User",
+            "created_from": "web",
+            "created_at": "2025-05-22T11:50:48Z",
+            "response_summary": "针对LLM幻觉现象进行系统性研究，建立幻觉评估标准和减缓策略"
+        },
+        {
+            "id": "67676767-6767-6767-6767-676767676767",
+            "status": "completed",
+            "version": "1.0",
+            "prompt": "",
+            "step": [
+                {
+                    "id": "5a0e5561-2b52-40f7-bc50-97ef7ba74618",
+                    "name": "AI生成内容版权分析",
+                    "status": "completed",
+                    "inserted_at": "2025-05-22T11:50:48Z",
+                    "updated_at": "2025-05-22T11:50:48Z",
+                    "executor_type": "agent",
+                    "agent": "AI Agent",
+                    "score": [
+                        {
+                            "reason": "AI内容版权研究",
+                            "version": "1.0",
+                            "description": "完成了对7个国家/地区AI生成内容版权法规的分析，识别了关键法律差异",
+                            "dimension": [
+                                {
+                                    "latitude": "法规覆盖",
+                                    "weight": 0.25
+                                },
+                                {
+                                    "latitude": "分析深度",
+                                    "weight": 0.25
+                                },
+                                {
+                                    "latitude": "差异识别",
+                                    "weight": 0.25
+                                },
+                                {
+                                    "latitude": "实用性",
+                                    "weight": 0.25
+                                }
+                            ],
+                            "confidence": 0.88,
+                            "score": 87,
+                            "consumed_points": 125
+                        }
+                    ]
+                }
+            ],
+            "like_count": 31,
+            "scenarios": [
+                {
+                    "id": "b83d597b-1a2f-490a-b171-75895136448d",
+                    "name": "AI生成内容版权评估场景",
+                    "description": "探讨AI生成内容的版权归属和保护问题",
+                    "dimensions": []
+                }
+            ],
+            "is_public": true,
+            "created_by": "Test User 2",
+            "created_from": "web",
+            "created_at": "2025-05-22T11:50:48Z",
+            "response_summary": "探索AI生成的内容在知识产权法律框架下的归属和保护问题"
+        }
+    ]
+}

@@ -22,6 +22,14 @@ import { useNavigate } from "react-router-dom"
 import "./card.css"
 
 const CardItem = ({ card }) => {
+  // 获取所有包含score的step
+  const stepsWithScore = useMemo(() => {
+    if (!card || !card.step) return [];
+    return card.step.filter(step => 
+      step.score && step.score.length > 0 && step.score[0]?.dimension?.length > 0
+    );
+  }, [card]);
+
   // 确保 card 对象存在且包含必要的属性
   const safeCard = useMemo(() => {
     if (!card) return {
@@ -42,6 +50,19 @@ const CardItem = ({ card }) => {
       answerDescription: ''
     };
     
+    // 从step数组中找到第一个包含score的步骤
+    const stepWithScore = card.step?.find(step => 
+      step.score && step.score.length > 0 && step.score[0]?.dimension?.length > 0
+    );
+    
+    // 提取该步骤的评分和维度数据
+    const scoreData = stepWithScore?.score?.[0];
+    const dimensionData = scoreData?.dimension || [];
+    
+    console.log("找到的步骤数量:", stepsWithScore.length);
+    console.log("评分数据:", scoreData);
+    console.log("维度数据:", dimensionData);
+    
     // 提供默认值以防属性不存在
     return {
       id: card.id || '',
@@ -53,21 +74,25 @@ const CardItem = ({ card }) => {
       },
       source: card.source || card.created_from || '未知来源',
       tags: card.tags || [],
-      credibility: parseFloat(card.credibility || card.step?.[0]?.score?.[0]?.confidence || 0) || 0,
+      credibility: parseFloat(card.credibility || scoreData?.confidence || 0) * 100 || 0,
       credibilityChange: card.credibilityChange || '+0%',
-      score: parseFloat(card.score || card.step?.[0]?.score?.[0]?.score || 0) * 10 || 0,
+      score: parseFloat(card.score || scoreData?.score || 0) || 0,
       scoreChange: card.scoreChange || '+0%',
       chartData: {
-        radar: card.chartData?.radar || (card.step?.[0]?.score?.[0]?.dimension?.map(dim => ({
-          name: dim.latitude,
-          weight: parseFloat(dim.weight),
-          value: parseFloat(dim.weight) * 100
-        })) || []),
+        radar: card.chartData?.radar || dimensionData.map(dim => {
+          // 使用整体分数乘以权重，确保每个维度有合理的值
+          const overallScore = parseFloat(scoreData?.score || 0);
+          const weight = parseFloat(dim.weight || 0.25);
+          return {
+            // 直接使用latitude作为维度名称
+            latitude: dim.latitude || '未命名维度',
+            weight: weight,
+            // 使用评分值乘以权重或固定值作为维度值
+            value: overallScore > 0 ? overallScore * weight * 4 : 25 // 乘以4是因为权重通常为0.25左右
+          };
+        }) || [],
         line: card.chartData?.line || [
-          { month: "08", value: 65 },
-          { month: "09", value: 75 },
-          { month: "10", value: 85 },
-          { month: "11", value: parseFloat(card.step?.[0]?.score?.[0]?.score || 0) * 100 || 0 }
+          { month: "版本1", value: parseFloat(scoreData?.confidence || 0) * 100 || 0 }
         ]
       },
       agents: card.agents || { overall: true, agent1: false, agent2: false },
@@ -83,7 +108,7 @@ const CardItem = ({ card }) => {
   const navigate = useNavigate()
   const [showRadarChart, setShowRadarChart] = useState(false)
   const [selectedAgents, setSelectedAgents] = useState({
-    overall: safeCard.agents?.overall || false,
+    overall: true,  // 默认选中Overall
     agent1: safeCard.agents?.agent1 || false,
     agent2: safeCard.agents?.agent2 || false,
   })
@@ -130,18 +155,42 @@ const CardItem = ({ card }) => {
 
   // Generate unique radar data for each card
   const generateUniqueRadarData = useMemo(() => {
-    if (!safeCard.chartData?.radar || safeCard.chartData.radar.length === 0) return []
+    console.log("雷达图原始数据:", safeCard.chartData?.radar);
+    
+    if (!safeCard.chartData?.radar || safeCard.chartData.radar.length === 0) {
+      // 不返回默认数据，如果真的没有维度，返回空数组
+      console.log("没有雷达图数据，返回空数组");
+      return [];
+    }
 
-    return safeCard.chartData.radar.map((item, index) => {
-      // Create different values for each agent
+    // 确保所有维度都有值，避免SVG路径错误
+    const processedData = safeCard.chartData.radar.map((item, index) => {
+      // 使用一个合理的固定值（如整体评分）作为每个维度的基准值
+      // score应该是0-100的值，而weight是0-1的权重
+      const baseScore = safeCard.score || 50; // 默认使用总评分
+      
+      // 计算每个维度的具体值
+      const value = item.value > 0 ? item.value : baseScore * (item.weight || 0.25);
+      
+      // 统一使用API返回的latitude作为维度名称
       return {
-        name: item.name,
-        value: item.value,
-        claude: Math.min(100, item.value * (1 + Math.sin(index * 0.5) * 0.2)),
-        agent2: Math.min(100, item.value * (1 - Math.cos(index * 0.5) * 0.15)),
-      }
-    })
-  }, [safeCard.chartData?.radar])
+        name: item.latitude || `维度${index+1}`,
+        value: Math.max(0.1, value), // 确保至少有0.1的值以避免SVG错误
+        // 为不同step创建不同的数据字段
+        ...stepsWithScore.reduce((acc, step, stepIndex) => {
+          const stepScore = step.score?.[0]?.score || 0;
+          const weight = item.weight || 0.25;
+          // 使用step名称作为字段名，但去掉空格和特殊字符
+          const fieldName = `step${stepIndex+1}`;
+          acc[fieldName] = Math.max(0.1, stepScore * weight * 4);
+          return acc;
+        }, {})
+      };
+    });
+    
+    console.log("处理后的雷达图数据:", processedData);
+    return processedData;
+  }, [safeCard.chartData?.radar, safeCard.score, stepsWithScore])
 
   // Generate unique line data for each card
   const generateUniqueLineData = useMemo(() => {
@@ -264,17 +313,59 @@ const CardItem = ({ card }) => {
                 <ResponsiveContainer width="100%" height={130}>
                   <RadarChart data={filteredRadarData} outerRadius={45}>
                     <PolarGrid stroke="#e0e0e0" />
-                    <PolarAngleAxis dataKey="name" tick={{ fontSize: 8, fill: "#8f9098" }} />
-                    <PolarRadiusAxis domain={[0, 100]} tick={{ fontSize: 8, fill: "#8f9098" }} axisLine={false} />
+                    <PolarAngleAxis 
+                      dataKey="name" 
+                      tick={{ fontSize: 8, fill: "#8f9098" }}
+                      tickFormatter={(value) => value ? value.substring(0, 4) : '维度'}
+                    />
+                    <PolarRadiusAxis 
+                      domain={[0, 100]} 
+                      tick={{ fontSize: 8, fill: "#8f9098" }} 
+                      axisLine={false} 
+                    />
+                    {/* 如果选择Overall，显示主要评分 */}
                     {selectedAgents.overall && (
-                      <Radar name="Overall" dataKey="value" stroke="#006ffd" fill="#006ffd" fillOpacity={0.2} />
+                      <Radar 
+                        name="Overall" 
+                        dataKey="value" 
+                        stroke="#006ffd" 
+                        fill="#006ffd" 
+                        fillOpacity={0.2}
+                        isAnimationActive={false}
+                      />
                     )}
-                    {selectedAgents.agent1 && (
-                      <Radar name="Agent 1" dataKey="claude" stroke="#3ac0a0" fill="#3ac0a0" fillOpacity={0.2} />
-                    )}
-                    {selectedAgents.agent2 && (
-                      <Radar name="Agent 2" dataKey="agent2" stroke="#ff7a45" fill="#ff7a45" fillOpacity={0.2} />
-                    )}
+                    
+                    {/* 为每个step创建一个雷达区域 */}
+                    {stepsWithScore.map((step, index) => {
+                      // 只显示被选中的agent
+                      if (index === 0 && selectedAgents.agent1) {
+                        return (
+                          <Radar 
+                            key={`step-${index}`}
+                            name={step.agent || `步骤${index+1}`} 
+                            dataKey={`step${index+1}`} 
+                            stroke="#3ac0a0" 
+                            fill="#3ac0a0" 
+                            fillOpacity={0.2}
+                            isAnimationActive={false}
+                          />
+                        );
+                      }
+                      if (index === 1 && selectedAgents.agent2) {
+                        return (
+                          <Radar 
+                            key={`step-${index}`}
+                            name={step.agent || `步骤${index+1}`} 
+                            dataKey={`step${index+1}`} 
+                            stroke="#ff7a45" 
+                            fill="#ff7a45" 
+                            fillOpacity={0.2}
+                            isAnimationActive={false}
+                          />
+                        );
+                      }
+                      return null;
+                    })}
                   </RadarChart>
                 </ResponsiveContainer>
               </div>
@@ -285,16 +376,20 @@ const CardItem = ({ card }) => {
                       Overall
                     </Checkbox>
                   </div>
-                  <div className="agent-item">
-                    <Checkbox checked={selectedAgents.agent1} onChange={() => handleAgentChange("agent1")}>
-                      Agent 1
-                    </Checkbox>
-                  </div>
-                  <div className="agent-item">
-                    <Checkbox checked={selectedAgents.agent2} onChange={() => handleAgentChange("agent2")}>
-                      Agent 2
-                    </Checkbox>
-                  </div>
+                  {stepsWithScore.length > 0 && (
+                    <div className="agent-item">
+                      <Checkbox checked={selectedAgents.agent1} onChange={() => handleAgentChange("agent1")}>
+                        {stepsWithScore[0].agent || "Agent 1"}
+                      </Checkbox>
+                    </div>
+                  )}
+                  {stepsWithScore.length > 1 && (
+                    <div className="agent-item">
+                      <Checkbox checked={selectedAgents.agent2} onChange={() => handleAgentChange("agent2")}>
+                        {stepsWithScore[1].agent || "Agent 2"}
+                      </Checkbox>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
