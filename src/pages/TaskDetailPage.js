@@ -2,21 +2,12 @@
 
 import { useState, useEffect, useRef, useMemo } from "react"
 import { useParams, useNavigate, useLocation } from "react-router-dom"
-import { Typography, Button, Avatar, Tag, Spin, Breadcrumb, Select, Checkbox, Timeline, Table, Collapse, Tooltip, message, Progress, Switch } from "antd"
+import { Typography, Button, Avatar, Tag, Spin, Breadcrumb, Select,  Timeline,  Tooltip, message, Progress, Switch } from "antd"
 import {
   ArrowLeftOutlined,
   StarOutlined,
   StarFilled,
   ShareAltOutlined,
-  LikeOutlined,
-  LikeFilled,
-  CommentOutlined,
-  ForkOutlined,
-  SettingOutlined,
-  CaretRightOutlined,
-  CaretDownOutlined,
-  PlusOutlined,
-  MinusOutlined,
   CheckOutlined,
 } from "@ant-design/icons"
 import {
@@ -267,6 +258,7 @@ const TaskDetailPage = () => {
     };
     
     // 更新state
+    console.log("updatedTask",updatedTask)
     setTask(updatedTask);
     setAnnotationData(updatedAnnotation);
     
@@ -516,32 +508,7 @@ const TaskDetailPage = () => {
         if (taskData && taskData.annotation) {
           // 直接使用原始annotation对象
           setAnnotationData(taskData.annotation);
-        } else if (taskData && taskData.annotations) {
-          // 兼容旧数据结构
-          if (Array.isArray(taskData.annotations)) {
-            // 如果是数组，转换为对象结构
-            setAnnotationData({
-              result: taskData.annotations,
-              qa: [],
-              scene: [],
-              template: []
-            });
-          } else {
-            // 如果已经是对象，直接使用
-          setAnnotationData(taskData.annotations);
-          }
-        } else if (taskAnnotationData && taskAnnotationData.data) {
-          // 使用默认注释数据作为后备
-          setAnnotationData(taskAnnotationData.data);
-        } else {
-          // 确保始终设置为有效对象
-          setAnnotationData({
-            result: [],
-            qa: [],
-            scene: [],
-            template: []
-          });
-        }
+        } 
 
         // 如果没有评估数据，提供默认数据
         if (!evaluationData || Object.keys(evaluationData).length === 0) {
@@ -687,14 +654,6 @@ const TaskDetailPage = () => {
     }
   };
 
-  const handleChartModelChange = (modelKey) => {
-    setSelectedChartModels((prev) => ({
-      ...prev,
-      [modelKey]: !prev[modelKey],
-    }))
-  }
-
-  const currentEvaluation = evaluationData[selectedModel] || evaluationData.claude
 
   // 渲染右侧内容的函数
   const renderContent = () => {
@@ -717,6 +676,7 @@ const TaskDetailPage = () => {
             </div>
           );
         case 2:
+          console.log("task------------1234",task)
           return (
             <div className="scene-section">
               <SceneSection 
@@ -725,6 +685,7 @@ const TaskDetailPage = () => {
                 scenario={task?.scenario}
                 comments={task?.annotation?.scene || []}
                 onAddAnnotation={addAnnotationToTask}
+                card={task}
               />
             </div>
           );
@@ -737,6 +698,7 @@ const TaskDetailPage = () => {
                 steps={task?.templateData ? { templateData: task.templateData, ...task?.step } : task?.step}
                 comments={task?.annotation?.template || []}
                 onAddAnnotation={addAnnotationToTask}
+                card={task}
               />
             </div>
           );
@@ -772,6 +734,7 @@ const TaskDetailPage = () => {
           </>
         );
       case 'qa':
+       
         return (
           <div className="qa-section" style={{
             background: 'var(--color-bg-container)',
@@ -788,6 +751,7 @@ const TaskDetailPage = () => {
           </div>
         );
       case 'scene':
+        console.log("task------------1234",task)
         return (
           <div className="scene-section">
             <SceneSection 
@@ -939,23 +903,14 @@ const TaskDetailPage = () => {
         onStartTest={() => {
           setIsTesting(true);
           setTestProgress(0);
-          
           // 确保选中至少一个模型用于测试
           if (selectedModels.length === 0 && Object.keys(evaluationData).length > 0) {
             const defaultModel = Object.keys(evaluationData)[0];
             setSelectedModels([defaultModel]);
           }
         }}
-        QASection={QASection}
-        SceneSection={SceneSection}
-        TemplateSection={TemplateSection}
-        annotationColumns={taskAnnotationData.columns}
-        annotationData={task?.annotation || {
-          result: [],
-          qa: [],
-          scene: [],
-          template: []
-        }}
+        annotationColumns={annotationColumns}
+        isOptimizationMode={isOptimizeMode}
       />
     );
   };

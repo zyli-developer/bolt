@@ -503,17 +503,17 @@ const ResultPage = ({
           maxHeight: 'calc(100vh - 320px)',
           overflow: 'hidden'
         }}>
-          <CommentsList 
+            <CommentsList 
             comments={comments} 
-            title="注释列表"
-            expandedId={expandedComment}
-            onToggleExpand={handleCommentToggle}
-            customStyles={{
-              container: { height: '100%' }
-            }}
-          />
-        </div>
-      )}
+              title="注释列表"
+              expandedId={expandedComment}
+              onToggleExpand={handleCommentToggle}
+              customStyles={{
+                container: { height: '100%' }
+              }}
+            />
+            </div>
+          )}
 
       {/* 非优化模式下显示传递的评论 */}
       {!isOptimizeMode && comments && comments.length > 0 && (
