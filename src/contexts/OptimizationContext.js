@@ -16,13 +16,17 @@ export const OptimizationContext = createContext({
   setCurrentOptimizationStep: () => {},
   addComment: () => {}, // 新增添加单条注释的方法
   setStepComments: () => {}, // 设置特定步骤的注释列表
+  syncStepToIM: () => {}, // 新增同步当前步骤到IM组件的方法
 });
+
+// 定义一个全局事件名称用于跨组件通信
+export const OPTIMIZATION_STEP_CHANGE_EVENT = 'optimization_step_change';
 
 // 优化模式提供者组件
 export const OptimizationProvider = ({ children }) => {
   const [isOptimizationMode, setIsOptimizationMode] = useState(false);
   // 直接使用字符串标识步骤，与task.annotation字段完全对应
-  const [currentOptimizationStep, setCurrentOptimizationStep] = useState('result');
+  const [currentOptimizationStep, setInternalCurrentOptimizationStep] = useState('result');
   // 使用对象存储各步骤的注释，完全与task.annotation结构一致
   const [commentsMap, setCommentsMap] = useState({
     result: [], // 结果质询对应CardDetailPage步骤0
@@ -36,10 +40,34 @@ export const OptimizationProvider = ({ children }) => {
   // 不再需要getStepType函数，因为我们已经使用字符串标识步骤
   const currentStepComments = commentsMap[currentOptimizationStep] || [];
 
+  // 同步步骤到IM组件的方法
+  const syncStepToIM = () => {
+    // 创建并触发自定义事件
+    const event = new CustomEvent(OPTIMIZATION_STEP_CHANGE_EVENT, {
+      detail: {
+        step: currentOptimizationStep,
+        isOptimizationMode
+      }
+    });
+    
+    // 在window对象上发布事件
+    window.dispatchEvent(event);
+    
+    console.log(`已同步优化步骤到IM，当前步骤：${currentOptimizationStep}，优化模式：${isOptimizationMode}`);
+  };
+  
+  // 设置当前步骤并同步到IM
+  const setCurrentOptimizationStep = (step) => {
+    setInternalCurrentOptimizationStep(step);
+    // 立即同步去掉，交由useEffect统一处理
+    // setTimeout(() => syncStepToIM(), 0);
+  };
+
   // 为特定步骤添加新的注释
   const addComment = (comment) => {
     // 确保comment具有step字段，该字段指示注释类型(qa/scene/template/result)
     // 如果没有step字段，使用当前步骤
+    console.log('addComment----------comment', comment);
     const commentType = comment.step || currentOptimizationStep;
     
     setCommentsMap(prevMap => {
@@ -54,6 +82,7 @@ export const OptimizationProvider = ({ children }) => {
   // 设置特定步骤的注释列表
   const setStepComments = (stepType, comments) => {
     // 直接使用步骤类型字符串(qa/scene/template/result)
+    console.log('setStepComments----------stepType', stepType);
     setCommentsMap(prevMap => ({
       ...prevMap,
       [stepType]: comments
@@ -77,8 +106,13 @@ export const OptimizationProvider = ({ children }) => {
         [currentOptimizationStep]: []
       }));
     }
-  }, [currentOptimizationStep, commentsMap]);
-
+    // 步骤变化或优化模式变化时同步到IM
+    syncStepToIM();
+  }, [currentOptimizationStep, isOptimizationMode]);
+  
+  useEffect(() => {
+    syncStepToIM();
+  }, [isOptimizationMode]);
   // 监听路由变化，当离开详情页时自动关闭优化模式
   useEffect(() => {
     const path = location.pathname;
@@ -90,7 +124,7 @@ export const OptimizationProvider = ({ children }) => {
     if (!isExplorationDetail && isOptimizationMode) {
       console.log('已离开探索详情页，重置优化模式');
       setIsOptimizationMode(false);
-      setCurrentOptimizationStep('result'); // 重置为result(结果质询)步骤
+      setInternalCurrentOptimizationStep('result'); // 重置为result(结果质询)步骤
     }
   }, [location.pathname, isOptimizationMode]);
 
@@ -105,6 +139,7 @@ export const OptimizationProvider = ({ children }) => {
     addComment, // 添加单条注释
     setStepComments, // 设置特定步骤的注释列表
     setComments: setCurrentStepComments, // 兼容原来的API
+    syncStepToIM, // 导出同步方法
   };
 
   return (
