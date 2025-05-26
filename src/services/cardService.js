@@ -11,7 +11,7 @@ import { explorationCardsData, taskCardsData } from "../mocks/data"
 import { filterCardsByConditions } from "../mocks/filterData"
 
 // 判断是否使用本地模拟数据
-const USE_MOCK_DATA = false;
+const USE_MOCK_DATA = true;
 
 const cardService = {
   /**
@@ -183,7 +183,6 @@ const cardService = {
           'ExplorationSearchRequest',
           'ExplorationSearchResponse'
         );
-        
         // 处理响应数据
         return processExplorationsResponse(response);
       }
@@ -195,7 +194,8 @@ const cardService = {
         'GetExplorationsRequest',
         'GetExplorationsPageResponse'
       );
-      
+      console.log("response",response);
+
       // 处理响应数据
       return processExplorationsResponse(response);
     } catch (error) {

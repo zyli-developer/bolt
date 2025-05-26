@@ -2,10 +2,7 @@
 
 import { useState, useEffect, useRef, useContext, useMemo } from "react"
 import { useParams, useNavigate, useLocation } from "react-router-dom"
-import {  Button, Avatar, Tag, Spin, Select, Checkbox, Breadcrumb, Switch, Steps, message, Tooltip, Card } from "antd"
-import { transparentScrollbarStyle, hideScrollbarStyle } from "../styles/scrollbarStyles"
-import { evaluationModelInfoStyle, evaluationLeftSectionStyle, evaluationRightSectionStyle, evaluationSectionStyle } from "../styles/evaluation-styles"
-import colorToken from "../styles/utils/colorToken"
+import {  Button, Avatar, Tag, Spin, Select,  Breadcrumb, Switch, Steps, message, Tooltip, Card } from "antd"
 import {
   ArrowLeftOutlined,
   StarOutlined,
@@ -16,28 +13,12 @@ import {
   CommentOutlined,
   ForkOutlined,
   SettingOutlined,
-  PlusOutlined,
-  MinusOutlined,
   FileTextOutlined,
   CloseCircleOutlined,
   SendOutlined,
   DownOutlined,
   UpOutlined,
 } from "@ant-design/icons"
-import {
-  Area,
-  AreaChart,
-  ResponsiveContainer,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip as RechartsTooltip,
-  Radar,
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-} from "recharts"
 import taskService from "../services/taskService"
 import cardService from "../services/cardService"
 import { useChatContext } from "../contexts/ChatContext"
@@ -68,9 +49,6 @@ import TextContextMenu from "../components/context/TextContextMenu"
 import DiscussModal from "../components/modals/DiscussModal"
 import ShareModal from "../components/modals/ShareModal"
 import { OptimizationContext } from "../contexts/OptimizationContext"
-
-// 导入通用评论列表组件
-import CommentsList from "../components/common/CommentsList";
 
 const { Option } = Select
 
@@ -411,7 +389,7 @@ const CardDetailPage = () => {
           console.log(`获取到的普通卡片详情数据:`, cardData);
         
         // 获取模型评估数据
-          evaluationData = await taskService.getAllModelEvaluations();
+          evaluationData = [];
         }
         
         // 确保templateData正确设置

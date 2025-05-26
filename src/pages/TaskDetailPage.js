@@ -506,7 +506,7 @@ const TaskDetailPage = () => {
         }
         
         // 获取评估数据
-        const evaluationData = await taskService.getAllModelEvaluations();
+        const evaluationData = [];
         
         console.log("获取到的任务数据:", taskData);
         setTask(taskData)

@@ -25,6 +25,7 @@ import taskService from "../../services/taskService"
 import SceneSection from "../scene/SceneSection" 
 import QASection from "../qa/QASection"
 import TemplateSection from "../template/TemplateSection"
+import LineChartSection from "./LineChartSection"
 
 const TaskCard = ({ task, onTaskUpdate }) => {
   const navigate = useNavigate()
@@ -141,7 +142,7 @@ const TaskCard = ({ task, onTaskUpdate }) => {
       {/* Card title */}
       <div className="task-card-header">
         <h2 className="task-card-title" onClick={handleTitleClick}>
-          {task.title}
+          {task.prompt}
         </h2>
         
         {/* 提交结果按钮 - 仅在任务状态为running时显示 */}
@@ -163,7 +164,7 @@ const TaskCard = ({ task, onTaskUpdate }) => {
       {/* Author info and tags */}
       <div className="task-card-meta">
         <div className="task-author-info">
-          <Avatar size={32} src={task.author.avatar} className="task-author-avatar">
+          <Avatar size={32} src={task.author?.avatar} className="task-author-avatar">
             {task.author?.name?.charAt(0)}
           </Avatar>
           <span className="task-assigned-text">
@@ -174,7 +175,7 @@ const TaskCard = ({ task, onTaskUpdate }) => {
           <span className="task-source-name">{task.source}</span>
         </div>
         <div className="task-card-tags">
-          {task.tags.map((tag, index) => (
+          {task.keywords?.map((tag, index) => (
             <Tag 
               key={index} 
               className="task-tag"
@@ -326,54 +327,9 @@ const TaskCard = ({ task, onTaskUpdate }) => {
           <div className="task-chart-container">
             <div className="task-chart-title">可信度爬升曲线</div>
             <div className="task-chart">
-              <ResponsiveContainer width="100%" height={130}>
-                <AreaChart data={task.chartData?.line || []} margin={{ top: 3, right: 3, left: 0, bottom: 3 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
-                  <XAxis
-                    dataKey="month"
-                    tick={{ fontSize: 8, fill: "#8f9098" }}
-                    axisLine={{ stroke: "#e0e0e0" }}
-                    tickLine={false}
-                  />
-                  <YAxis
-                    domain={[0, 100]}
-                    tick={{ fontSize: 8, fill: "#8f9098" }}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <RechartsTooltip />
-                  <defs>
-                    <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="var(--color-assist-1)" stopOpacity={0.6}/>
-                      <stop offset="95%" stopColor="var(--color-assist-1)" stopOpacity={0.1}/>
-                    </linearGradient>
-                  </defs>
-                  <Area
-                    type="monotone"
-                    dataKey="value"
-                    stroke="var(--color-assist-1)"
-                    strokeWidth={1.5}
-                    fillOpacity={1}
-                    fill="url(#colorValue)"
-                    dot={{ r: 2.5, fill: "var(--color-assist-1)" }}
-                    activeDot={{ r: 4 }}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
+              <LineChartSection card={task} />
             </div>
-            
-            <div className="task-chart-footer">
-              <div className="task-chart-info">
-                <div className="task-chart-time-author">
-                  <span className="task-chart-time">{task.updatedAt}</span>
-                  <span className="task-by-text">by</span>
-                  <Avatar size={14} src={task.updatedBy?.avatar} className="task-updater-avatar">
-                    {task.updatedBy?.name.charAt(0)}
-                  </Avatar>
-                  <span className="task-updater-name">{task.updatedBy?.name}</span>
-                </div>
-              </div>
-            </div>
+    
           </div>
         </div>
       </div>

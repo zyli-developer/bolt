@@ -7,7 +7,7 @@ const endpoints = {
   // 卡片相关（旧API，保留向后兼容）
   cards: {
     list: "/cards",
-    detail: (id) => `/cards/${id}`,
+    detail: (id) => `/exploration/${id}`,
     create: "/cards",
     update: (id) => `/cards/${id}`,
     delete: (id) => `/cards/${id}`,
@@ -15,30 +15,30 @@ const endpoints = {
 
   // 探索相关 (API规范: /v1/syntrust/explorations)
   explorations: {
-    list: "/v1/syntrust/explorations/search",
-    detail: (id) => `/v1/syntrust/exploration/${id}`,
-    search: "/v1/syntrust/explorations/search",
+    list: "/explorations/search",
+    detail: (id) => `/exploration/${id}`,
+    search: "/explorations/search",
   },
 
   // 任务相关 (API规范: /v1/syntrust/tasks)
   tasks: {
-    list: "/v1/syntrust/tasks",
-    detail: (id) => `/v1/syntrust/task/${id}`,
-    search: "/v1/syntrust/tasks/search",
-    create: "/v1/syntrust/task",
-    update: (id) => `/v1/syntrust/task/${id}`,
-    delete: (id) => `/v1/syntrust/task/${id}`,
-    qna: (id) => `/v1/syntrust/task/${id}/qna`,
-    scenario: (id) => `/v1/syntrust/task/${id}/scenario`,
-    flow: (id) => `/v1/syntrust/task/${id}/flow`,
-    submitOptimization: "/v1/syntrust/task/optimization",
+    list: "/tasks",
+    detail: (id) => `/task/${id}`,
+    search: "/tasks/search",
+    create: "/task",
+    update: (id) => `/task/${id}`,
+    delete: (id) => `/task/${id}`,
+    qna: (id) => `/task/${id}/qna`,
+    scenario: (id) => `/task/${id}/scenario`,
+    flow: (id) => `/task/${id}/flow`,
+    submitOptimization: "/task/optimization",
   },
 
   // 资产相关 (API规范: /v1/syntrust/assets)
   assets: {
-    list: "/v1/syntrust/assets",
-    detail: (id) => `/v1/syntrust/asset/${id}`,
-    search: "/v1/syntrust/assets/search",
+    list: "/assets",
+    detail: (id) => `/asset/${id}`,
+    search: "/assets/search",
   },
 
   // 用户相关
@@ -50,9 +50,9 @@ const endpoints = {
 
   // 认证相关
   auth: {
-    login: "/v1/syntrust/auth/login",
-    logout: "/v1/syntrust/auth/logout",
-    refresh: "/v1/syntrust/auth/refresh",
+    login: "/auth/login",
+    logout: "/auth/logout",
+    refresh: "/auth/refresh",
   },
 
   // 聊天相关
@@ -104,20 +104,20 @@ const endpoints = {
 
   // 文件上传相关 (API规范: /v1/syntrust/attachments)
   attachments: {
-    upload: "/v1/syntrust/attachments",
+    upload: "/attachments",
   },
 
   // 机器人对话相关 (API规范: /v1/rbt/chats)
   robotChat: {
-    messages: (chatId) => `/v1/rbt/chats/${chatId}/messages`,
+    messages: (chatId) => `/rbt/chats/${chatId}/messages`,
   },
 
   // 模型相关 (API规范: /v1/syntrust/models)
   models: {
-    list: "/v1/syntrust/models",
-    detail: (id) => `/v1/syntrust/model/${id}`,
-    evaluations: "/v1/syntrust/models/evaluations",
-    compare: "/v1/syntrust/models/compare",
+    list: "/models",
+    detail: (id) => `/model/${id}`,
+    evaluations: "/models/evaluations",
+    compare: "/models/compare",
   },
 }
 

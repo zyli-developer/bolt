@@ -31,35 +31,6 @@ function convertApiOperatorToUi(apiOp) {
 
 const taskService = {
   /**
-   * 获取所有模型评估数据
-   * @returns {Object} - 包含所有模型评估数据的对象
-   */
-  getAllModelEvaluations: async () => {
-    try {
-      // 如果使用本地模拟数据
-      if (USE_MOCK_DATA) {
-        console.log("使用本地模拟数据获取模型评估数据");
-        return modelEvaluationData;
-      }
-      
-      // 这里可以添加真实API调用
-      // const response = await api.get(
-      //   endpoints.models.evaluations,
-      //   {},
-      //   'GetModelEvaluationsResponse'
-      // );
-      // return response;
-      
-      // 暂时返回mock数据
-      return modelEvaluationData;
-    } catch (error) {
-      console.error("获取模型评估数据失败:", error);
-      // 如果API调用失败，仍然返回mock数据
-      return modelEvaluationData;
-    }
-  },
-
-  /**
    * 获取任务列表 (API规范: GET /v1/syntrust/tasks)
    * @param {Object} params - 查询参数，包括tab, pagination, filter, sort
    * @returns {Promise} - 任务列表数据，包含card和pagination
@@ -83,19 +54,19 @@ const taskService = {
         let data = JSON.parse(JSON.stringify(taskCardsData));
         
         // 从localStorage中获取导入的任务
-        try {
-          const importedTasksJson = localStorage.getItem('imported_tasks');
-          if (importedTasksJson) {
-            const importedTasks = JSON.parse(importedTasksJson);
-            if (Array.isArray(importedTasks) && importedTasks.length > 0) {
-              console.log(`从localStorage中获取到${importedTasks.length}条导入任务数据`);
-              // 将导入的任务添加到数据前面
-              data = [...importedTasks, ...data];
-            }
-          }
-        } catch (error) {
-          console.error('从localStorage获取导入任务失败:', error);
-        }
+        // try {
+        //   const importedTasksJson = localStorage.getItem('imported_tasks');
+        //   if (importedTasksJson) {
+        //     const importedTasks = JSON.parse(importedTasksJson);
+        //     if (Array.isArray(importedTasks) && importedTasks.length > 0) {
+        //       console.log(`从localStorage中获取到${importedTasks.length}条导入任务数据`);
+        //       // 将导入的任务添加到数据前面
+        //       data = [...importedTasks, ...data];
+        //     }
+        //   }
+        // } catch (error) {
+        //   console.error('从localStorage获取导入任务失败:', error);
+        // }
         
         // 应用筛选条件 - 如果有筛选参数
         if (filterParams) {
@@ -219,8 +190,8 @@ const taskService = {
       console.log("使用列表接口获取数据:", requestParams);
       
       // 调用列表接口
-      const response = await api.get(
-        endpoints.tasks.list, 
+      const response = await api.post(
+        endpoints.tasks.search, 
         { params: requestParams },
         'GetTasksPageResponse'
       );
@@ -714,40 +685,7 @@ const taskService = {
     }
   },
 
-  /**
-   * 获取所有模型评估数据
-   * @returns {Promise} - 所有模型的评估数据
-   */
-  getAllModelEvaluations: async () => {
-    try {
-      if (USE_MOCK_DATA) {
-        console.log("使用本地模拟数据获取所有模型评估...");
-        // 返回模拟的模型评估数据
-        return modelEvaluationData;
-      }
-      
-      // 获取当前用户
-      const currentUser = getCurrentUser();
-      
-      // 构建请求参数
-      const requestParams = {
-        user_id: currentUser?.id || ""
-      };
-      
-      // 调用API
-      const response = await api.get(
-        endpoints.models.evaluations,
-        { params: requestParams },
-        'GetModelEvaluationsResponse'
-      );
-      
-      return response.models || {};
-    } catch (error) {
-      console.error("获取模型评估数据失败:", error);
-      // 发生错误时返回mock数据，防止UI崩溃
-      return modelEvaluationData;
-    }
-  },
+
 
 }
 

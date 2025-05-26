@@ -232,7 +232,7 @@ const ExplorePage = () => {
       if (sortParams) {
         params.sort = sortParams;
       }
-      
+      console.log("params---123",params);
       // 使用新的API调用方式
       const response = await cardService.getExplorations(params);
       
