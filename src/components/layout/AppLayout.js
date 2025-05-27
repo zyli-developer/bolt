@@ -7,6 +7,7 @@ import { useChatContext } from "../../contexts/ChatContext"
 import { useState, useEffect } from "react"
 import ContentNav from "./ContentNav"
 import { useLocation } from 'react-router-dom'
+import SearchBar from "../layout/SearchBar"
 
 const { Content } = Layout
 
@@ -59,6 +60,11 @@ const AppLayout = ({ children }) => {
               className={`content-layout ${isChatOpen ? "chat-open" : "chat-closed"}`}
               style={{ width: isChatOpen ? "calc(100% - 380px)" : "100%" }}
             >
+              {/* 顶部搜索框 */}
+              {!isDetailPage && <SearchBar className="search-bar" />}
+
+              {/* 顶部导航栏 */}
+
               {/* 内容导航 */}
               {!isDetailPage && <ContentNav />}
 

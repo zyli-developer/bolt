@@ -216,7 +216,7 @@ const FilterCard = ({ config, onConfigChange, onNext }) => {
           </div>
         ))}
 
-        <a className="filter-add-condition" onClick={addCondition}>
+        <a className="filter-add-condition absolute bottom-1" onClick={addCondition}>
           <PlusOutlined /> 新条件
         </a>
 

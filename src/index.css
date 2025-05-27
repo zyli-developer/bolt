@@ -179,13 +179,6 @@ code {
   margin-top: 2px;
 }
 
-/* 内容导航容器 */
-.content-nav-container {
-  display: flex;
-  justify-content: center;
-  padding: 12px 0 0;
-  background-color: var(--color-bg-container);
-}
 
 /* 内容导航 */
 .content-nav {

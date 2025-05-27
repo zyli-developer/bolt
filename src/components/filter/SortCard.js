@@ -91,7 +91,7 @@ const SortCard = ({ config, onConfigChange, onPrev, onSave, loading }) => {
         </div>
 
         {config.fields.length < 3 && (
-          <a className="filter-add-condition" onClick={addSortField}>
+          <a className="filter-add-condition absolute bottom-1" onClick={addSortField}>
             <PlusOutlined /> 添加排序
           </a>
         )}
