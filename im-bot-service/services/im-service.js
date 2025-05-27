@@ -246,6 +246,32 @@ async function checkAccountExists(userIds) {
   }
 }
 
+/**
+ * 获取腾讯云IM服务器IP地址列表
+ * 参考文档: https://cloud.tencent.com/document/product/269/45438
+ *
+ * @param {number} nettype - 服务器IP类型，4:web SDK中国区，5:IM回调中国区
+ * @returns {Promise<Array<string>>} - 服务器IP列表
+ */
+async function getImServerIpList(nettype = 4) {
+  try {
+    logger.info(`获取IM服务器IP列表，nettype=${nettype}`);
+    // 直接拼接URL，接口为ConfigSvc/GetIPList
+    const random = Math.floor(Math.random() * 4294967295);
+    const { SDKAppID, AdminUserID } = IM;
+    const adminUserSig = genUserSig(AdminUserID);
+    const url = `${IM_DOMAIN}/v4/ConfigSvc/GetIPList?sdkappid=${SDKAppID}&identifier=${AdminUserID}&usersig=${adminUserSig}&random=${random}&contenttype=json&nettype=${nettype}`;
+    const response = await axios.post(url, {});
+    if (response.data.ErrorCode !== 0) {
+      throw new Error(`IM GetIPList error: ${response.data.ErrorInfo} (${response.data.ErrorCode})`);
+    }
+    return response.data.IPList || [];
+  } catch (error) {
+    logger.error(`获取IM服务器IP列表失败: ${error.message}`, { error });
+    throw error;
+  }
+}
+
 module.exports = {
   createBotAccount,
   sendC2CTextMessage,
@@ -253,5 +279,6 @@ module.exports = {
   getUserProfile,
   checkAccountExists,
   callImApi,
-  getAllBots
+  getAllBots,
+  getImServerIpList
 };

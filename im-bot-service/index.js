@@ -11,7 +11,7 @@ const logger = require('./utils/logger');
 const botMessageHandler = require('./handlers/bot-message-handler');
 const { initializeBots, getBotUserSig } = require('./utils/initialize-bots');
 const { genUserSig } = require('./utils/user-sig');
-const { getAllBots } = require('./services/im-service');
+const { getAllBots, getImServerIpList } = require('./services/im-service');
 
 // 创建Express应用
 const app = express();
@@ -204,6 +204,30 @@ app.get('/bots/:botId', async (req, res) => {
     logger.info(`[机器人API] 机器人信息返回成功----Bot info response sent for ${botId}`);
   } catch (error) {
     logger.error(`[机器人API] 获取机器人信息失败----Failed to get bot info: ${error.message}`, { error });
+    res.status(500).json({
+      status: 'error',
+      message: error.message
+    });
+  }
+});
+
+// 获取腾讯云IM服务器IP地址列表
+app.get('/im/server-ip-list', async (req, res) => {
+  try {
+    // 支持 nettype 0,1,2,3,4,5,6
+    const validNettypes = [0, 1, 2, 3, 4, 5, 6];
+    let nettype = parseInt(req.query.nettype, 10);
+    if (isNaN(nettype)) nettype = 4; // 默认4
+    if (!validNettypes.includes(nettype)) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'nettype 参数仅支持 0,1,2,3,4,5,6'
+      });
+    }
+    const ipList = await getImServerIpList(nettype);
+    res.json({ nettype, ipList });
+  } catch (error) {
+    logger.error(`[IM API] 获取服务器IP失败: ${error.message}`, { error });
     res.status(500).json({
       status: 'error',
       message: error.message
