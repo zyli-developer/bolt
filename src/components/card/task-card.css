@@ -235,17 +235,7 @@
   line-height: 1;
 }
 
-/* 右侧 - 图表 */
-.task-card-right {
-  display: flex;
-  flex-direction: row;
-  flex: 0.8;
-  background-color: var(--color-bg-chat);
-  border-radius: 20px;
-  padding: 10px;
-  overflow: hidden;
-  min-height: 0;
-}
+
 
 .task-chart-container,
 .task-radar-chart-container {
