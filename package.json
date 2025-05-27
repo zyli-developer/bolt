@@ -21,7 +21,6 @@
     "react-scripts": "5.0.1",
     "react-text-annotate": "^0.3.0",
     "recharts": "2.15.0",
-    "styled-components": "^6.1.18",
     "tailwind-merge": "^2.5.5",
     "tailwindcss": "^3.3.3",
     "tailwindcss-animate": "^1.0.7",
