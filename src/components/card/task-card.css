@@ -278,21 +278,10 @@
   display: inline-block;
 }
 
-/* 雷达图代理选择 */
-.task-agents {
-  margin-top: 2px;
-}
 
-.task-agents-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  justify-content: center;
-}
 
-.task-agent-item .ant-checkbox-wrapper {
-  font-size: 9px;
-}
+
+
 
 /* 任务页面样式 */
 .task-page {

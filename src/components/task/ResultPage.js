@@ -17,19 +17,14 @@ import AnnotationModal from '../../components/annotations/AnnotationModal';
 import { OptimizationContext } from '../../contexts/OptimizationContext';
 import CommentsList from '../common/CommentsList';
 import {
-  Area,
-  AreaChart,
-  ResponsiveContainer,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip as RechartsTooltip,
   Radar,
   RadarChart,
   PolarGrid,
   PolarAngleAxis,
   PolarRadiusAxis,
+  ResponsiveContainer
 } from 'recharts';
+import LineChartSection from '../card/LineChartSection';
 
 const { Option } = Select;
 
@@ -368,65 +363,14 @@ const ResultPage = ({
           </div>
 
           <div className="line-chart-container" style={{ height: "150px", marginTop: "4px" }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart
-                data={lineChartData.length > 0 ? lineChartData : enhancedChartData?.line || []}
-                margin={{ top: 2, right: 5, left: 0, bottom: 2 }}
-              >
-                <defs>
-                  {modelOptions.map(modelKey => (
-                    <linearGradient key={modelKey} id={`color${modelKey}`} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={getModelColor(modelKey)} stopOpacity={0.2} />
-                      <stop offset="95%" stopColor={getModelColor(modelKey)} stopOpacity={0} />
-                    </linearGradient>
-                  ))}
-                </defs>
-                <CartesianGrid
-                  vertical={false}
-                  horizontal={true}
-                  stroke="var(--color-border-secondary)"
-                />
-                <XAxis
-                  dataKey={lineChartData.length > 0 ? "version" : "month"}
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fontSize: 10, fill: 'var(--color-text-tertiary)' }}
-                />
-                <YAxis
-                  hide={true}
-                  domain={[0, 'dataMax + 20']}
-                  tickFormatter={(value) => `${Math.round(value)}%`}
-                />
-                <RechartsTooltip
-                  cursor={false}
-                  formatter={(value, name) => {
-                    const step = stepsData.find(s => s.agent.toLowerCase().replace(/\s+/g, '') === name);
-                    const displayName = step ? step.agent : (evaluationData[name]?.name || name);
-                    return [`${Math.round(value)}%`, displayName];
-                  }}
-                  labelFormatter={(label) => `版本: ${label}`}
-                  contentStyle={{
-                    background: 'var(--color-bg-container)',
-                    border: 'none',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                    borderRadius: '4px',
-                    padding: '4px 8px'
-                  }}
-                />
-                {Array.isArray(selectedModels) && selectedModels.map(modelKey => (
-                  <Area
-                    key={modelKey}
-                    type="monotone"
-                    dataKey={modelKey}
-                    name={modelKey}
-                    stroke={getModelColor(modelKey)}
-                    strokeWidth={1.5}
-                    fill={`url(#color${modelKey})`}
-                    dot={false}
-                  />
-                ))}
-              </AreaChart>
-            </ResponsiveContainer>
+            <LineChartSection 
+              card={{
+                ...task,
+                step: task.step,
+                chartData: { line: lineChartData }
+              }} 
+              showLinearGradient={true}
+            />
           </div>
         </div>
 
@@ -461,21 +405,6 @@ const ResultPage = ({
                   domain={[0, calculatedRadarMaxValue]} 
                   tick={{ fontSize: 9, fill: "var(--color-text-tertiary)" }} 
                   axisLine={false} 
-                />
-                <RechartsTooltip 
-                  formatter={(value, name) => {
-                    const step = stepsData.find(s => s.agent.toLowerCase().replace(/\s+/g, '') === name);
-                    const displayName = step ? step.agent : (evaluationData[name]?.name || name);
-                    return [`${Math.round(value)}%`, displayName];
-                  }}
-                  labelFormatter={(label) => `维度: ${label}`}
-                  contentStyle={{
-                    background: '#fff',
-                    border: 'none',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                    borderRadius: '4px',
-                    padding: '4px 8px'
-                  }}
                 />
                 {Array.isArray(selectedModels) && selectedModels.map(modelKey => (
                   <Radar

@@ -192,7 +192,7 @@ const taskService = {
       // 调用列表接口
       const response = await api.post(
         endpoints.tasks.search, 
-        { params: requestParams },
+       requestParams ,
         'GetTasksPageResponse'
       );
       

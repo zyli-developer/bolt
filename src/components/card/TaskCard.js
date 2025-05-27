@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { Avatar, Tag, Checkbox, Button, message, Modal } from "antd"
 import { useNavigate } from "react-router-dom"
 import {
@@ -30,11 +30,7 @@ import LineChartSection from "./LineChartSection"
 const TaskCard = ({ task, onTaskUpdate }) => {
   const navigate = useNavigate()
   const [showRadarChart, setShowRadarChart] = useState(false)
-  const [selectedAgents, setSelectedAgents] = useState({
-    overall: true,
-    agent1: false,
-    agent2: false,
-  })
+
   const [isCreateTaskModalVisible, setIsCreateTaskModalVisible] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [taskStatus, setTaskStatus] = useState(task.status || "pending")
@@ -44,15 +40,75 @@ const TaskCard = ({ task, onTaskUpdate }) => {
   const [isQAModalVisible, setIsQAModalVisible] = useState(false)
   const [isTemplateModalVisible, setIsTemplateModalVisible] = useState(false)
 
+  // 组装作者
+  const authorName = task.created_by || (task.author && task.author.name) || '';
+  const authorAvatar = task.avatar || (task.author && task.author.avatar) || null;
+  // 组装标签
+  const tags = task.keywords || task.tags || [];
+  // 组装来源
+  const source = task.created_from || task.source || '';
+  // 组装描述
+  const description = task.response_summary || task.description || '';
+  // 组装标题
+  const title = task.prompt || task.name || task.title || '';
+
+  // 解析 step 得到 line/radar 数据
+  // 折线图数据
+  const line = useMemo(() => {
+    if (!Array.isArray(task.step)) return [];
+    const versionSet = new Set();
+    task.step.forEach(step => {
+      if (Array.isArray(step.score)) {
+        step.score.forEach(score => {
+          if (score.version && score.confidence !== undefined) {
+            versionSet.add(score.version);
+          }
+        });
+      }
+    });
+    const versions = Array.from(versionSet).sort();
+    return versions.map(version => {
+      const row = { version };
+      task.step.forEach(step => {
+        const agent = step.agent || step.name || 'Agent';
+        const found = (step.score || []).find(s => s.version === version);
+        row[agent] = found ? parseFloat(found.confidence) * 100 : null;
+      });
+      return row;
+    });
+  }, [task.step]);
+
+  // 雷达图数据
+  const radar = useMemo(() => {
+    if (!Array.isArray(task.step) || task.step.length === 0) return [];
+    const firstStep = task.step.find(s => Array.isArray(s.score) && s.score.length > 0 && s.score[0].dimension && s.score[0].dimension.length > 0);
+    if (firstStep) {
+      return firstStep.score[0].dimension.map((dim, idx) => ({
+        name: dim.latitude || `维度${idx+1}`,
+        value: Math.max(0.1, dim.weight)
+      }));
+    }
+    return [];
+  }, [task.step]);
+
+  // 计算雷达图的最大值
+  const radarMaxValue = useMemo(() => {
+    if (!radar || radar.length === 0) return 100;
+    let max = 0;
+    radar.forEach(item => {
+      Object.values(item).forEach(val => {
+        if (typeof val === 'number' && val > max) max = val;
+      });
+    });
+    return Math.ceil(max * 1.1) || 100;
+  }, [radar]);
+
   const toggleRadarChart = () => {
     setShowRadarChart(!showRadarChart)
   }
 
   const handleAgentChange = (agentKey) => {
-    setSelectedAgents({
-      ...selectedAgents,
-      [agentKey]: !selectedAgents[agentKey],
-    })
+
   }
 
   // 处理标题点击
@@ -123,16 +179,6 @@ const TaskCard = ({ task, onTaskUpdate }) => {
     }
   };
 
-  // Filter radar data based on selected agents
-  const filteredRadarData = task.chartData?.radar || [
-    { name: "维度1", value: 70 },
-    { name: "维度2", value: 80 },
-    { name: "维度3", value: 60 },
-    { name: "维度4", value: 90 },
-    { name: "维度5", value: 75 },
-    { name: "维度6", value: 85 },
-  ]
-
   const handleModalCancel = () => {
     setIsCreateTaskModalVisible(false)
   }
@@ -142,7 +188,7 @@ const TaskCard = ({ task, onTaskUpdate }) => {
       {/* Card title */}
       <div className="task-card-header">
         <h2 className="task-card-title" onClick={handleTitleClick}>
-          {task.prompt}
+          {title}
         </h2>
         
         {/* 提交结果按钮 - 仅在任务状态为running时显示 */}
@@ -164,18 +210,18 @@ const TaskCard = ({ task, onTaskUpdate }) => {
       {/* Author info and tags */}
       <div className="task-card-meta">
         <div className="task-author-info">
-          <Avatar size={32} src={task.author?.avatar} className="task-author-avatar">
-            {task.author?.name?.charAt(0)}
+          <Avatar size={32} src={authorAvatar} className="task-author-avatar">
+            {authorName?.charAt(0)}
           </Avatar>
           <span className="task-assigned-text">
             Assigned by
           </span>
-          <span className="task-author-name">{task.author?.name}</span>
+          <span className="task-author-name">{authorName}</span>
           <span className="task-from-text">from</span>
-          <span className="task-source-name">{task.source}</span>
+          <span className="task-source-name">{source}</span>
         </div>
         <div className="task-card-tags">
-          {task.keywords?.map((tag, index) => (
+          {tags.map((tag, index) => (
             <Tag 
               key={index} 
               className="task-tag"
@@ -220,7 +266,7 @@ const TaskCard = ({ task, onTaskUpdate }) => {
             <div className="task-detail-item">
               <span className="task-detail-label">描述：</span>
               <span className="task-detail-value">
-                {task.response_summary || "暂无描述"}
+                {description || "暂无描述"}
               </span>
             </div>
           </div>
@@ -286,48 +332,45 @@ const TaskCard = ({ task, onTaskUpdate }) => {
               <div className="task-chart-title">各维度得分</div>
               <div className="task-radar-chart">
                 <ResponsiveContainer width="100%" height={130}>
-                  <RadarChart data={filteredRadarData} outerRadius={45}>
+                  <RadarChart data={radar} outerRadius={45}>
                     <PolarGrid stroke="#e0e0e0" />
-                    <PolarAngleAxis dataKey="name" tick={{ fontSize: 8, fill: "#8f9098" }} />
-                    <PolarRadiusAxis domain={[0, 100]} tick={{ fontSize: 8, fill: "#8f9098" }} axisLine={false} />
-                    {selectedAgents.overall && (
-                      <Radar name="Overall" dataKey="value" stroke="var(--color-primary)" fill="var(--color-primary)" fillOpacity={0.2} />
-                    )}
-                    {selectedAgents.agent1 && (
-                      <Radar name="Agent 1" dataKey="agent1" stroke="#3ac0a0" fill="#3ac0a0" fillOpacity={0.2} />
-                    )}
-                    {selectedAgents.agent2 && (
-                      <Radar name="Agent 2" dataKey="agent2" stroke="#ff7a45" fill="#ff7a45" fillOpacity={0.2} />
-                    )}
+                    <PolarAngleAxis 
+                      dataKey="name" 
+                      tick={{ fontSize: 8, fill: "#8f9098" }}
+                      tickFormatter={(value) => value ? value.substring(0, 4) : '维度'}
+                    />
+                    <PolarRadiusAxis 
+                      domain={[0, radarMaxValue]} 
+                      tick={{ fontSize: 8, fill: "#8f9098" }} 
+                      axisLine={false} 
+                    />
+                    <RechartsTooltip />
+                    {/* 自动渲染所有可用的数值字段（除name外） */}
+                    {radar && radar.length > 0 &&
+                      Object.keys(radar[0])
+                        .filter(key => key !== 'name')
+                        .map((key, idx) => (
+                          <Radar
+                            key={key}
+                            name={key}
+                            dataKey={key}
+                            stroke={['#8884d8', '#82ca9d', '#ff7a45', '#3ac0a0', '#ffc658', '#d0ed57'][idx % 6]}
+                            fill={['#8884d8', '#82ca9d', '#ff7a45', '#3ac0a0', '#ffc658', '#d0ed57'][idx % 6]}
+                            fillOpacity={0.2}
+                          />
+                        ))
+                    }
                   </RadarChart>
                 </ResponsiveContainer>
               </div>
-              <div className="task-agents">
-                <div className="task-agents-list">
-                  <div className="task-agent-item">
-                    <Checkbox checked={selectedAgents.overall} onChange={() => handleAgentChange("overall")}>
-                      Overall
-                    </Checkbox>
-                  </div>
-                  <div className="task-agent-item">
-                    <Checkbox checked={selectedAgents.agent1} onChange={() => handleAgentChange("agent1")}>
-                      Agent 1
-                    </Checkbox>
-                  </div>
-                  <div className="task-agent-item">
-                    <Checkbox checked={selectedAgents.agent2} onChange={() => handleAgentChange("agent2")}>
-                      Agent 2
-                    </Checkbox>
-                  </div>
-                </div>
-              </div>
+
             </div>
           )}
 
           <div className="task-chart-container">
             <div className="task-chart-title">可信度爬升曲线</div>
             <div className="task-chart">
-              <LineChartSection card={task} />
+              <LineChartSection card={{ ...task, chartData: { line } }} />
             </div>
     
           </div>

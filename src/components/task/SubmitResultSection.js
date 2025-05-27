@@ -13,19 +13,14 @@ import {
   MinusOutlined
 } from '@ant-design/icons';
 import {
-  Area,
-  AreaChart,
-  ResponsiveContainer,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip as RechartsTooltip,
   Radar,
   RadarChart,
   PolarGrid,
   PolarAngleAxis,
   PolarRadiusAxis,
+  ResponsiveContainer
 } from 'recharts';
+import LineChartSection from '../card/LineChartSection';
 
 const { Option } = Select;
 
@@ -371,59 +366,10 @@ const SubmitResultSection = ({ task }) => {
             </div>
 
             <div className="line-chart-container" style={{ height: "150px", marginTop: "4px" }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart 
-                  data={enhancedChartData.line} 
-                  margin={{ top: 2, right: 5, left: 0, bottom: 2 }}
-                >
-                  {/* 渐变定义 */}
-                  <defs>
-                    {Object.keys(evaluationData).map(modelKey => (
-                      <linearGradient key={modelKey} id={`color${modelKey}`} x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor={getModelColor(modelKey)} stopOpacity={0.2}/>
-                        <stop offset="95%" stopColor={getModelColor(modelKey)} stopOpacity={0}/>
-                      </linearGradient>
-                    ))}
-                  </defs>
-                  <CartesianGrid 
-                    vertical={false} 
-                    horizontal={true}
-                    stroke={colorToken.colorBorderSecondary}
-                  />
-                  <XAxis 
-                    dataKey="month" 
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 10, fill: colorToken.colorTextTertiary }}
-                  />
-                  <YAxis 
-                    hide={true}
-                    domain={[0, 'dataMax + 20']}
-                  />
-                  <RechartsTooltip 
-                    cursor={false}
-                    contentStyle={{
-                      background: colorToken.colorBgContainer,
-                      border: 'none',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                      borderRadius: '4px',
-                      padding: '4px 8px'
-                    }}
-                  />
-                  {selectedModels.map(modelKey => (
-                    <Area
-                      key={modelKey}
-                      type="monotone"
-                      dataKey={modelKey}
-                      name={evaluationData[modelKey]?.name || modelKey}
-                      stroke={getModelColor(modelKey)}
-                      strokeWidth={1.5}
-                      fill={`url(#color${modelKey})`}
-                      dot={false}
-                    />
-                  ))}
-                </AreaChart>
-              </ResponsiveContainer>
+              <LineChartSection 
+                card={task}
+                showLinearGradient={true}
+              />
             </div>
           </div>
 

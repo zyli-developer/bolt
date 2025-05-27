@@ -38,11 +38,12 @@ const colors = [
  * 折线图区域组件
  * @param {Object} props - 组件属性
  * @param {Object} props.card - 卡片数据
+ * @param {boolean} [props.showLinearGradient] - 是否显示头部linearGradient（默认false）
  * @returns {ReactElement} 折线图组件
  */
-const LineChartSection = ({ card }) => {
+const LineChartSection = ({ card, showLinearGradient = false }) => {
   const styles = useStyles();
-
+  console.log("------LineChartSection---------",card)
   // 1. 转换数据为平面数组
   const chartData = useMemo(() => {
     if (!card || !card.step) return [];
@@ -106,6 +107,17 @@ console.log("agents",agents)
             data={mergedData}
             margin={{ top: 2, right: 5, left: 0, bottom: 2 }}
           >
+            {/* 只有 showLinearGradient 为 true 时才渲染 <defs> 和 linearGradient */}
+            {showLinearGradient && (
+              <defs>
+                {agents.map((agent, idx) => (
+                  <linearGradient key={agent} id={`color${agent}`} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={colors[idx % colors.length]} stopOpacity={0.2} />
+                    <stop offset="95%" stopColor={colors[idx % colors.length]} stopOpacity={0} />
+                  </linearGradient>
+                ))}
+              </defs>
+            )}
             <CartesianGrid vertical={false} horizontal={true} stroke="#f0f0f0" />
             <XAxis
               dataKey="version"
@@ -131,6 +143,7 @@ console.log("agents",agents)
                 dot={{ r: 2.5, fill: colors[idx % colors.length] }}
                 activeDot={{ r: 4 }}
                 connectNulls
+                {...(showLinearGradient ? { fill: `url(#color${agent})` } : {})}
               />
             ))}
           </LineChart>

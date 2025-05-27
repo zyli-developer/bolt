@@ -1483,7 +1483,7 @@ const CardDetailPage = () => {
       {/* 卡片标题和信息 */}
       <div className="task-detail-title-section" style={{ padding: "6px", marginBottom: "4px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <h1 className="task-title" style={{ fontSize: "18px", margin: "0 0 4px 0" }}>{card.title}</h1>
+        <h1 className="task-title">  {card.prompt}</h1>
           <Button 
             type="text"
             icon={isDetailsExpanded ? <UpOutlined /> : <DownOutlined />}
@@ -1496,19 +1496,19 @@ const CardDetailPage = () => {
         <div className="task-creator-section" style={{ padding: "4px", gap: "8px" }}>
           <div className="task-creator-info" style={{ gap: "8px" }}>
             <Avatar size={24} className="creator-avatar">
-              {card.author?.name?.charAt(0)}
+              {card.created_by?.charAt ? card.created_by.charAt(0) : ''}
             </Avatar>
             <span className="creator-text" style={{ fontSize: "12px" }}>
-              by <span className="creator-name">{card.author?.name}</span> from{" "}
-              <span className="creator-source">{card.source}</span>
+              by <span className="creator-name">{card.created_by}</span> from{" "}
+              <span className="creator-source">{card.created_from}</span>
             </span>
           </div>
           <div className="task-tags" style={{ gap: "4px" }}>
-            {card.tags.map((tag, index) => (
-              <Tag key={index} className="task-dimension-tag">
-                {tag}
-              </Tag>
-            ))}
+            <div>
+              {(card.keyword || []).map((tag, idx) => (
+                <Tag className="task-dimension-tag" key={idx}>{tag}</Tag>
+              ))}
+            </div>
           </div>
           <div className="task-actions-top">
             <Button 
@@ -1558,7 +1558,7 @@ const CardDetailPage = () => {
             <div style={{ marginBottom: "16px" }}>
               <div style={{ display: "flex" }}>
                 <div style={{ width: "80px", color: "var(--color-text-tertiary)", fontSize: "13px" }}>描述</div>
-                <div style={{ flex: 1, fontSize: "13px", lineHeight: "1.6" }}>{card.description || card.summary || card.response_summary || "无描述"}</div>
+                <div style={{ flex: 1, fontSize: "13px", lineHeight: "1.6" }}>{card.description }</div>
               </div>
             </div>
 
@@ -1583,7 +1583,7 @@ const CardDetailPage = () => {
 
                 <div style={{ display: "flex", marginBottom: "12px" }}>
                   <div style={{ width: "80px", color: "var(--color-text-tertiary)", fontSize: "13px" }}>完成期限</div>
-                  <div style={{ flex: 1, fontSize: "13px" }}>{card.deadline || "未设置"}</div>
+                  <div style={{ flex: 1, fontSize: "13px" }}>{card.due_date || "未设置"}</div>
                 </div>
               </div>
 
@@ -1659,21 +1659,6 @@ const CardDetailPage = () => {
                     />
                   </div>
                   
-                  {/* 右侧注释列表 - 始终显示 */}
-                  {/* <div className="comments-section" style={{ 
-                    flex: 1, 
-                    backgroundColor: 'var(--color-bg-container)',
-                    borderRadius: '8px',
-                    maxHeight: 'calc(100vh - 320px)',
-                    overflow: 'hidden'
-                  }}>
-                    <CommentsList 
-                      comments={comments} 
-                      title="注释列表"
-                      expandedId={expandedComment}
-                      onToggleExpand={handleCommentToggle}
-                    />
-                  </div> */}
                 </>
               ) : currentOptimizationStep === 1 ? (
                 // QA优化界面

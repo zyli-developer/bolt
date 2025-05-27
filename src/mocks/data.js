@@ -213,7 +213,7 @@ export const cardsData = [
 
 // 当前用户数据
 export const currentUser = {
-  id: "1",
+  id: "11111111-1111-1111-1111-111111111111",
   name: "测评员-1",
   email: "tester-1yahoo.com",
   avatar: null,
