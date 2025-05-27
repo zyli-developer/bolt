@@ -218,9 +218,9 @@ const TaskCard = ({ task, onTaskUpdate }) => {
 
             <div className="task-detail-item">
               <span className="task-detail-label">描述：</span>
-              <span className="task-detail-value">
+              <p className="task-detail-value">
                 {task.response_summary || "暂无描述"}
-              </span>
+              </p>
             </div>
           </div>
 
@@ -278,104 +278,103 @@ const TaskCard = ({ task, onTaskUpdate }) => {
           </div>
         </div>
 
-        {/* Right section - chart */}
-        <div className="task-card-right">
-          {showRadarChart && (
-            <div className="task-radar-chart-container">
-              <div className="task-chart-title">各维度得分</div>
-              <div className="task-radar-chart">
-                <ResponsiveContainer width="100%" height={130}>
-                  <RadarChart data={filteredRadarData} outerRadius={45}>
-                    <PolarGrid stroke="#e0e0e0" />
-                    <PolarAngleAxis dataKey="name" tick={{ fontSize: 8, fill: "#8f9098" }} />
-                    <PolarRadiusAxis domain={[0, 100]} tick={{ fontSize: 8, fill: "#8f9098" }} axisLine={false} />
-                    {selectedAgents.overall && (
-                      <Radar name="Overall" dataKey="value" stroke="var(--color-primary)" fill="var(--color-primary)" fillOpacity={0.2} />
-                    )}
-                    {selectedAgents.agent1 && (
-                      <Radar name="Agent 1" dataKey="agent1" stroke="#3ac0a0" fill="#3ac0a0" fillOpacity={0.2} />
-                    )}
-                    {selectedAgents.agent2 && (
-                      <Radar name="Agent 2" dataKey="agent2" stroke="#ff7a45" fill="#ff7a45" fillOpacity={0.2} />
-                    )}
-                  </RadarChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="task-agents">
-                <div className="task-agents-list">
-                  <div className="task-agent-item">
-                    <Checkbox checked={selectedAgents.overall} onChange={() => handleAgentChange("overall")}>
-                      Overall
-                    </Checkbox>
-                  </div>
-                  <div className="task-agent-item">
-                    <Checkbox checked={selectedAgents.agent1} onChange={() => handleAgentChange("agent1")}>
-                      Agent 1
-                    </Checkbox>
-                  </div>
-                  <div className="task-agent-item">
-                    <Checkbox checked={selectedAgents.agent2} onChange={() => handleAgentChange("agent2")}>
-                      Agent 2
-                    </Checkbox>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
 
-          <div className="task-chart-container">
-            <div className="task-chart-title">可信度爬升曲线</div>
-            <div className="task-chart">
+        {showRadarChart && (
+          <div className="task-radar-chart-container bg-white">
+            <div className="task-chart-title">各维度得分</div>
+            <div className="task-radar-chart">
               <ResponsiveContainer width="100%" height={130}>
-                <AreaChart data={task.chartData?.line || []} margin={{ top: 3, right: 3, left: 0, bottom: 3 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
-                  <XAxis
-                    dataKey="month"
-                    tick={{ fontSize: 8, fill: "#8f9098" }}
-                    axisLine={{ stroke: "#e0e0e0" }}
-                    tickLine={false}
-                  />
-                  <YAxis
-                    domain={[0, 100]}
-                    tick={{ fontSize: 8, fill: "#8f9098" }}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <RechartsTooltip />
-                  <defs>
-                    <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="var(--color-assist-1)" stopOpacity={0.6}/>
-                      <stop offset="95%" stopColor="var(--color-assist-1)" stopOpacity={0.1}/>
-                    </linearGradient>
-                  </defs>
-                  <Area
-                    type="monotone"
-                    dataKey="value"
-                    stroke="var(--color-assist-1)"
-                    strokeWidth={1.5}
-                    fillOpacity={1}
-                    fill="url(#colorValue)"
-                    dot={{ r: 2.5, fill: "var(--color-assist-1)" }}
-                    activeDot={{ r: 4 }}
-                  />
-                </AreaChart>
+                <RadarChart data={filteredRadarData} outerRadius={45}>
+                  <PolarGrid stroke="#e0e0e0" />
+                  <PolarAngleAxis dataKey="name" tick={{ fontSize: 8, fill: "#8f9098" }} />
+                  <PolarRadiusAxis domain={[0, 100]} tick={{ fontSize: 8, fill: "#8f9098" }} axisLine={false} />
+                  {selectedAgents.overall && (
+                    <Radar name="Overall" dataKey="value" stroke="var(--color-primary)" fill="var(--color-primary)" fillOpacity={0.2} />
+                  )}
+                  {selectedAgents.agent1 && (
+                    <Radar name="Agent 1" dataKey="agent1" stroke="#3ac0a0" fill="#3ac0a0" fillOpacity={0.2} />
+                  )}
+                  {selectedAgents.agent2 && (
+                    <Radar name="Agent 2" dataKey="agent2" stroke="#ff7a45" fill="#ff7a45" fillOpacity={0.2} />
+                  )}
+                </RadarChart>
               </ResponsiveContainer>
             </div>
-            
-            <div className="task-chart-footer">
-              <div className="task-chart-info">
-                <div className="task-chart-time-author">
-                  <span className="task-chart-time">{task.updatedAt}</span>
-                  <span className="task-by-text">by</span>
-                  <Avatar size={14} src={task.updatedBy?.avatar} className="task-updater-avatar">
-                    {task.updatedBy?.name.charAt(0)}
-                  </Avatar>
-                  <span className="task-updater-name">{task.updatedBy?.name}</span>
+            <div className="task-agents">
+              <div className="task-agents-list">
+                <div className="task-agent-item">
+                  <Checkbox checked={selectedAgents.overall} onChange={() => handleAgentChange("overall")}>
+                    Overall
+                  </Checkbox>
+                </div>
+                <div className="task-agent-item">
+                  <Checkbox checked={selectedAgents.agent1} onChange={() => handleAgentChange("agent1")}>
+                    Agent 1
+                  </Checkbox>
+                </div>
+                <div className="task-agent-item">
+                  <Checkbox checked={selectedAgents.agent2} onChange={() => handleAgentChange("agent2")}>
+                    Agent 2
+                  </Checkbox>
                 </div>
               </div>
             </div>
           </div>
+        )}
+
+        <div className="task-chart-container bg-white">
+          <div className="task-chart-title">可信度爬升曲线</div>
+          <div className="task-chart">
+            <ResponsiveContainer width="100%" height={130}>
+              <AreaChart data={task.chartData?.line || []} margin={{ top: 3, right: 3, left: 0, bottom: 3 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
+                <XAxis
+                  dataKey="month"
+                  tick={{ fontSize: 8, fill: "#8f9098" }}
+                  axisLine={{ stroke: "#e0e0e0" }}
+                  tickLine={false}
+                />
+                <YAxis
+                  domain={[0, 100]}
+                  tick={{ fontSize: 8, fill: "#8f9098" }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <RechartsTooltip />
+                <defs>
+                  <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="var(--color-assist-1)" stopOpacity={0.6}/>
+                    <stop offset="95%" stopColor="var(--color-assist-1)" stopOpacity={0.1}/>
+                  </linearGradient>
+                </defs>
+                <Area
+                  type="monotone"
+                  dataKey="value"
+                  stroke="var(--color-assist-1)"
+                  strokeWidth={1.5}
+                  fillOpacity={1}
+                  fill="url(#colorValue)"
+                  dot={{ r: 2.5, fill: "var(--color-assist-1)" }}
+                  activeDot={{ r: 4 }}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+          
+          <div className="task-chart-footer">
+            <div className="task-chart-info">
+              <div className="task-chart-time-author">
+                <span className="task-chart-time">{task.updatedAt}</span>
+                <span className="task-by-text">by</span>
+                <Avatar size={14} src={task.updatedBy?.avatar} className="task-updater-avatar">
+                  {task.updatedBy?.name.charAt(0)}
+                </Avatar>
+                <span className="task-updater-name">{task.updatedBy?.name}</span>
+              </div>
+            </div>
+          </div>
         </div>
+
       </div>
 
       {/* 场景 Modal */}

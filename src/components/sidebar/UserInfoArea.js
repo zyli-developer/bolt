@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react"
 import { Avatar, Button, Popover, Switch, Divider, Tag } from "antd"
 import {
-  MoreOutlined,
   CreditCardOutlined,
   UserOutlined,
   GiftOutlined,
@@ -21,6 +20,7 @@ import authService from "../../services/authService"
 import DiamondIcon from "../icons/DiamondIcon"
 import CommandIcon from "../icons/CommandIcon"
 import ShiftIcon from "../icons/ShiftIcon"
+import VectorIcon from "../icons/VectorIcon"
 
 const UserInfoArea = ({ isCollapsed }) => {
   const [user, setUser] = useState(null)
@@ -97,101 +97,101 @@ const UserInfoArea = ({ isCollapsed }) => {
 
   // User profile popover content
   const userPopoverContent = (
-    <div className="user-popover-content">
+    <div className="p-4 w-64">
       {/* User header */}
-      <div className="user-popover-header">
-        <div className="user-popover-profile">
-          <Avatar size={48} className="user-popover-avatar">
-            {user && user.name ? user.name.charAt(0) : 'U'}
+      <div className="flex justify-between items-center mb-3">
+        <div className="flex items-center">
+          <Avatar size={48} className="mr-3 bg-yellow-400">
+            {user && user.name ? user.name.charAt(0) : "U"}
           </Avatar>
-          <div className="user-popover-info">
-            <div className="user-popover-name">{user ? user.name : '未知用户'}</div>
-            <div className="user-popover-email">{user ? user.email : ''}</div>
+          <div>
+            <div className="font-medium">{user ? user.name : "未知用户"}</div>
+            <div className="text-xs text-gray-500">{user ? user.email : ""}</div>
           </div>
         </div>
-        <div className="user-popover-badge">
-          <Avatar size={24} style={{ backgroundColor: "#f0f0f0", color: "#000" }}>
+        <div>
+          <Avatar size={24} className="bg-gray-100 text-black">
             <DiamondIcon style={{ fontSize: "14px" }} />
           </Avatar>
         </div>
       </div>
 
-      <Divider style={{ margin: "12px 0" }} />
+      <Divider className="my-3" />
 
       {/* Menu items */}
-      <div className="user-popover-menu">
-        <div className="user-popover-item">
-          <div className="user-popover-item-content">
-            <CreditCardOutlined className="user-popover-item-icon" />
-            <span className="user-popover-item-text">个人版本</span>
+      <div className="space-y-3">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center">
+            <CreditCardOutlined className="mr-3 text-gray-600" />
+            <span>个人版本</span>
           </div>
-          <Button size="small" type="primary" className="user-popover-upgrade-btn">
+          <Button size="small" type="primary">
             立即升级
           </Button>
         </div>
 
-        <div className="user-popover-item">
-          <div className="user-popover-item-content">
-            <UserOutlined className="user-popover-item-icon" />
-            <span className="user-popover-item-text">个人信息</span>
+        <div className="flex justify-between items-center">
+          <div className="flex items-center">
+            <UserOutlined className="mr-3 text-gray-600" />
+            <span>个人信息</span>
           </div>
-          <Tag color="success" className="user-popover-tag">
+          <Tag color="success" className="m-0">
             完善信息得奖励
           </Tag>
         </div>
 
-        <div className="user-popover-item">
-          <div className="user-popover-item-content">
-            <GiftOutlined className="user-popover-item-icon" />
-            <span className="user-popover-item-text">获取免费token</span>
-            <Tag color="error" className="user-popover-hot-tag">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center">
+            <GiftOutlined className="mr-3 text-gray-600" />
+            <span>获取免费token</span>
+            <Tag color="error" className="ml-2 m-0">
               HOT
             </Tag>
           </div>
-          <RightOutlined className="user-popover-arrow" />
+          <RightOutlined className="text-gray-400" />
         </div>
 
-        <div className="user-popover-item">
-          <div className="user-popover-item-content">
-            <MoonOutlined className="user-popover-item-icon" />
-            <span className="user-popover-item-text">深色模式</span>
+        <div className="flex justify-between items-center">
+          <div className="flex items-center">
+            <MoonOutlined className="mr-3 text-gray-600" />
+            <span>深色模式</span>
           </div>
           <Switch size="small" checked={darkMode} onChange={handleDarkModeToggle} />
         </div>
 
-        <div className="user-popover-item">
-          <div className="user-popover-item-content">
-            <SettingOutlined className="user-popover-item-icon" />
-            <span className="user-popover-item-text">设置</span>
+        <div className="flex justify-between items-center">
+          <div className="flex items-center">
+            <SettingOutlined className="mr-3 text-gray-600" />
+            <span>设置</span>
           </div>
         </div>
 
-        <div className="user-popover-item">
-          <div className="user-popover-item-content">
-            <FileTextOutlined className="user-popover-item-icon" />
-            <span className="user-popover-item-text">帮助文档</span>
+        <div className="flex justify-between items-center">
+          <div className="flex items-center">
+            <FileTextOutlined className="mr-3 text-gray-600" />
+            <span>帮助文档</span>
           </div>
         </div>
 
-        <div className="user-popover-item">
-          <div className="user-popover-item-content">
-            <CustomerServiceOutlined className="user-popover-item-icon" />
-            <span className="user-popover-item-text">客服中心</span>
+        <div className="flex justify-between items-center">
+          <div className="flex items-center">
+            <CustomerServiceOutlined className="mr-3 text-gray-600" />
+            <span>客服中心</span>
           </div>
         </div>
       </div>
 
-      <Divider style={{ margin: "12px 0" }} />
+      <Divider className="my-3" />
 
       {/* Logout */}
-      <div className="user-popover-item" onClick={handleLogout}>
-        <div className="user-popover-item-content">
-          <LogoutOutlined className="user-popover-item-icon" />
-          <span className="user-popover-item-text">退出登录</span>
+      <div className="flex justify-between items-center cursor-pointer" onClick={handleLogout}>
+        <div className="flex items-center">
+          <LogoutOutlined className="mr-3 text-gray-600" />
+          <span>退出登录</span>
         </div>
-        <div className="user-popover-shortcut">
-          <CommandIcon style={{ fontSize: "12px" }} />
-          <ShiftIcon style={{ fontSize: "12px" }} />
+        <div className="flex items-center text-xs text-gray-500">
+          <CommandIcon className="mr-0.5" />
+          <ShiftIcon className="mr-0.5" />
           <span>Q</span>
         </div>
       </div>
@@ -200,35 +200,37 @@ const UserInfoArea = ({ isCollapsed }) => {
 
   // Workspace popover content
   const workspacePopoverContent = (
-    <div className="workspace-popover-content">
-      <div className="workspace-popover-title">切换工作区</div>
-      <div className="workspace-list">
+    <div className="p-4 w-64">
+      <div className="font-medium mb-3">切换工作区</div>
+      <div className="space-y-2 max-h-60 overflow-y-auto">
         {workspacesLoading ? (
-          <div style={{ padding: "16px", textAlign: "center" }}>加载中...</div>
+          <div className="py-4 text-center">加载中...</div>
         ) : workspaces.length === 0 ? (
-          <div style={{ padding: "16px", textAlign: "center" }}>暂无工作区</div>
+          <div className="py-4 text-center">暂无工作区</div>
         ) : (
           workspaces.map((workspace) => (
             <div
               key={workspace.id}
-              className={`workspace-item ${workspace.current ? "workspace-item-current" : ""}`}
+              className={`flex justify-between items-center p-2 rounded cursor-pointer hover:bg-gray-100 ${
+                workspace.current ? "bg-gray-50" : ""
+              }`}
               onClick={() => handleWorkspaceChange(workspace.id)}
             >
-              <div className="workspace-item-info">
-                <Avatar size={32} className="workspace-avatar">
-                  {workspace.icon || (workspace.name ? workspace.name.charAt(0) : 'W')}
+              <div className="flex items-center">
+                <Avatar size={32} className="mr-3 bg-blue-100">
+                  {workspace.icon || (workspace.name ? workspace.name.charAt(0) : "W")}
                 </Avatar>
-                <div className="workspace-details">
-                  <div className="workspace-name">{workspace.name || '未命名工作区'}</div>
-                  <div className="workspace-role">{workspace.role || '成员'}</div>
+                <div>
+                  <div className="font-medium">{workspace.name || "未命名工作区"}</div>
+                  <div className="text-xs text-gray-500">{workspace.role || "成员"}</div>
                 </div>
               </div>
-              {workspace.current && <CheckOutlined className="workspace-current-icon" />}
+              {workspace.current && <CheckOutlined className="text-blue-500" />}
             </div>
           ))
         )}
       </div>
-      <div className="workspace-add-new">
+      <div className="mt-3">
         <Button type="dashed" block icon={<span>+</span>}>
           创建新工作区
         </Button>
@@ -238,27 +240,23 @@ const UserInfoArea = ({ isCollapsed }) => {
 
   if (loading) {
     return (
-      <div className={`user-info-container ${isCollapsed ? "collapsed" : ""}`}>
-        <div className="user-info">
-          <div>加载中...</div>
-        </div>
+      <div className={`flex items-center justify-center p-4 border-t border-gray-200 ${isCollapsed ? "h-16" : "h-16"}`}>
+        <div>加载中...</div>
       </div>
     )
   }
 
   if (!user) {
     return (
-      <div className={`user-info-container ${isCollapsed ? "collapsed" : ""}`}>
-        <div className="user-info">
-          <div>未登录</div>
-        </div>
+      <div className={`flex items-center justify-center p-4 border-t border-gray-200 ${isCollapsed ? "h-16" : "h-16"}`}>
+        <div>未登录</div>
       </div>
     )
   }
 
   return (
-    <div className={`user-info-container ${isCollapsed ? "collapsed" : ""}`}>
-      <div className={`user-info ${isCollapsed ? "collapsed" : ""}`}>
+    <div className={`border-t border-gray-200 p-2 ${isCollapsed ? "flex justify-center" : ""}`}>
+      <div className={`flex items-center ${isCollapsed ? "justify-center" : "justify-between"}`}>
         <Popover
           content={userPopoverContent}
           trigger="click"
@@ -269,42 +267,56 @@ const UserInfoArea = ({ isCollapsed }) => {
           getPopupContainer={() => document.body}
           autoAdjustOverflow={true}
         >
-          <div className="user-profile-trigger" onClick={() => setUserPopoverVisible(true)}>
-            <div className={`user-avatar-container ${isCollapsed ? "collapsed" : ""}`}>
-              <Avatar className="user-avatar" size={36}>
-                {user && user.name ? user.name.charAt(0) : 'U'}
+          <div
+            className={`flex items-center cursor-pointer ${isCollapsed ? "" : "w-full"}`}
+            onClick={() => setUserPopoverVisible(true)}
+          >
+            <div className="relative">
+              <Avatar className="bg-yellow-400 text-white" size={isCollapsed ? 36 : 32}>
+                {user && user.name ? user.name.charAt(0) : "U"}
               </Avatar>
             </div>
             {!isCollapsed && (
-              <div className="user-details">
-                <div className="user-name">{user ? user.name : '未知用户'}</div>
-                <div className="user-email">{user ? user.email : ''}</div>
+              <div className="ml-2 overflow-hidden">
+                <div className="font-medium text-sm truncate">{user ? user.name : "未知用户"}</div>
+                <div className="text-xs text-gray-500 truncate">{user ? user.email : ""}</div>
               </div>
             )}
           </div>
         </Popover>
 
         {!isCollapsed && (
-          <Popover
-            content={workspacePopoverContent}
-            trigger="click"
-            open={workspacePopoverVisible}
-            onOpenChange={setWorkspacePopoverVisible}
-            placement="topRight"
-            overlayClassName="workspace-popover"
-            getPopupContainer={() => document.body}
-            autoAdjustOverflow={true}
-          >
-            <Button
-              type="text"
-              icon={<MoreOutlined />}
-              className="user-more-btn"
-              onClick={(e) => {
-                e.stopPropagation()
-                setWorkspacePopoverVisible(true)
-              }}
-            />
-          </Popover>
+          <div className="flex items-center">
+            {/* 垂直分隔线 */}
+            <div className="w-[1px] h-8 bg-gray-300 mx-2"></div>
+
+            {/* 灰色方块图标 */}
+            <div className="w-4 h-4 bg-neutral-500 rounded flex items-center justify-center mr-1">
+              <div className="w-4 h-4 bg-neutral-500 rounded"></div>
+            </div>
+
+            <Popover
+              content={workspacePopoverContent}
+              trigger="click"
+              open={workspacePopoverVisible}
+              onOpenChange={setWorkspacePopoverVisible}
+              placement="topRight"
+              overlayClassName="workspace-popover"
+              getPopupContainer={() => document.body}
+              autoAdjustOverflow={true}
+            >
+              <Button
+                type="text"
+                className="flex items-center justify-center p-0 w-6 h-6 min-w-0"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setWorkspacePopoverVisible(true)
+                }}
+              >
+                <VectorIcon />
+              </Button>
+            </Popover>
+          </div>
         )}
       </div>
     </div>

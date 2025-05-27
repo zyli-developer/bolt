@@ -2,14 +2,13 @@
 
 import { useState, useEffect } from "react"
 import { Layout, Button, Dropdown, Modal, Input, message } from "antd"
-import { Minus, Plus } from "lucide-react"
 import {
   SearchOutlined,
   FileOutlined,
   AppstoreOutlined,
   CloseOutlined,
-  DownOutlined,
-  RightOutlined,
+  PlusOutlined,
+  MinusOutlined,
   EllipsisOutlined,
   EditOutlined,
   DeleteOutlined,
@@ -29,7 +28,6 @@ import {
   registerMenuChangeListener,
   unregisterMenuChangeListener,
 } from "../../utils/menuManager"
-import "./sidebar-styles.css"
 
 const { Sider } = Layout
 
@@ -273,6 +271,16 @@ const AppSidebar = () => {
     // TODO: 实现更新最近打开的项目的逻辑
   }, [location.pathname, location.state, menuItems])
 
+    // 监听来自首页的搜索激活请求
+  useEffect(() => {
+    // 检查是否需要激活搜索模式（从location.state中）
+    if (location.state?.activateSearch && !isCollapsed) {
+      setIsSearchMode(true)
+      // 清除状态，避免重复激活
+      window.history.replaceState({}, document.title)
+    }
+  }, [location.state, isCollapsed])
+
   const getIconComponent = (iconName) => {
     switch (iconName) {
       case "SearchOutlined":
@@ -305,6 +313,29 @@ const AppSidebar = () => {
   const toggleRecentlyOpenedExpanded = (e) => {
     e.stopPropagation() // 阻止事件冒泡
     setRecentlyOpenedExpanded(!recentlyOpenedExpanded)
+  }
+
+  // 处理搜索点击事件
+  const handleSearchClick = () => {
+    if (isCollapsed) {
+      // 在折叠状态下，导航到首页并激活搜索框
+      navigate("/", {
+        state: {
+          activateSearch: true,
+          clearFilters: true,
+        },
+      })
+
+      // 激活首页对应的菜单项
+      const exploreItem = menuItems.find((item) => item.path === "/explore" || item.path === "/")
+      if (exploreItem) {
+        setActiveItemId(exploreItem.id)
+        setActiveSubItemId(null)
+      }
+    } else {
+      // 在展开状态下，直接激活搜索模式
+      setIsSearchMode(true)
+    }
   }
 
   // 处理菜单项点击事件
@@ -507,22 +538,19 @@ const AppSidebar = () => {
     if (!children || children.length === 0) return null
 
     return (
-      <div className="submenu-container">
+      <div className="pl-7 pr-2 mt-1">
         {children.map((child) => (
           <div
             key={child.id}
-            className={`submenu-item mx-5 flex items-center justify-between px-3 py-2 rounded-full transition-all ${
-              activeSubItemId === child.id
-                ? "border border-black bg-white"
-                : "hover:border hover:border-black hover:bg-white"
+            className={`flex items-center justify-between px-3 py-2 rounded-full cursor-pointer mb-0.5 h-8 w-[180px] transition-all ${
+              activeSubItemId === child.id ? "bg-white border border-black" : "hover:bg-[#f0f7ff]"
             }`}
           >
-            <div
-              className="submenu-item-content flex items-center gap-2"
-              onClick={(e) => handleMenuItemClick(e, child)}
-            >
-              <span className="submenu-item-icon">{child.icon && getIconComponent(child.icon)}</span>
-              <span className="submenu-item-title">{child.title}</span>
+            <div className="flex items-center flex-1" onClick={(e) => handleMenuItemClick(e, child)}>
+              <span className="flex items-center justify-center text-sm text-[#595959] mr-2">
+                {child.icon && getIconComponent(child.icon)}
+              </span>
+              <span className="text-xs text-black">{child.title}</span>
             </div>
 
             <Dropdown
@@ -546,7 +574,10 @@ const AppSidebar = () => {
               trigger={["click"]}
               placement="bottomRight"
             >
-              <button className="submenu-more-btn" onClick={(e) => e.stopPropagation()}>
+              <button
+                className="bg-transparent border-none cursor-pointer p-0.5 rounded text-[#8c8c8c] text-sm flex items-center justify-center opacity-0 transition-opacity hover:bg-[#f0f0f0] hover:text-[#1890ff] group-hover:opacity-100"
+                onClick={(e) => e.stopPropagation()}
+              >
                 <EllipsisOutlined />
               </button>
             </Dropdown>
@@ -568,22 +599,27 @@ const AppSidebar = () => {
       expandedItems[item.id] || (hasChildren && item.children.some((child) => activeSubItemId === child.id))
 
     return (
-      <div key={item.id} className="custom-menu-item">
+      <div key={item.id} className="mb-0.5 group">
         <div
-          className={`menu-item mx-4 my-2 flex items-center justify-between px-3 py-2 rounded-full transition-all ${
-            isActive ? "border border-black bg-white" : "hover:border hover:border-black hover:bg-white"
-          } ${isCollapsed ? "collapsed" : ""}`}
+          className={`flex items-center justify-between cursor-pointer transition-colors relative rounded-full ${
+            isActive ? "bg-white border border-black" : "hover:bg-[#f0f7ff] text-black"
+          } ${isCollapsed ? "h-10 w-10 mx-auto justify-center" : "h-10 w-[200px] mx-[14px] px-4 py-2"}`}
           onClick={(e) => handleMenuItemClick(e, item)}
         >
-          <div className="menu-item-content flex items-center gap-2">
-            {item.icon && <span className="menu-item-icon">{getIconComponent(item.icon)}</span>}
-            {!isCollapsed && <span className="menu-item-title">{item.title}</span>}
+          <div className={`flex items-center ${isCollapsed ? "justify-center mx-auto" : "gap-3"}`}>
+            <span className="flex items-center justify-center text-base text-black">
+              {item.icon && getIconComponent(item.icon)}
+            </span>
+            {!isCollapsed && <span className="text-sm text-black">{item.title}</span>}
           </div>
 
-          {/* 对有子菜单的项添加展开/折叠图标 */}
+          {/* 对有子菜单的项添加展开/折叠图标，仅在非折叠状态下显示 */}
           {!isCollapsed && hasChildren && (
-            <span className="menu-item-expand-icon ml-2" onClick={(e) => toggleExpand(e, item.id)}>
-              {isExpanded ? <Minus size={16}/> : <Plus size={16}/>}
+            <span
+              className="text-xs text-[#8c8c8c] p-1 rounded transition-all ml-1 hover:bg-[rgba(0,0,0,0.04)] hover:text-[#1890ff]"
+              onClick={(e) => toggleExpand(e, item.id)}
+            >
+              {isExpanded ? <MinusOutlined /> : <PlusOutlined />}
             </span>
           )}
         </div>
@@ -599,41 +635,41 @@ const AppSidebar = () => {
     if (isCollapsed) return null
 
     return (
-      <div className="recently-opened-section mt-4">
+      <div className="mt-4 fixed top-[448px] bg-white border-t border-gray-200">
         {/* 最近打开标题栏 */}
         <div
-          className="recently-opened-header flex items-center justify-between px-3 py-2 w-[200px] cursor-pointer"
+          className="flex items-center justify-between px-3 py-2 w-[200px] hover:bg-[#f0f7ff] rounded-full cursor-pointer mx-[14px] text-black"
           onClick={toggleRecentlyOpenedExpanded}
         >
           <div className="flex items-center gap-2">
-            <span className="text-green-700 bg-green-700 bg-opacity-20 p-1 rounded">
+            <span className="">
               <ClockCircleOutlined />
             </span>
             <span className="font-medium">最近打开</span>
           </div>
-          <span>{recentlyOpenedExpanded ? <DownOutlined /> : <RightOutlined />}</span>
+          <span>{recentlyOpenedExpanded ? <MinusOutlined /> : <PlusOutlined />}</span>
         </div>
 
         {/* 分割线 */}
         <div className="mx-4 my-2">
-          <div className="w-[196px] h-[0.5px] bg-gray-200"></div>
+          <div className="w-[196px] h-[0.5px] bg-gray-300"></div>
         </div>
 
         {/* 最近打开的项目列表 */}
         {recentlyOpenedExpanded && (
-          <div className="recently-opened-items">
+          <div className="mx-[14px] max-h-60 overflow-y-auto">
             {recentlyOpenedItems.map((item) => (
               <div
                 key={item.id}
-                className="recently-opened-item flex items-center justify-between px-3 py-2 w-[200px] hover:bg-gray-100 cursor-pointer"
+                className={`flex items-center justify-between px-3 py-2 w-[200px] hover:bg-[#f0f7ff] rounded-full cursor-pointer ${activeItemId === item.id ? "bg-white border border-black" : ""}`}
                 onClick={(e) => handleRecentItemClick(e, item)}
               >
                 <div className="flex items-center gap-2">
-                  <span className="item-icon">{getIconComponent(item.icon)}</span>
-                  <span className="item-title">{item.title}</span>
+                  <span className="flex items-center justify-center">{getIconComponent(item.icon)}</span>
+                  <span className="text-sm">{item.title}</span>
                 </div>
                 <button
-                  className="remove-btn opacity-50 hover:opacity-100"
+                  className="opacity-50 hover:opacity-100 bg-transparent border-none cursor-pointer"
                   onClick={(e) => removeRecentItem(e, item.id)}
                 >
                   <CloseOutlined />
@@ -646,84 +682,121 @@ const AppSidebar = () => {
     )
   }
 
+  // 渲染顶部 Logo 区域
+  const renderLogoArea = () => {
+    return (
+      <div className={`flex items-center text-[#122415] ${isCollapsed ? "justify-center p-2" : "px-4 py-6"}`}>
+        <div className="flex items-center justify-center w-8 h-8 bg-[#58bd6d] rounded-md text-white font-bold">S</div>
+        {!isCollapsed && (
+          <div className="flex flex-col justify-between ml-2">
+            <span className="font-medium text-sm">可信</span>
+            <span className="font-light text-[10px]">syntrusthub.agentour.app</span>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // 渲染工作区区域
+  const renderWorkspaceArea = () => {
+    // 在折叠状态下不渲染搜索输入框，避免布局问题
+    if (isCollapsed) {
+      return null
+    }
+
+    if (isSearchMode) {
+      return (
+        <div className="px-4 pb-1 h-[30px]">
+          <Input
+            autoFocus
+            placeholder="搜索…"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onPressEnter={() => {
+              console.log("执行搜索:", searchTerm)
+              // TODO: dispatch your search action…
+            }}
+            className="h-8"
+            suffix={
+              <CloseOutlined
+                onClick={() => {
+                  setIsSearchMode(false)
+                  setSearchTerm("")
+                }}
+              />
+            }
+          />
+        </div>
+      )
+    }
+
+    return (
+      <div className="flex items-center px-4 pb-1 h-[30px]">
+            <div className="flex items-center justify-center w-4 h-4 bg-[#1a1a1a] rounded-md text-white font-bold text-[10px] mr-3">
+              A
+            </div>
+            <div className="font-semibold text-xs">
+              {workspaceLoading ? "加载中..." : currentWorkspace ? currentWorkspace.name : "Alibaba"}
+            </div>
+    
+        <Button className="ml-auto" type="text" icon={<SearchIcon />} onClick={handleSearchClick} size="small" />
+      </div>
+    )
+  }
+
+  // 渲染搜索按钮（仅在折叠状态下）
+  const renderSearchButton = () => {
+    if (!isCollapsed) return null
+
+    return (
+      <div className="flex justify-center my-4">
+        <Button
+          type="text"
+          icon={<SearchOutlined className="text-gray-500" />}
+          onClick={handleSearchClick}
+          size="large"
+          className="w-10 h-10 flex items-center justify-center"
+        />
+      </div>
+    )
+  }
+
   return (
     <>
       <Sider
-        className={`app-sidebar ${isCollapsed ? "collapsed" : ""}`}
-        width={220}
+        className={`bg-white text-black transition-all duration-300 ${isCollapsed ? "w-16" : "w-[228px]"}`}
+        width={isCollapsed ? 64 : 228}
         collapsible
         collapsed={isCollapsed}
         trigger={null}
+        collapsedWidth={64}
       >
-        <div className={`sidebar-top-container ${isCollapsed ? "collapsed" : ""}`}>
-          <div className="logo-company-icon">S</div>
-          {!isCollapsed && (
-            <div className="logo-company-text">
-              <span>可信</span>
-              <span>Syntrust.agenent.cloud</span>
-            </div>
-          )}
-        </div>
+        {/* 顶部公司标识 */}
+        {renderLogoArea()}
 
         {/* 工作区标志、名称 & 搜索 */}
-        <div className={`sidebar-logo ${isCollapsed ? "collapsed" : ""}`}>
-          {isSearchMode ? (
-            <Input
-              autoFocus
-              placeholder="搜索…"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              onPressEnter={() => {
-                console.log("执行搜索:", searchTerm)
-                // TODO: dispatch your search action…
-              }}
-              className="logo-search-input"
-              suffix={
-                <CloseOutlined
-                  onClick={() => {
-                    setIsSearchMode(false)
-                    setSearchTerm("")
-                  }}
-                />
-              }
-            />
-          ) : (
-            <>
-              <div className="logo-icon"></div>
-              {!isCollapsed && (
-                <div className="logo-text">
-                  {workspaceLoading ? "加载中..." : currentWorkspace ? currentWorkspace.name : "Syntrust"}
-                </div>
-              )}
-              <Button
-                className="ml-auto"
-                type="text"
-                icon={<SearchIcon />}
-                onClick={() => setIsSearchMode(true)}
-                size="small"
-              />
-            </>
-          )}
+        {renderWorkspaceArea()}
+
+        {/* 搜索按钮（仅在折叠状态下） */}
+        {renderSearchButton()}
+
+        {/* 分割线 */}
+        <div className={`mx-4 my-2 ${isCollapsed ? "hidden" : ""}`}>
+          <div className="w-[196px] h-[0.5px] bg-gray-300"></div>
         </div>
 
-        {/* Add divider line between workspace and menu */}
-        <div className="mx-4 my-2">
-          <div className="w-[190px] h-[0.5px] bg-black"></div>
-        </div>
-
-        <div className={`sidebar-menu-container ${isCollapsed ? "collapsed" : ""}`}>
-          {loading ? (
-            <div style={{ padding: "16px", textAlign: "center" }}>加载中...</div>
-          ) : (
-            menuItems.map(renderMenuItem)
-          )}
+        {/* 菜单容器 */}
+        <div className={`flex-1 overflow-y-auto hide-scrollbar overflow-x-hidden py-2 max-h-80 ${isCollapsed ? "flex flex-col items-center gap-6" : ""}`}>
+          {loading ? <div className="p-4 text-center">加载中...</div> : menuItems.map(renderMenuItem)}
         </div>
 
         {/* 最近打开的项目 */}
-        <div className="mx-[14px] ">{renderRecentlyOpenedItems()}</div>
+        {renderRecentlyOpenedItems()}
 
         {/* 个人信息区域 - 固定在底部 */}
-        <UserInfoArea isCollapsed={isCollapsed} />
+        <div className={`absolute bottom-0 left-0 w-full ${isCollapsed ? "flex justify-center" : "px-3 pb-3"}`}>
+          <UserInfoArea isCollapsed={isCollapsed} />
+        </div>
       </Sider>
 
       {/* 重命名菜单项的Modal */}

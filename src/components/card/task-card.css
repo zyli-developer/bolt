@@ -109,6 +109,7 @@
   justify-content: space-between;
   min-width: 200px;
   max-width: 500px;
+  width: 536px;
   flex-grow: 1;
   flex-basis: 0;
   background-color: #F7F9F8;
@@ -143,6 +144,11 @@
   font-size: 12px;
   line-height: 1.2;
   word-break: break-word;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;       /* 显示行数 */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* 任务操作按钮 */
@@ -243,12 +249,13 @@
 
 .task-chart-container,
 .task-radar-chart-container {
-  flex: 1;
+  flex: 0.8;
   display: flex;
   flex-direction: column;
   position: relative;
   width: 170px;
   min-height: 0;
+  border-radius: 24px;
 }
 
 .task-chart-title {
