@@ -3,7 +3,7 @@ import { ArrowLeftOutlined, ArrowRightOutlined, PlusOutlined, MessageOutlined, U
 import AnnotationModal from '../annotations/AnnotationModal';
 import annotationService from '../../services/annotationService';
 import { message as messageApi } from 'antd';
-import { OptimizationContext } from '../../contexts/OptimizationContext';
+import { OptimizationContext, OPTIMIZATION_STEP_CHANGE_EVENT } from '../../contexts/OptimizationContext';
 import { useChatContext } from '../../contexts/ChatContext';
 import TextContextMenu from '../context/TextContextMenu';
 import { extractSessionData } from '../../lib/tim/message';
@@ -43,6 +43,34 @@ const ChatMessage = ({ message }) => {
     currentOptimizationStep,
     addComment
   } = useContext(OptimizationContext);
+  
+  // 本地状态跟踪当前优化步骤
+  const [localOptimizationStep, setLocalOptimizationStep] = useState(currentOptimizationStep);
+  const [localOptimizationMode, setLocalOptimizationMode] = useState(isOptimizationMode);
+  
+  // 监听步骤变更事件
+  useEffect(() => {
+    const handleStepChange = (event) => {
+      const { step, isOptimizationMode } = event.detail;
+      console.log(`收到步骤变更事件，步骤: ${step}, 优化模式: ${isOptimizationMode}`);
+      setLocalOptimizationStep(step);
+      setLocalOptimizationMode(isOptimizationMode);
+    };
+    
+    // 监听全局步骤变更事件
+    window.addEventListener(OPTIMIZATION_STEP_CHANGE_EVENT, handleStepChange);
+    
+    // 卸载时移除监听
+    return () => {
+      window.removeEventListener(OPTIMIZATION_STEP_CHANGE_EVENT, handleStepChange);
+    };
+  }, []);
+  
+  // 当全局步骤变更时，同步到本地状态
+  useEffect(() => {
+    setLocalOptimizationStep(currentOptimizationStep);
+    setLocalOptimizationMode(isOptimizationMode);
+  }, [currentOptimizationStep, isOptimizationMode]);
   
   // 检查当前消息是否是Session分割线
   const isSessionDivider = () => {
@@ -455,10 +483,13 @@ const ChatMessage = ({ message }) => {
   // 保存观点
   const handleSaveAnnotation = async (data) => {
     try {
+      // 使用localOptimizationStep确保使用最新的步骤值
+      const stepValue = localOptimizationStep || 'result';
+      
       // 创建新的注释对象
       const newAnnotation = {
         ...data,
-        step: currentOptimizationStep,
+        step: stepValue, // 使用当前本地步骤
         messageId: message.id,
         timestamp: new Date().toISOString()
       };
@@ -472,7 +503,8 @@ const ChatMessage = ({ message }) => {
         author: savedAnnotation.author.name,
         time: savedAnnotation.time,
         text: savedAnnotation.content,
-        summary: savedAnnotation.summary
+        summary: savedAnnotation.summary,
+        step: stepValue, // 使用当前步骤确保添加到正确分类
       });
       
       messageApi.success('观点已添加');
@@ -557,9 +589,6 @@ const ChatMessage = ({ message }) => {
     const isStart = sessionInfo.type === CUSTOM_MESSAGE_TYPE.SESSION_START;
     const isExpanded = isSessionExpanded();
     const sessionId = sessionInfo.id;
-    
-    // 调试信息
-    console.log(`渲染会话分割线: ID=${sessionId}, 类型=${isStart ? '开始' : '结束'}, 展开状态=${isExpanded}`);
     
     // 获取当前会话的引用内容和信息
     const quoteContent = sessionInfo.quoteContent || '无引用内容';
@@ -660,10 +689,8 @@ const ChatMessage = ({ message }) => {
           // 分割线在消息上方
           if (isStartDivider) {
             prevStartDivider = { divider, sessionId };
-            console.log(`找到消息上方的开始分割线，会话ID: ${sessionId}`);
           } else if (isEndDivider && prevStartDivider && divider.getAttribute('data-session-id') === prevStartDivider.sessionId) {
             // 如果找到对应会话的结束分割线，说明消息不在该会话内
-            console.log(`在消息上方找到会话${prevStartDivider.sessionId}的结束分割线，消息不在该会话内`);
             prevStartDivider = null;
           }
         } else if (dividerRect.top > messageTop && isEndDivider) {
@@ -671,7 +698,6 @@ const ChatMessage = ({ message }) => {
           if (prevStartDivider && divider.getAttribute('data-session-id') === prevStartDivider.sessionId) {
             // 找到了对应的结束分割线，说明消息在该会话内
             nextEndDivider = { divider, sessionId };
-            console.log(`找到消息下方的结束分割线，会话ID: ${sessionId}，消息在会话${prevStartDivider.sessionId}内`);
             break;
           }
         }
@@ -680,14 +706,12 @@ const ChatMessage = ({ message }) => {
       // 如果找到了开始分割线和结束分割线，消息在这个会话中
       if (prevStartDivider && nextEndDivider && prevStartDivider.sessionId === nextEndDivider.sessionId) {
         messageSessionId = prevStartDivider.sessionId;
-        console.log(`消息确定在会话${messageSessionId}内，会话展开状态: ${expandedSessions[messageSessionId] !== false ? '展开' : '折叠'}`);
       } else if (prevStartDivider) {
         // 即使没找到结束分割线，也可能在会话中
         // 这种情况在跨段历史记录中可能出现，即开始分割线在当前段，结束分割线在另一段
         messageSessionId = prevStartDivider.sessionId;
-        console.log(`消息可能在会话${messageSessionId}内(未找到结束分割线)，会话展开状态: ${expandedSessions[messageSessionId] !== false ? '展开' : '折叠'}`);
       } else {
-        console.log('消息不在任何会话内，或会话状态不完整(缺少开始/结束分割线)');
+        // console.log('消息不在任何会话内，或会话状态不完整(缺少开始/结束分割线)');
       }
     }
     
@@ -761,7 +785,7 @@ const ChatMessage = ({ message }) => {
         onContextMenu={handleContextMenu}
       >
         {/* 仅在优化模式下且消息不是用户发送的时候显示操作按钮 */}
-        {!isUser && isOptimizationMode && (
+        {!isUser && (isOptimizationMode || localOptimizationMode) && (
           <div className="message-controls">
             <span className="message-control-btn" onClick={() => console.log('返回')}>
               <ArrowLeftOutlined />
@@ -822,6 +846,7 @@ const ChatMessage = ({ message }) => {
         onSave={handleSaveAnnotation}
         selectedText={initialContentForModal}
         initialContent={initialContentForModal}
+        step={localOptimizationStep || 'result'}
       />
       
       {/* 讨论模态框 */}

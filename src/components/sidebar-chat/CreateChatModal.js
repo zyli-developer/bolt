@@ -63,7 +63,7 @@ const CreateChatModal = ({ onClose, onCreate }) => {
       handleCreateSingleChat()
     } else {
       if (groupAction === "create") {
-        handleCreateGroupChat()
+      handleCreateGroupChat()
       } else {
         handleJoinGroupChat()
       }
@@ -127,20 +127,20 @@ const CreateChatModal = ({ onClose, onCreate }) => {
               </div>
               
               {groupAction === "create" ? (
-                <div className="group-chat-form">
-                  <div className="form-group">
-                    <label htmlFor="groupName">群组名称</label>
-                    <input
-                      id="groupName"
-                      type="text"
-                      value={groupName}
-                      onChange={(e) => setGroupName(e.target.value)}
-                      placeholder="输入群组名称"
-                    />
-                  </div>
+            <div className="group-chat-form">
+              <div className="form-group">
+                <label htmlFor="groupName">群组名称</label>
+                <input
+                  id="groupName"
+                  type="text"
+                  value={groupName}
+                  onChange={(e) => setGroupName(e.target.value)}
+                  placeholder="输入群组名称"
+                />
+              </div>
                   <div className="form-tip">
                     创建群聊后将自动添加默认成员，无需手动添加
-                  </div>
+            </div>
                 </div>
               ) : (
                 <div className="join-group-form">

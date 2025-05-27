@@ -48,6 +48,10 @@ import TestConfirmation from "../components/task/TestConfirmation"
 import ResultPage from "../components/task/ResultPage"
 import TaskOverview from "../components/task/TaskOverview"
 import useTaskDetailStyles from '../styles/pages/TaskDetailPage'
+import SubmitResultSection from "../components/task/SubmitResultSection"
+import TextContextMenu from '../components/context/TextContextMenu'
+import AnnotationModal from '../components/annotations/AnnotationModal';
+import DiscussModal from '../components/modals/DiscussModal';
 
 const { Title, Text, Paragraph } = Typography
 const { Option } = Select
@@ -71,7 +75,8 @@ const TaskDetailPage = () => {
   const [evaluationData, setEvaluationData] = useState({})
   const [testProgress, setTestProgress] = useState(0);
   const [isTesting, setIsTesting] = useState(false);
-  const [isOptimizeMode, setIsOptimizeMode] = useState(false);
+  const [isOptimizationMode, setIsOptimizationMode] = useState(false);
+  const [currentOptimizationStep, setCurrentOptimizationStep] = useState(0);
   
   // 添加关注、分享和点赞相关状态
   const [isFollowing, setIsFollowing] = useState(false);
@@ -106,7 +111,15 @@ const TaskDetailPage = () => {
   const [selectedModels, setSelectedModels] = useState([]); // 将在数据加载后从task.step中填充
   const [expandedModel, setExpandedModel] = useState(false);
 
-
+  // 步骤标题与组件映射
+  const OPTIMIZE_STEPS = [
+    { label: '结果质询', component: ResultPage },
+    { label: 'QA优化', component: QASection },
+    { label: '场景优化', component: SceneSection },
+    { label: '模版优化', component: TemplateSection },
+    { label: '再次测试', component: TestConfirmation },
+    { label: '提交结果', component: SubmitResultSection },
+  ];
 
   // 注释表格列定义
   const annotationColumns = [
@@ -235,48 +248,20 @@ const TaskDetailPage = () => {
   const [annotationData, setAnnotationData] = useState([]);
   
   // 添加注释到任务中的方法
-  const addAnnotationToTask = (newAnnotation) => {
-    if (!task || !newAnnotation || !newAnnotation.step) return;
-    
-    // 创建任务的注释对象的副本（如果不存在则创建新对象）
+  const addAnnotationToTask = (newAnnotation, stepType) => {
+    if (!task || !newAnnotation) return;
+    // 兼容step参数
+    const category = stepType || newAnnotation.step || 'result';
     const updatedAnnotation = task.annotation ? { ...task.annotation } : {
-      result: [],
-      qa: [],
-      scene: [],
-      template: []
+      result: [], qa: [], scene: [], template: []
     };
-    
-    // 根据step字段确定注释应该被添加到哪个分类中
-    const category = newAnnotation.step === 'qa' ? 'qa' : 
-                     newAnnotation.step === 'scene' ? 'scene' : 
-                     newAnnotation.step === 'template' ? 'template' : 
-                     newAnnotation.step === 'result' ? 'result' : 'result';
-    
-    // 确保该分类中有一个数组
-    if (!updatedAnnotation[category]) {
-      updatedAnnotation[category] = [];
-    }
-    
-    // 添加新注释到对应分类
+    if (!updatedAnnotation[category]) updatedAnnotation[category] = [];
     updatedAnnotation[category].push(newAnnotation);
-    
-    // 更新任务对象
-    const updatedTask = {
-      ...task,
-      annotation: updatedAnnotation
-    };
-    
-    // 更新state
+    const updatedTask = { ...task, annotation: updatedAnnotation };
     setTask(updatedTask);
     setAnnotationData(updatedAnnotation);
-    
     // 可选：调用API更新服务器上的任务数据
-    try {
-      taskService.updateTask(id, updatedTask);
-      console.log(`已将注释添加到任务的${category}分类中`, newAnnotation);
-    } catch (error) {
-      console.error('更新任务数据失败:', error);
-    }
+    try { taskService.updateTask(id, updatedTask); } catch {}
   };
 
   // 使用useRef和useMemo缓存图表数据，防止重新渲染导致数据变化
@@ -766,7 +751,7 @@ const TaskDetailPage = () => {
               <TaskOverview 
                 task={task} 
                 annotationData={annotationData}
-                isOptimizationMode={isOptimizeMode}
+                isOptimizationMode={isOptimizationMode}
                     />
                   )}
           </>
@@ -1011,7 +996,7 @@ const TaskDetailPage = () => {
         toggleModelPanel={toggleModelPanel}
         getModelColor={getModelColor}
         onAddAnnotation={addAnnotationToTask}
-        isOptimizeMode={isOptimizeMode}
+        isOptimizationMode={isOptimizationMode}
       />
     );
   };
@@ -1131,7 +1116,7 @@ const TaskDetailPage = () => {
       };
       
       // 如果有优化模式，调用优化结果提交方法
-      if (isOptimizeMode) {
+      if (isOptimizationMode) {
         // 创建优化数据
         const optimizationData = {
           sourceTaskId: id,
@@ -1316,8 +1301,8 @@ const TaskDetailPage = () => {
           <div className={styles.optimizeModeContainer} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span>优化模式</span>
             <Switch
-              checked={isOptimizeMode}
-              onChange={setIsOptimizeMode}
+              checked={isOptimizationMode}
+              onChange={setIsOptimizationMode}
               size="small"
             />
           </div>
@@ -1434,6 +1419,434 @@ const TaskDetailPage = () => {
     setIsShareModalVisible(false);
   };
 
+  // 优化模式每一步的临时状态
+  const [optimizeStepState, setOptimizeStepState] = useState({});
+
+  // 切换优化模式时重置step和每一步状态
+  const toggleOptimizationMode = (checked) => {
+    setIsOptimizationMode(checked);
+    setCurrentOptimizationStep(0);
+    // 重置每一步的临时状态
+    setOptimizeStepState({});
+    // 其他如测试进度等也可重置
+    setIsTesting(false);
+    setTestProgress(0);
+  };
+
+  // 右键菜单相关状态
+  const [contextMenu, setContextMenu] = useState(null);
+  const [contextType, setContextType] = useState('text');
+  const [isMultiSelectActive, setIsMultiSelectActive] = useState(false);
+  const [discussModalVisible, setDiscussModalVisible] = useState(false);
+  const [annotationModalVisible, setAnnotationModalVisible] = useState(false);
+  const [selectedModalText, setSelectedModalText] = useState('');
+  // 添加连续选择相关状态
+  const [isMultiSelectTempMode, setIsMultiSelectTempMode] = useState(false);
+  const [selectedTexts, setSelectedTexts] = useState([]);
+  const [selectedText, setSelectedText] = useState('');
+  const [selectionRanges, setSelectionRanges] = useState([]);
+
+  // 新增ref
+  const sceneSectionRef = useRef();
+  const templateSectionRef = useRef();
+  // 新增高亮文本和range的ref
+  const lastHighlightedTextRef = useRef('');
+  const lastHighlightedRangeRef = useRef(null);
+
+  // 右键菜单action处理
+  const handleContextMenuAction = (action) => {
+    setContextMenu(null);
+    switch (action) {
+      case 'discuss':
+        setSelectedModalText(lastHighlightedTextRef.current || selectedText);
+        setDiscussModalVisible(true);
+        break;
+      case 'annotate':
+        setSelectedModalText(lastHighlightedTextRef.current || selectedText);
+        setAnnotationModalVisible(true);
+        break;
+      case 'edit':
+        if (currentOptimizationStep === 2 && sceneSectionRef.current) {
+          sceneSectionRef.current.handleEditNode && sceneSectionRef.current.handleEditNode();
+        }
+        if (currentOptimizationStep === 3 && templateSectionRef.current) {
+          templateSectionRef.current.handleEditNode && templateSectionRef.current.handleEditNode();
+        }
+        break;
+      case 'delete':
+        if (currentOptimizationStep === 2 && sceneSectionRef.current) {
+          sceneSectionRef.current.handleDeleteNode && sceneSectionRef.current.handleDeleteNode();
+        }
+        if (currentOptimizationStep === 3 && templateSectionRef.current) {
+          templateSectionRef.current.handleDeleteNode && templateSectionRef.current.handleDeleteNode();
+        }
+        break;
+      default:
+        break;
+    }
+    // 菜单关闭后清除高亮
+    clearAllHighlights();
+    lastHighlightedTextRef.current = '';
+    lastHighlightedRangeRef.current = null;
+  };
+
+  // 添加观点modal保存
+  const handleSaveAnnotation = (data) => {
+    let stepType = 'result';
+    if (currentOptimizationStep === 1) stepType = 'qa';
+    if (currentOptimizationStep === 2) stepType = 'scene';
+    if (currentOptimizationStep === 3) stepType = 'template';
+
+    const annotationData = {
+      ...data,
+      selectedText: selectedModalText,
+      id: `comment-${Date.now()}`,
+      time: new Date().toISOString(),
+      step: stepType
+    };
+
+    addAnnotationToTask(annotationData, stepType);
+    setAnnotationModalVisible(false);
+    setSelectedModalText('');
+    message.success('添加成功');
+  };
+
+  // 全局点击事件用于关闭右键菜单
+  useEffect(() => {
+    const handleGlobalClick = (e) => {
+      if (contextMenu && !e.target.closest('.text-context-menu')) {
+        setContextMenu(null);
+      }
+    };
+    document.addEventListener('mousedown', handleGlobalClick);
+    return () => {
+      document.removeEventListener('mousedown', handleGlobalClick);
+    };
+  }, [contextMenu]);
+
+  // 鼠标松开自动高亮（连续选择模式下）
+  useEffect(() => {
+    const handleAutoSelection = (event) => {
+      if (!isMultiSelectActive) return;
+      const selection = window.getSelection();
+      const selectedText = selection.toString().trim();
+      if (selectedText) {
+        const range = selection.getRangeAt(0);
+        const hasHighlight = range.commonAncestorContainer.closest?.('.text-highlight-selection');
+        if (hasHighlight) return;
+        if (selectedTexts.includes(selectedText)) return;
+        setSelectedTexts(prev => [...new Set([...prev, selectedText])]);
+        applyHighlightToSelection(range, selectedText);
+      }
+    };
+    if (isMultiSelectActive) {
+      document.addEventListener('mouseup', handleAutoSelection);
+    }
+    return () => {
+      document.removeEventListener('mouseup', handleAutoSelection);
+    };
+  }, [isMultiSelectActive, selectedTexts]);
+
+  // 修正handleTextSelection：只做高亮和状态，不弹出菜单
+  const handleTextSelection = (event) => {
+    if (!isOptimizationMode) return;
+    const selection = window.getSelection();
+    const selected = selection.toString().trim();
+    const isModifierKeyPressed = event.ctrlKey || event.metaKey;
+    if (selected) {
+      const range = selection.getRangeAt(0);
+      const newSelectionRange = { range: range.cloneRange(), text: selected };
+      const hasHighlight = range.commonAncestorContainer.closest?.('.text-highlight-selection');
+      if (hasHighlight) {
+        setSelectedText(selected); // 只更新状态，不弹菜单
+        lastHighlightedTextRef.current = selected;
+        lastHighlightedRangeRef.current = range.cloneRange();
+        return;
+      }
+      if (isMultiSelectActive || isMultiSelectTempMode || isModifierKeyPressed) {
+        if (!selectedTexts.includes(selected)) {
+          setSelectedTexts(prev => [...prev, selected]);
+          setSelectionRanges(prev => [...prev, newSelectionRange]);
+          applyHighlightToSelection(range, selected);
+        }
+      } else {
+        clearAllHighlights();
+        setSelectedTexts([selected]);
+        setSelectionRanges([newSelectionRange]);
+        applyHighlightToSelection(range, selected);
+      }
+      setSelectedText(selected);
+      lastHighlightedTextRef.current = selected;
+      lastHighlightedRangeRef.current = range.cloneRange();
+    }
+  };
+
+  // 优化模式下右键菜单触发
+  const handleOptimizeContextMenu = (e, type = 'text') => {
+    if (!isOptimizationMode) return;
+    e.preventDefault();
+    // 优先用lastHighlightedTextRef
+    const selected = lastHighlightedTextRef.current || window.getSelection().toString().trim();
+    if (selected) {
+      setContextMenu({ x: e.clientX, y: e.clientY });
+      setContextType(type);
+      setSelectedText(selected); // 保证右键时内容为最新
+    } else {
+      setContextMenu(null);
+    }
+  };
+
+  // 优化模式下内容渲染
+  const renderOptimizeContent = () => {
+    const step = currentOptimizationStep;
+    let contextTypeForStep = 'text';
+    if (step === 2) contextTypeForStep = 'scene';
+    if (step === 3) contextTypeForStep = 'template';
+    return (
+      <div
+        style={{ width: '100%', height: '100%' }}
+        onContextMenu={e => handleOptimizeContextMenu(e, contextTypeForStep)}
+        onMouseUp={handleTextSelection}
+      >
+        {(() => {
+          switch (step) {
+            case 0:
+              return <ResultPage 
+                task={task}
+                comments={task?.annotation?.result || []}
+                enhancedChartData={enhancedChartData}
+                evaluationData={evaluationData}
+                selectedModels={selectedModels}
+                selectedModel={selectedModel}
+                expandedModel={expandedModel}
+                radarMaxValue={radarMaxValue}
+                handleModelChange={handleModelChange}
+                handleSelectAll={handleSelectAll}
+                toggleModelPanel={toggleModelPanel}
+                getModelColor={getModelColor}
+                onAddAnnotation={addAnnotationToTask}
+                isOptimizeMode={isOptimizationMode}
+              />;
+            case 1:
+              return <QASection 
+                isEditable={true}
+                taskId={task?.id}
+                prompt={task?.prompt}
+                response={task?.response_summary}
+                comments={task?.annotation?.qa || []}
+                onAddAnnotation={addAnnotationToTask}
+              />;
+            case 2:
+              return <SceneSection 
+                ref={sceneSectionRef}
+                isEditable={true}
+                taskId={task?.id}
+                scenario={task?.scenario}
+                comments={task?.annotation?.scene || []}
+                onAddAnnotation={addAnnotationToTask}
+              />;
+            case 3:
+              return <TemplateSection 
+                ref={templateSectionRef}
+                isEditable={true}
+                taskId={task?.id}
+                steps={task?.templateData ? { templateData: task.templateData, ...task?.step } : task?.step}
+                comments={task?.annotation?.template || []}
+                onAddAnnotation={addAnnotationToTask}
+              />;
+            case 4:
+              return <TestConfirmation
+                isTesting={isTesting}
+                testProgress={testProgress}
+                task={task}
+                isTaskStarted={isTaskStarted}
+                TimelineIcon={TimelineIcon}
+                currentStep={4}
+                onPrevious={handleBack}
+                onStartTest={handleStartTest}
+                QASection={QASection}
+                SceneSection={SceneSection}
+                TemplateSection={TemplateSection}
+                annotationColumns={taskAnnotationData.columns}
+                annotationData={task?.annotation || {
+                  result: [],
+                  qa: [],
+                  scene: [],
+                  template: []
+                }}
+              />;
+            case 5:
+              return <SubmitResultSection task={task} />;
+            default:
+              return null;
+          }
+        })()}
+        {/* 优化模式下右键菜单 */}
+        {contextMenu && (
+          <TextContextMenu
+            x={contextMenu.x}
+            y={contextMenu.y}
+            onAction={handleContextMenuAction}
+            onClose={() => setContextMenu(null)}
+            isMultiSelectActive={isMultiSelectActive}
+            contextType={contextTypeForStep}
+          />
+        )}
+        {/* 讨论Modal */}
+        <DiscussModal
+          visible={discussModalVisible}
+          onClose={() => setDiscussModalVisible(false)}
+          selectedText={selectedModalText}
+        />
+        {/* 添加观点Modal */}
+        <AnnotationModal
+          visible={annotationModalVisible}
+          onClose={() => setAnnotationModalVisible(false)}
+          onSave={handleSaveAnnotation}
+          selectedText={selectedModalText}
+          initialContent={selectedModalText}
+          step={(() => {
+            if (step === 1) return 'qa';
+            if (step === 2) return 'scene';
+            if (step === 3) return 'template';
+            return 'result';
+          })()}
+          nodeId={null}
+        />
+      </div>
+    );
+  };
+
+  // 优化模式下底部按钮渲染
+  const renderOptimizeFooterButtons = () => {
+    const step = currentOptimizationStep;
+    return (
+      <div style={{ display: 'flex', gap: 12, width: '100%' }}>
+        {step === 5 ? (
+          <>
+            <Button onClick={handleGenerateReport} style={{ flex: 1 }}>生成报告</Button>
+            <Button onClick={() => setIsOptimizationMode(false)} style={{ flex: 1 }}>放弃此次优化</Button>
+            <Button type="primary" onClick={handleSubmitResults} style={{ flex: 1 }}>保存并新建任务</Button>
+            <div style={{ display: 'inline-flex', alignItems: 'center', marginLeft: 8 }}>
+              <span>优化模式</span>
+              <Switch size="small" checked={isOptimizationMode} onChange={toggleOptimizationMode} />
+            </div>
+          </>
+        ) : step === 4 ? (
+          <>
+            <Button onClick={handlePrevStep} style={{ flex: 1 }}>上一步</Button>
+            <Button onClick={saveCurrentData} style={{ flex: 1 }}>保存</Button>
+            <Button type="primary" onClick={handleStartTest} disabled={isTesting} style={{ flex: 1 }}>
+              {isTesting ? `测试中...(${testProgress}%)` : '确认无误，开始测试'}
+            </Button>
+            <div style={{ display: 'inline-flex', alignItems: 'center', marginLeft: 8 }}>
+              <span>优化模式</span>
+              <Switch size="small" checked={isOptimizationMode} onChange={toggleOptimizationMode} />
+            </div>
+          </>
+        ) : (
+          <>
+            <Button onClick={step === 0 ? handleBack : handlePrevStep} style={{ flex: 1 }}>{step === 0 ? '返回' : '上一步'}</Button>
+            <Button onClick={saveCurrentData} style={{ flex: 1 }}>保存</Button>
+            <Button type="primary" onClick={saveAndNext} style={{ flex: 1 }}>保存并进入下一步</Button>
+            <div style={{ display: 'inline-flex', alignItems: 'center', marginLeft: 8 }}>
+              <span>优化模式</span>
+              <Switch size="small" checked={isOptimizationMode} onChange={toggleOptimizationMode} />
+            </div>
+          </>
+        )}
+      </div>
+    );
+  };
+
+  // 优化模式下：上一步
+  const handlePrevStep = () => {
+    if (currentOptimizationStep > 0) {
+      setCurrentOptimizationStep(currentOptimizationStep - 1);
+    } else {
+      setIsOptimizationMode(false);
+      setCurrentOptimizationStep(0);
+    }
+  };
+
+  // 优化模式下：保存当前数据
+  const saveCurrentData = () => {
+    // 可根据实际需求保存当前步骤数据
+    // 这里只做占位
+  };
+
+  // 优化模式下：保存并进入下一步
+  const saveAndNext = () => {
+    saveCurrentData();
+    if (currentOptimizationStep < OPTIMIZE_STEPS.length - 1) {
+      setCurrentOptimizationStep(currentOptimizationStep + 1);
+    }
+  };
+
+  // 优化模式下：开始测试
+  const handleStartTest = () => {
+    setIsTesting(true);
+    setTestProgress(0);
+    // 模拟测试进度
+    const timer = setInterval(() => {
+      setTestProgress(prev => {
+        const next = prev + 1;
+        if (next >= 100) {
+          clearInterval(timer);
+          setIsTesting(false);
+          setCurrentOptimizationStep(5); // 测试完成自动跳转到提交结果
+        }
+        return next;
+      });
+    }, 50);
+  };
+
+  // 应用高亮样式到选中文本
+  const applyHighlightToSelection = (range, text) => {
+    if (!range) return;
+
+    // 只允许高亮纯文本节点
+    const { startContainer, endContainer } = range;
+    // 1 = Text node
+    if (
+      startContainer.nodeType !== 3 ||
+      endContainer.nodeType !== 3 ||
+      startContainer.parentNode !== endContainer.parentNode
+    ) {
+      message.warning('请只选择连续的纯文本内容进行高亮');
+      return;
+    }
+
+    // 创建高亮元素
+    const highlightEl = document.createElement('span');
+    highlightEl.className = 'text-highlight-selection';
+    highlightEl.textContent = text;
+
+    // 替换选区内容为高亮
+    range.deleteContents();
+    range.insertNode(highlightEl);
+  };
+
+  // 清除所有高亮
+  const clearAllHighlights = () => {
+    // 清除所有高亮元素
+    const highlights = document.querySelectorAll('.text-highlight-selection');
+    highlights.forEach(el => {
+      const parent = el.parentNode;
+      if (parent) {
+        // 将高亮元素替换为其文本内容
+        const textNode = document.createTextNode(el.textContent);
+        parent.replaceChild(textNode, el);
+        parent.normalize(); // 合并相邻的文本节点
+      }
+    });
+    // 重置选择状态
+    setSelectedTexts([]);
+    setSelectionRanges([]);
+    lastHighlightedTextRef.current = '';
+    lastHighlightedRangeRef.current = null;
+  };
+
   if (loading) {
     return (
       <div className={`task-detail-page ${isChatOpen ? "chat-open" : "chat-closed"}`}>
@@ -1533,6 +1946,45 @@ const TaskDetailPage = () => {
       {/* 下半部分 - 上下结构 */}
       <div className={styles.taskDetailBottomSection}>
         {/* 步骤导航 */}
+        {isOptimizationMode ? (
+          <div className={styles.stepsNavigation}>
+            {OPTIMIZE_STEPS.map((item, idx) => {
+              const isCurrentStep = currentOptimizationStep === idx;
+              const isCompletedStep = currentOptimizationStep > idx;
+              return (
+                <div key={idx} className={`step ${isCurrentStep ? 'current-step' : ''}`} style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '4px',
+                  cursor: 'default',
+                  opacity: isCurrentStep ? 1 : 0.7
+                }}>
+                  <div className="step-icon" style={{
+                    width: '20px',
+                    height: '20px',
+                    borderRadius: '50%',
+                    border: `1px solid ${isCurrentStep ? 'var(--color-primary)' : isCompletedStep ? 'var(--color-primary)' : 'var(--color-text-tertiary)'}`,
+                    background: isCurrentStep ? 'var(--color-primary)' : isCompletedStep ? 'var(--color-primary-bg)' : '#fff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    color: isCurrentStep ? '#fff' : isCompletedStep ? 'var(--color-primary)' : 'var(--color-text-tertiary)'
+                  }}>
+                    {isCompletedStep ? <CheckOutlined style={{ fontSize: '12px' }} /> : idx + 1}
+                  </div>
+                  <div className="step-label" style={{
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    color: isCurrentStep ? 'var(--color-primary)' : isCompletedStep ? 'var(--color-primary)' : 'var(--color-text-tertiary)'
+                  }}>{item.label}</div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
         <div className={styles.stepsNavigation}>
           {steps.map((item) => {
             // 判断步骤状态：当前步骤、已完成步骤、未完成步骤
@@ -1577,6 +2029,7 @@ const TaskDetailPage = () => {
             );
           })}
         </div>
+        )}
 
         {/* 主要内容区域 */}
         <div className={styles.mainContent}>
@@ -1650,7 +2103,7 @@ const TaskDetailPage = () => {
           <div className="right-content" style={{
             flex: 1,
           }}>
-            {renderContent()}
+            {isOptimizationMode ? renderOptimizeContent() : renderContent()}
           </div>
         </div>
 
@@ -1661,7 +2114,7 @@ const TaskDetailPage = () => {
           gap: '12px',
           justifyContent: 'center'
         }}>
-          {renderFooterButtons()}
+          {isOptimizationMode ? renderOptimizeFooterButtons() : renderFooterButtons()}
         </div>
       </div>
 
