@@ -39,9 +39,10 @@ const colors = [
  * @param {Object} props - 组件属性
  * @param {Object} props.card - 卡片数据
  * @param {boolean} [props.showLinearGradient] - 是否显示头部linearGradient（默认false）
+ * @param {number} [props.height] - 折线图容器的高度（默认150）
  * @returns {ReactElement} 折线图组件
  */
-const LineChartSection = ({ card, showLinearGradient = false }) => {
+const LineChartSection = ({ card, showLinearGradient = false, height = 150 }) => {
   const styles = useStyles();
   console.log("------LineChartSection---------",card)
   // 1. 转换数据为平面数组
@@ -101,11 +102,11 @@ console.log("agents",agents)
 
   return (
     <div className={styles.lineChartSection}>
-      <div className={styles.lineChartContainer}>
-        <ResponsiveContainer width="100%" height={130}>
+      <div className={styles.lineChartContainer} style={{ height }}>
+        <ResponsiveContainer width="100%" height="100%">
           <LineChart
             data={mergedData}
-            margin={{ top: 2, right: 5, left: 0, bottom: 2 }}
+            margin={{ top: 10, right: 10, left: -30, bottom: 0 }}
           >
             {/* 只有 showLinearGradient 为 true 时才渲染 <defs> 和 linearGradient */}
             {showLinearGradient && (

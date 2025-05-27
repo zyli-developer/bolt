@@ -13,7 +13,7 @@ import "./styles/globals.css"  // 确保全局CSS变量先加载
 import "./index.css"
 
 // 再引入组件样式
-import "./components/sidebar/sidebar-styles.css" // 导入侧边栏样式
+
 import "./components/card/task-card.css" // 导入任务卡片样式
 import "./components/card/task-detail.css" // 导入任务详情页样式
 import "./components/card/card-detail.css" // 导入卡片详情页样式

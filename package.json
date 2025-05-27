@@ -37,7 +37,9 @@
       "react-app",
       "react-app/jest"
     ],
-    "ignorePatterns": ["src/mocks/cardDetailMocks.js"]
+    "ignorePatterns": [
+      "src/mocks/cardDetailMocks.js"
+    ]
   },
   "browserslist": {
     "production": [

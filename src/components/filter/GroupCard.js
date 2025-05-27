@@ -66,7 +66,7 @@ const GroupCard = ({ config, onConfigChange, onPrev, onNext }) => {
         </div>
 
         {config.fields.length < 3 && (
-          <a className="filter-add-condition" onClick={addGroupField}>
+          <a className="filter-add-condition absolute bottom-1" onClick={addGroupField}>
             <PlusOutlined /> 添加分组
           </a>
         )}

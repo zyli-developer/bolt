@@ -1,24 +1,8 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { Avatar, Tag, Checkbox, Button, message, Modal } from "antd"
+import { Avatar, Tag,  Button, message, Modal } from "antd"
 import { useNavigate } from "react-router-dom"
-import {
-  LineChart,
-  Line,
-  ResponsiveContainer,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip as RechartsTooltip,
-  Radar,
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-  Area,
-  AreaChart
-} from "recharts"
 import { FileTextOutlined, PlusOutlined, CheckCircleOutlined } from "@ant-design/icons"
 import CreateTaskModal from "../modals/CreateTaskModal"
 import taskService from "../../services/taskService"
@@ -26,6 +10,7 @@ import SceneSection from "../scene/SceneSection"
 import QASection from "../qa/QASection"
 import TemplateSection from "../template/TemplateSection"
 import LineChartSection from "./LineChartSection"
+import RadarChartSection from "./RadarChartSection"
 
 const TaskCard = ({ task, onTaskUpdate }) => {
   const navigate = useNavigate()
@@ -107,9 +92,7 @@ const TaskCard = ({ task, onTaskUpdate }) => {
     setShowRadarChart(!showRadarChart)
   }
 
-  const handleAgentChange = (agentKey) => {
-
-  }
+ 
 
   // 处理标题点击
   const handleTitleClick = () => {
@@ -325,56 +308,24 @@ const TaskCard = ({ task, onTaskUpdate }) => {
           </div>
         </div>
 
-        {/* Right section - chart */}
-        <div className="task-card-right">
-          {showRadarChart && (
-            <div className="task-radar-chart-container">
-              <div className="task-chart-title">各维度得分</div>
-              <div className="task-radar-chart">
-                <ResponsiveContainer width="100%" height={130}>
-                  <RadarChart data={radar} outerRadius={45}>
-                    <PolarGrid stroke="#e0e0e0" />
-                    <PolarAngleAxis 
-                      dataKey="name" 
-                      tick={{ fontSize: 8, fill: "#8f9098" }}
-                      tickFormatter={(value) => value ? value.substring(0, 4) : '维度'}
-                    />
-                    <PolarRadiusAxis 
-                      domain={[0, radarMaxValue]} 
-                      tick={{ fontSize: 8, fill: "#8f9098" }} 
-                      axisLine={false} 
-                    />
-                    <RechartsTooltip />
-                    {/* 自动渲染所有可用的数值字段（除name外） */}
-                    {radar && radar.length > 0 &&
-                      Object.keys(radar[0])
-                        .filter(key => key !== 'name')
-                        .map((key, idx) => (
-                          <Radar
-                            key={key}
-                            name={key}
-                            dataKey={key}
-                            stroke={['#8884d8', '#82ca9d', '#ff7a45', '#3ac0a0', '#ffc658', '#d0ed57'][idx % 6]}
-                            fill={['#8884d8', '#82ca9d', '#ff7a45', '#3ac0a0', '#ffc658', '#d0ed57'][idx % 6]}
-                            fillOpacity={0.2}
-                          />
-                        ))
-                    }
-                  </RadarChart>
-                </ResponsiveContainer>
-              </div>
 
+        {showRadarChart && (
+          <div className="task-radar-chart-container bg-white">
+            <div className="task-chart-title">各维度得分</div>
+            <div className="task-radar-chart">
+              <RadarChartSection radarData={radar} maxValue={radarMaxValue}  />
             </div>
-          )}
-
-          <div className="task-chart-container">
-            <div className="task-chart-title">可信度爬升曲线</div>
-            <div className="task-chart">
-              <LineChartSection card={{ ...task, chartData: { line } }} />
-            </div>
-    
           </div>
+        )}
+
+        <div className="task-chart-container bg-white">
+          <div className="task-chart-title">置信度爬升曲线</div>
+          <div className="task-chart">
+            <LineChartSection card={task}  />
+          </div>  
+          
         </div>
+
       </div>
 
       {/* 场景 Modal */}

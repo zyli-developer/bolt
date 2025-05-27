@@ -536,7 +536,7 @@ const FilterSystem = ({ onFilterChange, onSortChange, onViewChange, onImportSucc
 
   // 筛选卡片内容
   const filterCardContent = (
-    <div className="filter-card">
+    <div className="filter-card ">
       <FilterCard
         config={state.filterConfig}
         onConfigChange={updateFilterConfig}
@@ -773,15 +773,7 @@ const FilterSystem = ({ onFilterChange, onSortChange, onViewChange, onImportSucc
       </div>
       
       <div className={styles.toolbarRight} ref={buttonContainerRef}>
-        <Input
-          placeholder="搜索感兴趣的任务"
-          suffix={<SearchOutlined style={{ color: '#8c8c8c', fontSize: '16px' }} onClick={() => handleSearch()} />}
-          value={state.searchValue}
-          onChange={handleSearchChange}
-          onPressEnter={() => handleSearch()}
-          className={styles.searchInput}
-          allowClear={false}
-        />
+        
         
         {isTaskPage && (
           <div className={styles.circleButtonGroup}>

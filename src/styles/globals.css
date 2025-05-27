@@ -61,6 +61,22 @@ body {
 }
 
 /* ReactFlow 全局样式覆盖 */
+.border-t {
+    border-top-width: 0px;
+}
+
+.border-b {
+    border-bottom-width: 0px;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;  /* IE 和 Edge */
+  scrollbar-width: none;     /* Firefox */
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;             /* Chrome, Safari, Opera */
+}
+
 .react-flow__panel.react-flow__controls {
   border: none !important;
   box-shadow: 0 0 2px rgba(0, 0, 0, 0.1) !important;

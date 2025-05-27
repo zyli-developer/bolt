@@ -6,6 +6,7 @@ import * as qaService from '../../services/qaService';
 import * as sceneService from '../../services/sceneService';
 import * as templateService from '../../services/templateService';
 import useStyles from '../../styles/components/task/TestConfirmation';
+import TaskOverview from './TaskOverview';
 
 const { Title, Text } = Typography;
 
@@ -300,84 +301,11 @@ const TestConfirmation = ({
     switch (activeSection) {
       case 'overview':
         return (
-          <>
-            {/* 积分说明区域 */}
-            <div className={styles.scoreSection}>
-              <div 
-                className={`${styles.scoreHeader} ${isScoreExpanded ? styles.scoreHeaderExpanded : ''}`}
-                onClick={() => setIsScoreExpanded(!isScoreExpanded)}
-              >
-                <span className={styles.scoreTitle}>积分消耗说明</span>
-                {isScoreExpanded ? 
-                  <CaretDownOutlined className={styles.scoreIcon} /> :
-                  <CaretRightOutlined className={styles.scoreIcon} />
-                }
-              </div>
-              {isScoreExpanded && (
-                <div className={styles.scoreContent}>
-                  <div>根据此任务的配置，预计每次测试消耗XXX积分*。</div>
-                  <div className={styles.scoreContentRow}>
-                    <span>*根据配置参数动态计算，</span>
-                    <a href="#" className={styles.scoreLink}>了解计算规则&gt;&gt;</a>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* 任务信息区域 */}
-            <div className={styles.infoSection}>
-              <div className={styles.infoRow}>
-                <div className={styles.infoLabel}>任务名称</div>
-                <div className={styles.infoContent}>{task?.title}</div>
-              </div>
-              <div className={styles.infoRow}>
-                <div className={styles.infoLabel}>创建人</div>
-                <div className={styles.authorInfo}>
-                  <Avatar size={24}>{task?.author?.name?.charAt(0)}</Avatar>
-                  <span>{task?.author?.name}</span>
-                </div>
-              </div>
-              <div className={styles.infoRow}>
-                <div className={styles.infoLabel}>描述</div>
-                <div className={styles.infoContent}>{task?.description}</div>
-              </div>
-              <div className={styles.infoRow}>
-                <div className={styles.infoLabel}>关键词</div>
-                <div className={styles.infoContent}>
-                  {task?.tags?.map((tag, index) => (
-                    <Tag key={index} className={styles.tag}>{tag}</Tag>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* 注释表格区域 */}
-            <div className={styles.annotationSection}>
-              <div 
-                className={styles.annotationHeader}
-                onClick={() => setIsAnnotationExpanded(!isAnnotationExpanded)}
-              >
-                <span className={styles.annotationTitle}>注释</span>
-                {isAnnotationExpanded ? 
-                  <CaretDownOutlined className={styles.annotationIcon} /> :
-                  <CaretRightOutlined className={styles.annotationIcon} />
-                }
-              </div>
-              
-              {isAnnotationExpanded && annotationColumns && (
-                <Table
-                  columns={annotationColumns}
-                  dataSource={Array.isArray(annotationData) ? annotationData : []}
-                  pagination={false}
-                  size="small"
-                  className={styles.annotationTable}
-                  style={{ width: "100%" }}
-                  scroll={{ x: true }}
-                  locale={{ emptyText: '暂无注释数据' }}
-                />
-              )}
-            </div>
-          </>
+          <TaskOverview
+            task={task}
+            annotationData={annotationData}
+            isOptimizationMode={false}
+          />
         );
       case 'qa':
         return QASection ? (
