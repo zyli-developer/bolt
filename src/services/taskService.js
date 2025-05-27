@@ -11,7 +11,7 @@ import { taskCardsData, modelEvaluationData } from "../mocks/data"
 import { filterCardsByConditions } from "../mocks/filterData"
 
 // 判断是否使用本地模拟数据
-const USE_MOCK_DATA = true;
+const USE_MOCK_DATA = false;
 
 // 辅助函数：将API操作符转换为UI操作符
 function convertApiOperatorToUi(apiOp) {

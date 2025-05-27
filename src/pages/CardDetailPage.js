@@ -19,7 +19,6 @@ import {
   DownOutlined,
   UpOutlined,
 } from "@ant-design/icons"
-import taskService from "../services/taskService"
 import cardService from "../services/cardService"
 import { useChatContext } from "../contexts/ChatContext"
 import CreateTaskModal from "../components/modals/CreateTaskModal"

@@ -7,7 +7,7 @@ const endpoints = {
   // 卡片相关（旧API，保留向后兼容）
   cards: {
     list: "/cards",
-    detail: (id) => `/exploration/${id}`,
+    detail: (id) => `/explorations/${id}`,
     create: "/cards",
     update: (id) => `/cards/${id}`,
     delete: (id) => `/cards/${id}`,
@@ -16,7 +16,7 @@ const endpoints = {
   // 探索相关 (API规范: /v1/syntrust/explorations)
   explorations: {
     list: "/explorations/search",
-    detail: (id) => `/exploration/${id}`,
+    detail: (id) => `/explorations/${id}`,
     search: "/explorations/search",
   },
 
