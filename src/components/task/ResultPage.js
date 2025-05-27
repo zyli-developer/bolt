@@ -46,7 +46,8 @@ const ResultPage = ({
   toggleModelPanel,
   getModelColor,
   onAddAnnotation,
-  isOptimizeMode = false
+  isOptimizeMode = false,
+  comments = []
 }) => {
   const [annotationModalVisible, setAnnotationModalVisible] = useState(false);
   const [selectedText, setSelectedText] = useState('');
@@ -494,9 +495,7 @@ const ResultPage = ({
       </div>
 
       {/* 右侧注释列表 - 仅在优化模式下显示且有注释数据时显示 */}
-      {isOptimizeMode && 
-        task?.annotation?.result && 
-        Array.isArray(task.annotation.result) && (
+      {isOptimizeMode && comments && comments.length > 0 && (
         <div className="comments-section" style={{ 
           flex: 1, 
           backgroundColor: 'var(--color-bg-container)',
@@ -504,9 +503,8 @@ const ResultPage = ({
           maxHeight: 'calc(100vh - 320px)',
           overflow: 'hidden'
         }}>
-          {task.annotation.result.length > 0 ? (
             <CommentsList 
-              comments={task.annotation.result} 
+            comments={comments} 
               title="注释列表"
               expandedId={expandedComment}
               onToggleExpand={handleCommentToggle}
@@ -514,16 +512,27 @@ const ResultPage = ({
                 container: { height: '100%' }
               }}
             />
-          ) : (
-            <div style={{ 
-              padding: '20px', 
-              textAlign: 'center', 
-              color: 'var(--color-text-tertiary)',
-              fontSize: '14px' 
-            }}>
-              暂无注释数据
             </div>
           )}
+
+      {/* 非优化模式下显示传递的评论 */}
+      {!isOptimizeMode && comments && comments.length > 0 && (
+        <div className="comments-section" style={{ 
+          flex: 1, 
+          backgroundColor: 'var(--color-bg-container)',
+          borderRadius: '8px',
+          maxHeight: 'calc(100vh - 320px)',
+          overflow: 'auto'
+        }}>
+          <CommentsList 
+            comments={comments} 
+            title="注释列表"
+            expandedId={expandedComment}
+            onToggleExpand={handleCommentToggle}
+            customStyles={{
+              container: { height: '100%' }
+            }}
+          />
         </div>
       )}
 

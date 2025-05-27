@@ -85,8 +85,22 @@ const STEP_TITLES = [
   '提交结果',
 ];
 
+// 步骤字符串到数字的映射
+const STEP_TYPE_TO_INDEX = {
+  'result': 0,
+  'qa': 1,
+  'scene': 2,
+  'template': 3,
+  'retest': 4,
+  'submit': 5
+};
+
 const OptimizationSteps = ({ currentStep, onStepChange }) => {
   const stepItems = STEP_TITLES.map(title => ({ title }));
+  
+  // 将字符串步骤转换为数字索引
+  const currentIndex = typeof currentStep === 'string' ? 
+    STEP_TYPE_TO_INDEX[currentStep] || 0 : currentStep;
 
   return (
     <div className="optimization-steps" style={{ 
@@ -97,7 +111,7 @@ const OptimizationSteps = ({ currentStep, onStepChange }) => {
       borderRadius: "8px" 
     }}>
       <Steps 
-        current={currentStep} 
+        current={currentIndex} 
         onChange={onStepChange}
         items={stepItems} 
         size="small"
@@ -109,23 +123,15 @@ const OptimizationSteps = ({ currentStep, onStepChange }) => {
 
 // QA优化界面组件
 const QAOptimizationSection = ({ comments = [], card }) => {
-  // 自定义样式
-  const annotationTitleStyle = {
-    fontSize: "16px",
-    fontWeight: "500",
-    margin: "0 0 8px 0",
-    color: "var(--color-text-base)"
-  };
-
   return (
     <div className="qa-optimization-content" style={{ width: "100%" }}>
-      {/* 使用现有的QA组件，传递当前卡片的prompt和response_summary */}
       <QASection 
         isEditable={true} 
         taskId={card?.id}
+        card={card}
         prompt={card?.prompt} 
         response={card?.response_summary} 
-        comments={card?.annotation?.qa || comments}
+        comments={comments}
       />
     </div>
   );
@@ -135,12 +141,12 @@ const QAOptimizationSection = ({ comments = [], card }) => {
 const SceneOptimizationSection = ({ comments = [], card }) => {
   return (
     <div className="scene-optimization-content" style={{ width: "100%" }}>
-      {/* 使用现有的场景组件，场景组件中已包含注释列表，传递当前卡片的scenario */}
       <SceneSection 
         isEditable={true} 
         taskId={card?.id}
         scenario={card?.scenario} 
-        comments={card?.annotation?.scene || comments}
+        comments={comments}
+        card={card}
       />
     </div>
   );
@@ -150,31 +156,18 @@ const SceneOptimizationSection = ({ comments = [], card }) => {
 const TemplateOptimizationSection = ({ comments = [], card }) => {
   return (
     <div className="template-optimization-content" style={{ width: "100%" }}>
-      {/* 使用现有的模板组件，模板组件中已包含注释列表，传递当前卡片的step */}
       <TemplateSection 
         isEditable={true} 
         taskId={card?.id}
         steps={card?.templateData ? { templateData: card.templateData, ...card?.step } : card?.step} 
-        comments={card?.annotation?.template || comments}
+        comments={comments}
+        card={card}
       />
     </div>
   );
 };
 
-// 自定义QASection包装组件
-const CustomQASection = (props) => {
-  // 使用React.forwardRef传递ref等
-  return <QASection {...props} customTitleRender={(title) => (
-    <div style={{ 
-      fontSize: "16px", 
-      fontWeight: "500", 
-      margin: "0 0 8px 0", 
-      color: "var(--color-text-base)" 
-    }}>
-      {title}
-    </div>
-  )} />;
-};
+
 
 const CardDetailPage = () => {
   const { id } = useParams()
@@ -205,7 +198,7 @@ const CardDetailPage = () => {
   const { 
     isOptimizationMode, setIsOptimizationMode,
     currentOptimizationStep, setCurrentOptimizationStep,
-    currentStepComments: comments, setComments, addComment
+    currentStepComments, setComments, addComment
   } = useContext(OptimizationContext);
   
   // 保留本地状态存储
@@ -251,7 +244,7 @@ const CardDetailPage = () => {
   const toggleOptimizationMode = (checked) => {
     setIsOptimizationMode(checked);
     // 重置到第一步
-    setCurrentOptimizationStep(0);
+    setCurrentOptimizationStep('result');
     
     // 关闭连续选择模式并清除高亮
     if (isMultiSelectActive) {
@@ -273,7 +266,7 @@ const CardDetailPage = () => {
     const currentData = {
       step: currentOptimizationStep,
       models: selectedModels,
-      comments: comments,
+      comments: currentStepComments,
       // 其他需要保存的数据
     };
     
@@ -303,20 +296,64 @@ const CardDetailPage = () => {
       clearAllHighlights();
     }
     
-    // 进入下一步，确保不会超出步骤范围
-    if (currentOptimizationStep < STEP_TITLES.length - 1) {
-      setCurrentOptimizationStep(currentOptimizationStep + 1);
-    } else {
-      // 如果是最后一步，则完成优化
-      message.success('优化已完成');
+    // 根据当前步骤确定下一步
+    let nextStep;
+    switch(currentOptimizationStep) {
+      case 'result':
+        nextStep = 'qa';
+        break;
+      case 'qa':
+        nextStep = 'scene';
+        break;
+      case 'scene':
+        nextStep = 'template';
+        break;
+      case 'template':
+        nextStep = 'retest';
+        break;
+      case 'retest':
+        nextStep = 'submit';
+        break;
+      default:
+        nextStep = 'result';
     }
+    
+    // 进入下一步
+    setCurrentOptimizationStep(nextStep);
   };
 
   // 步骤变更处理
   const handleStepChange = (current) => {
-    setCurrentOptimizationStep(current);
+    // 将数字步骤转换为字符串表示
+    let stepType;
+    switch(current) {
+      case 0:
+        stepType = 'result';
+        break;
+      case 1:
+        stepType = 'qa';
+        break;
+      case 2:
+        stepType = 'scene';
+        break;
+      case 3:
+        stepType = 'template';
+        break;
+      case 4:
+        stepType = 'retest';
+        break;
+      case 5:
+        stepType = 'submit';
+        break;
+      default:
+        stepType = 'result';
+    }
+    
+    // 更新全局优化上下文中的当前步骤
+    setCurrentOptimizationStep(stepType);
+    
     // 记录当前步骤数据，用于返回时恢复
-    if (current !== currentOptimizationStep) {
+    if (stepType !== currentOptimizationStep) {
       // 如果是切换到不同步骤，保存当前步骤的数据
       saveCurrentData();
       
@@ -324,23 +361,6 @@ const CardDetailPage = () => {
       if (isMultiSelectActive) {
         setIsMultiSelectActive(false);
         clearAllHighlights();
-      }
-      
-      // 根据步骤加载对应的注释数据 - 直接使用步骤字符串映射到annotation对应字段
-      if (card && card.annotation) {
-        // 使用步骤数值或字符串加载对应的注释
-        if ((current === 0 || current === 'result') && Array.isArray(card.annotation.result)) {
-          setComments(card.annotation.result);
-        // QA优化 - 对应 qa 注释
-        } else if ((current === 1 || current === 'qa') && Array.isArray(card.annotation.qa)) {
-          setComments(card.annotation.qa);
-        // 场景优化 - 对应 scene 注释
-        } else if ((current === 2 || current === 'scene') && Array.isArray(card.annotation.scene)) {
-          setComments(card.annotation.scene);
-        // 模板优化 - 对应 template 注释
-        } else if ((current === 3 || current === 'template') && Array.isArray(card.annotation.template)) {
-          setComments(card.annotation.template);
-        }
       }
     }
   };
@@ -350,7 +370,7 @@ const CardDetailPage = () => {
     // 关闭优化模式
     if (isOptimizationMode) {
       setIsOptimizationMode(false);
-      setCurrentOptimizationStep(0);
+      setCurrentOptimizationStep('result');
     }
     
     // 关闭连续选择模式并清除高亮
@@ -364,20 +384,39 @@ const CardDetailPage = () => {
 
   // 上一步按钮处理函数
   const handlePrevStep = () => {
-    if (currentOptimizationStep > 0) {
-      saveCurrentData(); // 先保存当前步骤数据
-      
-      // 关闭连续选择模式并清除高亮
-      if (isMultiSelectActive) {
-        setIsMultiSelectActive(false);
-        clearAllHighlights();
-      }
-      
-      setCurrentOptimizationStep(currentOptimizationStep - 1);
-    } else {
-      // 如果已经是第一步，则关闭优化模式
-      setIsOptimizationMode(false);
+    // 根据当前步骤确定上一步
+    let prevStep;
+    switch(currentOptimizationStep) {
+      case 'qa':
+        prevStep = 'result';
+        break;
+      case 'scene':
+        prevStep = 'qa';
+        break;
+      case 'template':
+        prevStep = 'scene';
+        break;
+      case 'retest':
+        prevStep = 'template';
+        break;
+      case 'submit':
+        prevStep = 'retest';
+        break;
+      default:
+        // 如果已经是第一步，则关闭优化模式
+        setIsOptimizationMode(false);
+        return;
     }
+    
+    saveCurrentData(); // 先保存当前步骤数据
+    
+    // 关闭连续选择模式并清除高亮
+    if (isMultiSelectActive) {
+      setIsMultiSelectActive(false);
+      clearAllHighlights();
+    }
+    
+    setCurrentOptimizationStep(prevStep);
   };
 
   useEffect(() => {
@@ -892,7 +931,7 @@ const CardDetailPage = () => {
           if (next >= 100) {
             clearInterval(timer);
             // 测试完成后自动进入结果页面
-            setCurrentOptimizationStep(5);
+            setCurrentOptimizationStep('submit');
             setIsTesting(false);
           }
           return next;
@@ -920,7 +959,7 @@ const CardDetailPage = () => {
         if (next >= 100) {
           clearInterval(timer);
           // 测试完成后自动进入结果页面
-          setCurrentOptimizationStep(5);
+          setCurrentOptimizationStep('submit');
           setIsTesting(false);
         }
         return next;
@@ -944,7 +983,7 @@ const CardDetailPage = () => {
       source: card?.source || "优化测试",
       tags: [...(Array.isArray(card?.tags) ? card.tags : []), "已优化"],
       author: card?.author ? JSON.parse(JSON.stringify(card.author)) : null,
-      comments: comments ? JSON.parse(JSON.stringify(comments)) : [], // 深拷贝所有注释
+      comments: currentStepComments ? JSON.parse(JSON.stringify(currentStepComments)) : [], // 深拷贝所有注释
       steps: savedData ? JSON.parse(JSON.stringify(savedData)) : {}, // 深拷贝各步骤保存的数据
       selectedModels: selectedModels ? [...selectedModels] : [], // 深拷贝选中的模型
       // 添加卡片的原始数据
@@ -1261,6 +1300,7 @@ const CardDetailPage = () => {
 
   // 处理添加注释的逻辑
   const handleSaveAnnotation = (data) => {
+    console.log('handleSaveAnnotation----------data', data);
     try {
       // 如果是多选模式，使用合并的文本
       const textToSave = isMultiSelectActive || isMultiSelectTempMode ? selectedTexts.join('\n\n') : selectedText;
@@ -1661,11 +1701,11 @@ const CardDetailPage = () => {
             
             {/* 优化模式内容区域 */}
             <div className="optimization-content" style={{ display: "flex", gap: "4px" }}>
-              {currentOptimizationStep === 0 ? (
+              {currentOptimizationStep === 'result' ? (
                 // 结果质询界面
                 <>
                   {/* 左侧评估结果区域 - 使用ResultPage组件 */}
-                  <div style={{ flex: comments.length > 0 ? 2 : 3, display: "flex", flexDirection: "column", gap: "4px" }}>
+                  <div style={{ flex: currentStepComments.length > 0 ? 2 : 3, display: "flex", flexDirection: "column", gap: "4px" }}>
                     <ResultPage 
                       task={card}
                       enhancedChartData={enhancedChartData}
@@ -1679,35 +1719,21 @@ const CardDetailPage = () => {
                       toggleModelPanel={toggleModelPanel}
                       getModelColor={getModelColor}
                       onAddAnnotation={addComment}
+                      comments={currentStepComments}
                     />
                   </div>
-                  
-                  {/* 右侧注释列表 - 始终显示 */}
-                  {/* <div className="comments-section" style={{ 
-                    flex: 1, 
-                    backgroundColor: 'var(--color-bg-container)',
-                    borderRadius: '8px',
-                    maxHeight: 'calc(100vh - 320px)',
-                    overflow: 'hidden'
-                  }}>
-                    <CommentsList 
-                      comments={comments} 
-                      title="注释列表"
-                      expandedId={expandedComment}
-                      onToggleExpand={handleCommentToggle}
-                    />
-                  </div> */}
+        
                 </>
-              ) : currentOptimizationStep === 1 ? (
+              ) : currentOptimizationStep === 'qa' ? (
                 // QA优化界面
-                <QAOptimizationSection comments={comments} card={card} />
-              ) : currentOptimizationStep === 2 ? (
+                <QAOptimizationSection comments={currentStepComments} card={card} />
+              ) : currentOptimizationStep === 'scene' ? (
                 // 场景优化界面
-                <SceneOptimizationSection comments={comments} card={card} />
-              ) : currentOptimizationStep === 3 ? (
+                <SceneOptimizationSection comments={currentStepComments} card={card} />
+              ) : currentOptimizationStep === 'template' ? (
                 // 模板优化界面
-                <TemplateOptimizationSection comments={comments} card={card} />
-              ) : currentOptimizationStep === 4 ? (
+                <TemplateOptimizationSection comments={currentStepComments} card={card} />
+              ) : currentOptimizationStep === 'retest' ? (
                 // 再次测试界面
                 <div style={{ width: "100%", display: "flex", flex: 1 }}>
                   <TestConfirmation
@@ -1726,7 +1752,7 @@ const CardDetailPage = () => {
                     annotationData={getAnnotationObject(card)}
                   />
                 </div>
-              ) : currentOptimizationStep === 5 ? (
+              ) : currentOptimizationStep === 'submit' ? (
                 // 提交结果界面
                 <div style={{ width: "100%", display: "flex", flex: 1 }}>
                   <SubmitResultSection
@@ -1762,7 +1788,7 @@ const CardDetailPage = () => {
         {isOptimizationMode ? (
           // 优化模式下的按钮
           <>
-            {currentOptimizationStep === 5 ? (
+            {currentOptimizationStep === 'submit' ? (
               // 提交结果阶段的按钮布局
               <>
                 <Button 
@@ -1855,7 +1881,7 @@ const CardDetailPage = () => {
                 <Button 
                   icon={<ArrowLeftOutlined />} 
                   className="action-button back-button"
-                  onClick={currentOptimizationStep === 0 ? handleBack : handlePrevStep}
+                  onClick={currentOptimizationStep === 'result' ? handleBack : handlePrevStep}
                   style={{ 
                     borderRadius: '20px', 
                     display: 'flex',
@@ -1867,7 +1893,7 @@ const CardDetailPage = () => {
                     flex: 1
                   }}
                 >
-                  {currentOptimizationStep === 0 ? '返回' : '上一步'}
+                  {currentOptimizationStep === 'result' ? '返回' : '上一步'}
                 </Button>
                 <Button 
                   className="action-button save-button"
@@ -1886,7 +1912,7 @@ const CardDetailPage = () => {
                 >
                   保存
                 </Button>
-                {currentOptimizationStep === 4 ? (
+                {currentOptimizationStep === 'retest' ? (
                   // 再次测试步骤特有的按钮
                   <Button 
                     type="primary"
@@ -1934,7 +1960,7 @@ const CardDetailPage = () => {
                       flex: 2
                     }}
                   >
-                    {currentOptimizationStep < 5 ? '保存并进入下一步' : '保存并完成'}
+                    {currentOptimizationStep !== 'submit' ? '保存并进入下一步' : '保存并完成'}
                   </Button>
                 )}
                 <div 
@@ -2088,6 +2114,7 @@ const CardDetailPage = () => {
         onSave={handleSaveAnnotation}
         selectedText={selectedModalText}
         initialContent={selectedModalText}
+        step={currentOptimizationStep}
       />
       
       {/* 分享模态框 */}
