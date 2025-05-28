@@ -8,6 +8,7 @@ import { useChatContext } from "../contexts/ChatContext"
 import { useNavContext } from "../contexts/NavContext"
 import FilterSystem from "../components/filter/FilterSystem"
 import { useLocation } from "react-router-dom"
+import ListFooter from "../components/common/ListFooter"
 
 const ExplorePage = () => {
   const { selectedNav } = useNavContext()
@@ -202,7 +203,13 @@ const ExplorePage = () => {
 
       observer.current = new IntersectionObserver((entries) => {
         if (entries[0].isIntersecting && hasMore) {
-          setPage((prevPage) => prevPage + 1)
+          console.log("触底加载，准备 setPage");
+          setPage((prevPage) => {
+            const nextPage = prevPage + 1;
+            console.log("setPage 被调用，下一页:", nextPage);
+            return nextPage;
+          });
+          setLoading(true);
         }
       })
 
@@ -211,52 +218,56 @@ const ExplorePage = () => {
     [loading, hasMore]
   )
 
-  // 加载卡片数据
-  const loadCards = useCallback(async () => {
-    if (!loading) return
-    
+  // 1. 直接定义 loadCards 普通函数
+  const loadCards = async () => {
+    console.log("loadCards 调用, loading:", loading, "page:", page, "selectedNav:", selectedNav);
+    if (!loading) return;
     try {
       const params = {
         tab: selectedNav,
         pagination: {
           page,
-          per_page: 10
+          per_page: 1
         }
       };
-      
-      // 添加筛选和排序条件
       if (filterParams) {
         params.filter = filterParams;
       }
-      
       if (sortParams) {
         params.sort = sortParams;
       }
-      
-      // 使用新的API调用方式
       const response = await cardService.getExplorations(params);
-      
+      console.log("loadCards 获取到数据:", response.card, "当前页:", page);
       setCards((prevCards) => {
-        // 如果是第一页或导航变化，直接使用新数据
         if (page === 1 || prevNav !== selectedNav) {
+          console.log("setCards: 覆盖卡片数据", response.card);
           return response.card;
         }
-        // 否则追加新数据
+        console.log("setCards: 追加卡片数据", [...prevCards, ...response.card]);
         return [...prevCards, ...response.card];
       });
-      
-      // 更新分页信息
       setTotalItems(response.pagination.total);
       setHasMore(response.card.length > 0 && response.pagination.page * response.pagination.per_page < response.pagination.total);
+      console.log("setHasMore:", response.card.length > 0 && response.pagination.page * response.pagination.per_page < response.pagination.total);
       setPrevNav(selectedNav);
+      console.log("setPrevNav:", selectedNav);
       setError(null);
     } catch (err) {
       console.error("加载探索卡片失败:", err);
       setError("加载数据失败，请稍后重试");
     } finally {
       setLoading(false);
+      console.log("setLoading(false)");
     }
-  }, [selectedNav, page, filterParams, sortParams, prevNav]);
+  };
+
+  // 2. useEffect 依赖所有分页相关参数和 loading
+  useEffect(() => {
+    console.log("useEffect 依赖触发, loading:", loading, "page:", page, "selectedNav:", selectedNav);
+    if (loading) {
+      loadCards();
+    }
+  }, [page, selectedNav, filterParams, sortParams, loading]);
 
   // 导航变化时重置状态
   useEffect(() => {
@@ -267,11 +278,6 @@ const ExplorePage = () => {
       setLoading(true)
     }
   }, [selectedNav, prevNav])
-
-  // 页面加载或页码变化时加载数据
-  useEffect(() => {
-    loadCards()
-  }, [loadCards])
 
   return (
     <div className={`explore-page ${isChatOpen ? "chat-open" : ""}`}>
@@ -305,11 +311,8 @@ const ExplorePage = () => {
           <div className="no-data">暂无数据</div>
         ) : null}
 
-        {loading && (
-          <div className="loading-container" ref={loadingRef}>
-            <Spin tip="加载中..." />
-          </div>
-        )}
+        {/* 统一底部提示组件 */}
+        <ListFooter loading={loading} hasMore={hasMore} />
 
         {error && <div className="error-message">{error}</div>}
       </div>
