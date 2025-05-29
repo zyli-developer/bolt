@@ -23,7 +23,7 @@ const endpoints = {
   // 任务相关 (API规范: /v1/syntrust/tasks)
   tasks: {
     list: "/tasks",
-    detail: (id) => `/task/${id}`,
+    detail: (id) => `/tasks/${id}`,
     search: "/tasks/search",
     create: "/task",
     update: (id) => `/task/${id}`,

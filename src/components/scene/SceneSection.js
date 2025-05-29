@@ -15,7 +15,7 @@ import { OptimizationContext } from '../../contexts/OptimizationContext';
 const { Title } = Typography;
 const { TextArea } = Input;
 
-const SceneSection = ({ isEditable = false, taskId, scenario, comments = [], onAddAnnotation, onScenarioUpdate = () => {}, card }) => {
+const SceneSection = ({ isEditable = false, taskId, result, scenario, comments = [], onAddAnnotation, onScenarioUpdate = () => {}, card }) => {
   const { styles } = useStyles();
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
@@ -45,11 +45,14 @@ const SceneSection = ({ isEditable = false, taskId, scenario, comments = [], onA
     setStepComments
   } = useContext(OptimizationContext);
 
+  // 优先使用 card?.scenario 作为 scenario 数据源
+  const scenarioData = card?.scenario || scenario;
+console.log("scenarioData",scenarioData)
   useEffect(() => {
-    // 如果提供了scenario参数，则使用props数据，否则从服务获取数据
-    if (scenario) {
-      // 将scenario数据转换为React Flow所需的格式
-      const flowNodes = scenario.node ? scenario.node.map(node => {
+    // 如果提供了 scenarioData 参数，则使用它，否则从服务获取数据
+    if (scenarioData) {
+      // 将 scenarioData 数据转换为 React Flow 所需的格式
+      const flowNodes = scenarioData.dimension_node ? scenarioData.dimension_node.map(node => {
         // 根据节点类型设置不同的样式
         let nodeStyle = {
           background: '#fff',
@@ -58,65 +61,32 @@ const SceneSection = ({ isEditable = false, taskId, scenario, comments = [], onA
           padding: '12px 20px',
           fontSize: '14px'
         };
-        
-        // 根节点样式
-        if (node.type === 'root') {
-          nodeStyle = {
-            ...nodeStyle,
-            background: '#f0f7ff',
-            border: '1px solid #006ffd',
-            fontWeight: 'bold'
-          };
-        } 
-        // 分支节点样式
-        else if (node.type === 'branch') {
-          nodeStyle = {
-            ...nodeStyle,
-            background: '#f9f9f9',
-            border: '1px solid #a6a6a6'
-          };
-        }
-        // 叶子节点样式
-        else if (node.type === 'leaf') {
-          nodeStyle = {
-            ...nodeStyle,
-            background: '#fff',
-            border: '1px solid #d9d9d9',
-            width: node.label.length > 15 ? '280px' : 'auto'
-          };
-        }
-        
+        // 可根据需要扩展类型判断
         return {
           id: node.id,
           data: { label: node.label },
-          position: node.position || { x: 0, y: 0 },
+          position: { x: node.x || 0, y: node.y || 0 },
           type: 'default',
           style: nodeStyle
         };
       }) : [];
-
-      const flowEdges = scenario.edge ? scenario.edge.map(edge => ({
+      const flowEdges = scenarioData.dimension_edge ? scenarioData.dimension_edge.map(edge => ({
         id: edge.id,
         source: edge.source,
         target: edge.target,
         animated: true,
         style: { stroke: '#006ffd' }
       })) : [];
-
       setNodes(flowNodes);
       setEdges(flowEdges);
-      console.log("comments", comments);
       if (comments && comments.length > 0) {
-        // 如果提供了comments属性，直接使用它
         setLoading(false);
       } else {
-        // 否则从服务获取注释
       fetchAnnotations().finally(() => {
         setLoading(false);
       });
       }
     } else {
-      // 如果没有提供scenario参数，则从服务获取数据
       Promise.all([
         fetchSceneContent(),
         fetchAnnotations()
@@ -124,14 +94,12 @@ const SceneSection = ({ isEditable = false, taskId, scenario, comments = [], onA
         setLoading(false);
       });
     }
-  }, [scenario]);
+  }, [scenarioData]);
 
   // 监听scenario props变化，更新nodes和edges
   useEffect(() => {
-    if (scenario) {
-      // 将scenario数据转换为React Flow所需的格式
-      const flowNodes = scenario.node ? scenario.node.map(node => {
-        // 根据节点类型设置不同的样式
+    if (scenarioData) {
+      const flowNodes = scenarioData.dimension_node ? scenarioData.dimension_node.map(node => {
         let nodeStyle = {
           background: '#fff',
           border: '1px solid #d9d9d9',
@@ -139,55 +107,25 @@ const SceneSection = ({ isEditable = false, taskId, scenario, comments = [], onA
           padding: '12px 20px',
           fontSize: '14px'
         };
-        
-        // 根节点样式
-        if (node.type === 'root') {
-          nodeStyle = {
-            ...nodeStyle,
-            background: '#f0f7ff',
-            border: '1px solid #006ffd',
-            fontWeight: 'bold'
-          };
-        } 
-        // 分支节点样式
-        else if (node.type === 'branch') {
-          nodeStyle = {
-            ...nodeStyle,
-            background: '#f9f9f9',
-            border: '1px solid #a6a6a6'
-          };
-        }
-        // 叶子节点样式
-        else if (node.type === 'leaf') {
-          nodeStyle = {
-            ...nodeStyle,
-            background: '#fff',
-            border: '1px solid #d9d9d9',
-            width: node.label.length > 15 ? '280px' : 'auto'
-          };
-        }
-        
         return {
           id: node.id,
           data: { label: node.label },
-          position: node.position || { x: 0, y: 0 },
+          position: { x: node.x || 0, y: node.y || 0 },
           type: 'default',
           style: nodeStyle
         };
       }) : [];
-
-      const flowEdges = scenario.edge ? scenario.edge.map(edge => ({
+      const flowEdges = scenarioData.dimension_edge ? scenarioData.dimension_edge.map(edge => ({
         id: edge.id,
         source: edge.source,
         target: edge.target,
         animated: true,
         style: { stroke: '#006ffd' }
       })) : [];
-
       setNodes(flowNodes);
       setEdges(flowEdges);
     }
-  }, [scenario]);
+  }, [scenarioData]);
 
   // 当从props获取到comments或从优化上下文获取到注释数据时，更新本地状态
   useEffect(() => {
@@ -276,8 +214,8 @@ const SceneSection = ({ isEditable = false, taskId, scenario, comments = [], onA
         
         // 查找对应的场景节点以获取权重
         let nodeWeight = "0";
-        if (scenario && scenario.node && Array.isArray(scenario.node)) {
-          const sceneNode = scenario.node.find(n => n.id === selectedNode.id);
+        if (scenarioData && scenarioData.dimension_node && Array.isArray(scenarioData.dimension_node)) {
+          const sceneNode = scenarioData.dimension_node.find(n => n.id === selectedNode.id);
           if (sceneNode && typeof sceneNode.weight !== 'undefined') {
             nodeWeight = String(sceneNode.weight);
           }
@@ -367,10 +305,10 @@ const SceneSection = ({ isEditable = false, taskId, scenario, comments = [], onA
     );
 
     // 如果是可编辑模式，同时更新scenario.node数据
-    if (isEditable && scenario && scenario.node && Array.isArray(scenario.node)) {
+    if (isEditable && scenarioData && scenarioData.dimension_node && Array.isArray(scenarioData.dimension_node)) {
       // 创建scenario的副本，避免直接修改props
-      const updatedScenario = { ...scenario };
-      const updatedNodes = [...updatedScenario.node];
+      const updatedScenario = { ...scenarioData };
+      const updatedNodes = [...updatedScenario.dimension_node];
       
       // 查找对应节点并更新
       const nodeIndex = updatedNodes.findIndex(n => n.id === selectedNode.id);
@@ -382,7 +320,7 @@ const SceneSection = ({ isEditable = false, taskId, scenario, comments = [], onA
         };
         
         // 更新scenario
-        updatedScenario.node = updatedNodes;
+        updatedScenario.dimension_node = updatedNodes;
         
         // 如果有更新scenario的回调，调用它
         if (typeof onScenarioUpdate === 'function') {

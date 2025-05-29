@@ -4,12 +4,12 @@ import { useLocation } from 'react-router-dom';
 // 创建优化模式上下文
 export const OptimizationContext = createContext({
   isOptimizationMode: false,
-  currentOptimizationStep: 'result', // 直接使用字符串标识步骤: result=结果质询, qa=QA优化, scene=场景优化, template=模板优化
+  currentOptimizationStep: 'result', // 直接使用字符串标识步骤: result=结果质询, qa=QA优化, scenario=场景优化, flow=模板优化
   comments: {
     'result': [], // 结果质询对应CardDetailPage步骤0
     'qa': [],     // QA优化对应CardDetailPage步骤1
-    'scene': [],  // 场景优化对应CardDetailPage步骤2
-    'template': [] // 模板优化对应CardDetailPage步骤3
+    'scenario': [],  // 场景优化对应CardDetailPage步骤2
+    'flow': [] // 模板优化对应CardDetailPage步骤3
   },  // 对象类型，完全与task.annotation结构一致
   currentStepComments: [], // 当前步骤的注释列表
   setIsOptimizationMode: () => {},
@@ -31,8 +31,8 @@ export const OptimizationProvider = ({ children }) => {
   const [commentsMap, setCommentsMap] = useState({
     result: [], // 结果质询对应CardDetailPage步骤0
     qa: [],     // QA优化对应CardDetailPage步骤1
-    scene: [],  // 场景优化对应CardDetailPage步骤2
-    template: [] // 模板优化对应CardDetailPage步骤3
+    scenario: [],  // 场景优化对应CardDetailPage步骤2
+    flow: [] // 模板优化对应CardDetailPage步骤3
   });
   const location = useLocation();
   
@@ -65,7 +65,7 @@ export const OptimizationProvider = ({ children }) => {
 
   // 为特定步骤添加新的注释
   const addComment = (comment) => {
-    // 确保comment具有step字段，该字段指示注释类型(qa/scene/template/result)
+    // 确保comment具有step字段，该字段指示注释类型(qa/scenario/flow)
     // 如果没有step字段，使用当前步骤
     console.log('addComment----------comment', comment);
     const commentType = comment.step || currentOptimizationStep;
@@ -81,7 +81,7 @@ export const OptimizationProvider = ({ children }) => {
 
   // 设置特定步骤的注释列表
   const setStepComments = (stepType, comments) => {
-    // 直接使用步骤类型字符串(qa/scene/template/result)
+    // 直接使用步骤类型字符串(qa/scenario/flow)
     console.log('setStepComments----------stepType', stepType);
     setCommentsMap(prevMap => ({
       ...prevMap,

@@ -1,10 +1,12 @@
-{
+// exploration_search.js
+module.exports = {
     "pagination": {
         "total": 8,
         "page": 1,
         "per_page": 10
-    },  
+    },
     "cards": [
+        // 探索详情页数据
         {
             "id": "66666666-6666-6666-6666-666666666666",
             "name": "大型语言模型在医疗诊断辅助中的可靠性与伦理评估",
@@ -16,11 +18,11 @@
             "prompt": "本研究评估了大型语言模型在医疗诊断辅助中的可靠性和伦理问题。研究表明，当前模型在常见疾病诊断建议方面准确率达到87%，但在罕见病识别和紧急情况处理方面存在明显不足。同时，模型在医疗隐私保护和知情同意等伦理方面需要进一步完善。",
             "step": [
                 {
-                    "id": "2afac909-1a34-486a-abe5-75bcd0e7fe7f",
+                    "id": "d95f28e4-4520-4eb7-85c6-29ed7c75be1f",
                     "name": "医疗AI模型评估",
                     "status": "completed",
-                    "inserted_at": "2025-05-27T07:46:04Z",
-                    "updated_at": "2025-05-27T07:46:04Z",
+                    "inserted_at": "2025-05-28T09:32:48Z",
+                    "updated_at": "2025-05-28T09:32:48Z",
                     "score": [
                         {
                             "reason": "医疗AI模型在诊断准确性方面表现优秀，但在罕见病识别方面仍有不足",
@@ -71,9 +73,9 @@
                 "result": [],
                 "flow": [
                     {
-                        "id": "b8270020-c484-4f9c-b374-34af168d9de1",
+                        "id": "5ed7c550-2fb6-45aa-b866-ab4cd9ab7057",
                         "type": "task",
-                        "time": "2025-05-27T07:46:04Z",
+                        "time": "2025-05-28T09:32:48Z",
                         "text": "该模型在医疗诊断准确性方面表现出色，但在处理罕见病例时仍有不足。建议进一步完善伦理控制机制和知情同意流程。",
                         "author": "Admin User",
                         "attachments": [
@@ -247,6 +249,123 @@
                 ]
             },
             "created_from": "web"
+        },
+        // taskt list
+        {
+            "id": "44444444-4444-4444-4444-444444444444",
+            "name": "Python代码审查",
+            "priority": 2,
+            "status": "pending",
+            "version": "1.0",
+            "keywords": [],
+            "prompt": "请审查这段Python代码并提供改进建议",
+            "step": [
+                {
+                    "id": "48bbbd7f-f493-40e4-8800-91a6f7da2895",
+                    "name": "单元测试",
+                    "status": "pending",
+                    "score": [
+                        {
+                            "reason": "单元测试评估准备",
+                            "version": "1.0",
+                            "description": "已准备好单元测试框架和测试用例，等待执行测试并收集覆盖率数据",
+                            "score": 0,
+                            "dimension": [
+                                { "weight": 0.3, "latitude": "测试覆盖率" },
+                                { "weight": 0.3, "latitude": "测试质量" },
+                                { "weight": 0.2, "latitude": "边界情况处理" },
+                                { "weight": 0.2, "latitude": "文档完整性" }
+                            ],
+                            "confidence": 0.85,
+                            "consumed_points": 45
+                        },
+                        {
+                            "reason": "单元测试首轮执行",
+                            "version": "1.1",
+                            "description": "首轮测试执行中，已完成基本功能测试，覆盖率达到65%",
+                            "score": 65,
+                            "dimension": [
+                                { "weight": 0.3, "latitude": "测试覆盖率" },
+                                { "weight": 0.3, "latitude": "测试质量" },
+                                { "weight": 0.2, "latitude": "边界情况处理" },
+                                { "weight": 0.2, "latitude": "文档完整性" }
+                            ],
+                            "confidence": 0.88,
+                            "consumed_points": 65
+                        }
+                    ],
+                    "inserted_at": "2025-05-27T07:46:04Z",
+                    "updated_at": "2025-05-27T07:46:04Z",
+                    "agent": "Gemini Pro",
+                    "executor_type": "agent"
+                },
+                {
+                    "id": "56c69ff5-29aa-46eb-8fbb-5b88342d581c",
+                    "name": "代码审查",
+                    "status": "completed",
+                    "score": [
+                        {
+                            "reason": "代码质量评估",
+                            "version": "1.0",
+                            "description": "Python代码整体质量良好，但存在部分安全隐患和性能优化空间",
+                            "score": 88,
+                            "dimension": [
+                                { "weight": 0.25, "latitude": "代码质量" },
+                                { "weight": 0.25, "latitude": "安全性" },
+                                { "weight": 0.25, "latitude": "性能" },
+                                { "weight": 0.25, "latitude": "可维护性" }
+                            ],
+                            "confidence": 0.92,
+                            "consumed_points": 80
+                        }
+                    ],
+                    "inserted_at": "2025-05-27T07:46:04Z",
+                    "updated_at": "2025-05-27T07:46:04Z",
+                    "agent": "DeepSeek",
+                    "executor_type": "agent"
+                },
+                {
+                    "id": "02122b22-938c-44f0-8342-8beaf0ee60ef",
+                    "name": "语法检查",
+                    "status": "running",
+                    "score": [
+                        {
+                            "reason": "语法检查初始评估",
+                            "version": "1.0",
+                            "description": "开始进行Python代码语法检查，使用pylint静态分析工具",
+                            "score": 0,
+                            "dimension": [
+                                { "weight": 0.5, "latitude": "语法规范" },
+                                { "weight": 0.5, "latitude": "代码风格" }
+                            ],
+                            "confidence": 0.75,
+                            "consumed_points": 15
+                        },
+                        {
+                            "reason": "语法检查进行中",
+                            "version": "1.1",
+                            "description": "pylint静态分析进行中，已完成50%的代码检查，发现3处潜在问题",
+                            "score": 72.5,
+                            "dimension": [
+                                { "weight": 0.5, "latitude": "语法规范" },
+                                { "weight": 0.5, "latitude": "代码风格" }
+                            ],
+                            "confidence": 0.82,
+                            "consumed_points": 35
+                        }
+                    ],
+                    "inserted_at": "2025-05-27T07:46:04Z",
+                    "updated_at": "2025-05-27T07:46:04Z",
+                    "agent": "Llama 3",
+                    "executor_type": "agent"
+                }
+            ],
+            "scenarios": [],
+            "created_at": "2025-05-27T07:46:03Z",
+            "created_by": "Admin User",
+            "like_count": 0,
+            "created_from": "web",
+            "response_summary": "对Python代码进行安全性和性能审查"
         }
     ]
 }

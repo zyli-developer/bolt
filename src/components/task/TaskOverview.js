@@ -12,25 +12,18 @@ const TaskOverview = ({ task, annotationData, isOptimizationMode }) => {
   const mergedAnnotationData = useMemo(() => {
     // 确保返回值始终是数组
     if (!task) return Array.isArray(annotationData) ? annotationData : [];
-    
-    // 如果task.annotation不存在或为空，使用传入的annotationData
-    if (!task.annotation) {
+    // 如果task.annotations不存在或为空，使用传入的annotationData
+    if (!task.annotations) {
       return Array.isArray(annotationData) ? annotationData : [];
     }
-
-    // 从task.annotation中获取所有类别的注释
+    // 从task.annotations中获取所有类别的注释
     const allAnnotations = [];
-    
-    // 遍历annotation对象的所有属性（result、qa、scene、template等）
-    Object.keys(task.annotation).forEach(key => {
-      const categoryAnnotations = task.annotation[key];
-      // 确保是数组再添加
+    Object.keys(task.annotations).forEach(key => {
+      const categoryAnnotations = task.annotations[key];
       if (Array.isArray(categoryAnnotations)) {
         allAnnotations.push(...categoryAnnotations);
       }
     });
-
-    // 如果没有找到任何注释，使用传入的annotationData（确保是数组）
     return allAnnotations.length > 0 ? allAnnotations : (Array.isArray(annotationData) ? annotationData : []);
   }, [task, annotationData]);
 
@@ -187,13 +180,13 @@ const TaskOverview = ({ task, annotationData, isOptimizationMode }) => {
       <div className={styles.taskInfoSection}>
         <div className={styles.infoRow}>
           <div className={styles.infoLabel}>任务名称</div>
-          <div className={styles.infoContent}>{task.title}</div>
+          <div className={styles.infoContent}>{task.name}</div>
         </div>
         <div className={styles.infoRow}>
           <div className={styles.infoLabel}>创建人</div>
           <div className={styles.authorInfo}>
-            <Avatar size={24}>{task.author?.name ? task.author.name.charAt(0) : '?'}</Avatar>
-            <span>{task.author?.name || '未知'}</span>
+            <Avatar size={24}>{task.created_by ? task.created_by.charAt(0) : '?'}</Avatar>
+            <span>{task.created_by || '未知'}</span>
           </div>
         </div>
         <div className={styles.infoRow}>
@@ -203,7 +196,7 @@ const TaskOverview = ({ task, annotationData, isOptimizationMode }) => {
         <div className={styles.infoRow}>
           <div className={styles.infoLabel}>关键词</div>
           <div className={styles.tagContainer}>
-            {task.tags && Array.isArray(task.tags) ? task.tags.map((tag, index) => (
+            {task.keyword && Array.isArray(task.keyword) ? task.keyword.map((tag, index) => (
               <Tag key={index} className={styles.tag}>{tag}</Tag>
             )) : null}
           </div>

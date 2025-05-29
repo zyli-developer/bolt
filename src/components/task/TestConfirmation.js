@@ -281,18 +281,17 @@ const TestConfirmation = ({
   const renderSectionContent = () => {
     // 从task中获取注释数据
     const getCommentsFromTask = (section) => {
-      if (!task || !task.annotation) return [];
-      
+      if (!task || !task.annotations) return [];
       // 根据不同的区域返回对应的注释
       switch(section) {
         case 'qa':
-          return task.annotation.qa || [];
+          return task.annotations.qa || [];
         case 'scene':
-          return task.annotation.scene || [];
+          return task.annotations.scenario || [];
         case 'template':
-          return task.annotation.template || [];
+          return task.annotations.flow || [];
         case 'result':
-          return task.annotation.result || [];
+          return task.annotations.result || [];
         default:
           return [];
       }
@@ -314,7 +313,7 @@ const TestConfirmation = ({
               isEditable={false} 
               taskId={task?.id}
               prompt={task?.prompt} 
-              response={task?.response_summary}
+              response={task?.response}
               comments={getCommentsFromTask('qa')} // 从task数据中获取QA注释
             />
           </div>
@@ -326,7 +325,7 @@ const TestConfirmation = ({
               isEditable={false} 
               taskId={task?.id}
               scenario={task?.scenario}
-              comments={getCommentsFromTask('scene')} // 从task数据中获取场景注释
+              comments={getCommentsFromTask('scenario')} // 从task数据中获取场景注释
             />
           </div>
         ) : renderConfirmContent();
@@ -336,8 +335,8 @@ const TestConfirmation = ({
             <TemplateSection 
               isEditable={false} 
               taskId={task?.id}
-              steps={task?.templateData ? { templateData: task.templateData, ...task?.step } : task?.step}
-              comments={getCommentsFromTask('template')} // 从task数据中获取模板注释
+              steps={task?.flow_config ? { flow_config: task.flow_config, ...task?.step } : task?.step}
+              comments={getCommentsFromTask('flow')} // 从task数据中获取模板注释
             />
           </div>
         ) : renderConfirmContent();

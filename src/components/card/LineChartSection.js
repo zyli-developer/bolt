@@ -40,9 +40,10 @@ const colors = [
  * @param {Object} props.card - 卡片数据
  * @param {boolean} [props.showLinearGradient] - 是否显示头部linearGradient（默认false）
  * @param {number} [props.height] - 折线图容器的高度（默认150）
+ * @param {Array} [props.selectedModels] - 选中的模型
  * @returns {ReactElement} 折线图组件
  */
-const LineChartSection = ({ card, showLinearGradient = false, height = 150 }) => {
+const LineChartSection = ({ card, showLinearGradient = false, height = 150, selectedModels }) => {
   const styles = useStyles();
   console.log("------LineChartSection---------",card)
   // 1. 转换数据为平面数组
@@ -63,11 +64,24 @@ const LineChartSection = ({ card, showLinearGradient = false, height = 150 }) =>
     return [...new Set(chartData.map(d => d.version))].sort(versionSort);
   }, [chartData]);
 
-  // 3. 获取所有唯一agent
-  const agents = useMemo(() => {
+  // 3. 获取所有唯一agent，并根据selectedModels过滤
+  const allAgents = useMemo(() => {
     return [...new Set(chartData.map(d => d.agent))];
-  }, [chartData]);  
-console.log("agents",agents)
+  }, [chartData]);
+  const agents = useMemo(() => {
+    if (Array.isArray(selectedModels) && selectedModels.length > 0) {
+      // selectedModels是modelKey（如claude3），agent是原始名，需要做映射
+      // 先构建modelKey到agent的映射
+      const agentMap = {};
+      allAgents.forEach(agent => {
+        const key = agent.toLowerCase().replace(/\s+/g, '');
+        agentMap[key] = agent;
+      });
+      return selectedModels.map(key => agentMap[key]).filter(Boolean);
+    }
+    return allAgents;
+  }, [allAgents, selectedModels]);
+
   // 4. 生成每个agent的线数据（以version为X轴，补齐缺失点为null）
 
 

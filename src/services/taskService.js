@@ -290,7 +290,7 @@ const taskService = {
       // 调用API
       const response = await api.get(
         endpoints.tasks.detail(id),
-        { params: requestParams },
+        requestParams,
         'GetTaskResponse'
       );
       

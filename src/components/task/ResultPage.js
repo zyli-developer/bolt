@@ -1,12 +1,9 @@
 import React, { useState, useContext, useMemo } from 'react';
 import { 
-  Typography, 
   Avatar, 
-  Tag, 
   Select,
   Checkbox,
   Spin,
-  Button,
   message
 } from 'antd';
 import {
@@ -16,15 +13,8 @@ import {
 import AnnotationModal from '../../components/annotations/AnnotationModal';
 import { OptimizationContext } from '../../contexts/OptimizationContext';
 import CommentsList from '../common/CommentsList';
-import {
-  Radar,
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-  ResponsiveContainer
-} from 'recharts';
 import LineChartSection from '../card/LineChartSection';
+import RadarChartSection from '../card/RadarChartSection';
 
 const { Option } = Select;
 
@@ -32,12 +22,12 @@ const ResultPage = ({
   task, 
   enhancedChartData, 
   evaluationData, 
-  selectedModels, 
+  selectedModels: propSelectedModels, 
   selectedModel,
   expandedModel,
   radarMaxValue,
-  handleModelChange,
-  handleSelectAll,
+  handleModelChange: propHandleModelChange,
+  handleSelectAll: propHandleSelectAll,
   toggleModelPanel,
   getModelColor,
   onAddAnnotation,
@@ -106,12 +96,31 @@ const ResultPage = ({
 
   const modelOptions = useMemo(() => {
     if (stepsData && stepsData.length > 0) {
-      return stepsData.map(step => {
-        return step.agent.toLowerCase().replace(/\s+/g, '');
-      });
+      return stepsData.map(step => step.agent.toLowerCase().replace(/\s+/g, ''));
     }
     return Object.keys(evaluationData || {});
   }, [stepsData, evaluationData]);
+
+  const [selectedModels, setSelectedModels] = useState(modelOptions);
+  React.useEffect(() => {
+    setSelectedModels(modelOptions);
+  }, [JSON.stringify(modelOptions)]);
+
+  const handleModelChange = (values) => {
+    setSelectedModels(values);
+  };
+
+  const handleSelectAll = (checked) => {
+    setSelectedModels(checked ? modelOptions : []);
+  };
+
+  const getModelReason = (step) => {
+    if (!step || !Array.isArray(step.score) || step.score.length === 0) return '暂无描述';
+    const matchedScore = step.score.find(s => s.version === task.version);
+    if (matchedScore && matchedScore.reason) return matchedScore.reason;
+    if (step.score[0] && step.score[0].reason) return step.score[0].reason;
+    return '暂无描述';
+  };
 
   const currentEvaluation = useMemo(() => {
     if (stepsData && stepsData.length > 0 && selectedModel) {
@@ -151,7 +160,7 @@ const ResultPage = ({
           credibility: confidenceValue,
           scoreChange: '+0.0',
           credibilityChange: '+0.0',
-          reason: selectedStep.reason || '暂无描述',
+          reason: getModelReason(selectedStep),
           tags: selectedStep.tags || []
         };
       }
@@ -172,7 +181,7 @@ const ResultPage = ({
       reason: '暂无数据',
       tags: []
     };
-  }, [stepsData, selectedModel, evaluationData]);
+  }, [stepsData, selectedModel, evaluationData, task]);
 
   const lineChartData = useMemo(() => {
     if (!stepsData || stepsData.length === 0) {
@@ -219,6 +228,26 @@ const ResultPage = ({
     return Math.ceil(maxValue / 10) * 10 + 10;
   }, [enhancedChartData]);
 
+  const enhancedRadar = useMemo(() => {
+    const radarData = task?.chartData?.radar || [];
+    return radarData.map(item => {
+      const radarPoint = {
+        name: item.name || '未知维度',
+        value: Math.round(item.value || 0),
+      };
+      if (Array.isArray(stepsData)) {
+        stepsData.forEach((step, modelIndex) => {
+          if (step && step.agent) {
+            const modelKey = step.agent.toLowerCase().replace(/\s+/g, '');
+            const offset = 0.8 + (modelIndex * 0.05);
+            radarPoint[modelKey] = Math.round(Math.min(100, (item.value || 0) * offset));
+          }
+        });
+      }
+      return radarPoint;
+    });
+  }, [task, stepsData]);
+
   if (!task || !enhancedChartData || !currentEvaluation) {
     return (
       <div style={{ textAlign: 'center', padding: '40px 0' }}>
@@ -240,12 +269,17 @@ const ResultPage = ({
     return 70;
   };
 
+  // 计算是否有注释列表
+  const hasComments = Array.isArray(comments) && comments.length > 0;
+
   return (
-    <div className="evaluation-charts-wrapper" style={{ display: "flex", gap: "8px" }}>
+    <div
+      className={`evaluation-charts-wrapper flex gap-2 w-full ${hasComments ? 'justify-between' : ''}`}
+    >
       {/* 左侧评估区域 */}
-      <div className="evaluation-left-section" style={{ 
-        flex: isOptimizeMode && task?.annotation?.result && Array.isArray(task.annotation.result) && task.annotation.result.length > 0 ? 1 : 1.5
-      }}>
+      <div
+        className={`evaluation-left-section ${hasComments ? 'w-1/3' : 'w-1/2'} flex-shrink-0`}
+      >
         <div className="evaluation-section" style={{ padding: "8px" }}>
           <div className="evaluation-header" style={{ marginBottom: "8px" }}>
             <div className="evaluation-title" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -296,7 +330,7 @@ const ResultPage = ({
               const modelData = step ? {
                 name: step.agent,
                 tags: step.tags || [],
-                reason: step.reason || '暂无描述'
+                reason: getModelReason(step)
               } : evaluationData[modelKey];
               
               if (!modelData) return null;
@@ -310,8 +344,20 @@ const ResultPage = ({
                       </Avatar>
                       <div className="model-info">
                         <div className="model-name" style={{ fontSize: "14px" }}>
-                            {modelData.name || 'Unknown Model'}
-                          <span className="model-usage" style={{ fontSize: "12px", marginLeft: "4px" }}>128k</span>
+                          {modelData.name || 'Unknown Model'}
+                          <span className="model-tags" style={{ gap: "4px", marginLeft: "4px" }}>
+                            <span className="model-tag" style={{ padding: "0 4px", fontSize: "11px" }}>
+                              {
+                                (() => {
+                                  const step = stepsData.find(s => s.agent && s.agent.toLowerCase().replace(/\s+/g, '') === modelKey);
+                                  const consumed = step && Array.isArray(step.score) && step.score[0]
+                                    ? step.score[0].consumed_points
+                                    : undefined;
+                                  return consumed !== undefined ? `${consumed} tokens` : '未知消耗';
+                                })()
+                              }
+                            </span>
+                          </span>
                         </div>
                         <div className="model-tags" style={{ gap: "4px" }}>
                             {Array.isArray(modelData.tags) && modelData.tags.map((tag, index) => (
@@ -344,10 +390,9 @@ const ResultPage = ({
       </div>
 
       {/* 右侧图表区域 */}
-      <div className="evaluation-right-section" style={{ 
-        gap: "4px", 
-        flex: isOptimizeMode && task?.annotation?.result && Array.isArray(task.annotation.result) && task.annotation.result.length > 0 ? 1 : 1.5
-      }}>
+      <div
+        className={`evaluation-right-section flex flex-col gap-1 ${hasComments ? 'w-1/3' : 'w-1/2'} flex-shrink-0`}
+      >
         <div className="line-chart-section" style={{ padding: "8px" }}>
           <div className="chart-legend" style={{ marginBottom: "8px", gap: "8px" }}>
             {Array.isArray(selectedModels) && selectedModels.map(modelKey => {
@@ -371,6 +416,7 @@ const ResultPage = ({
                 chartData: { line: lineChartData }
               }} 
               showLinearGradient={true}
+              selectedModels={selectedModels}
             />
           </div>
         </div>
@@ -398,40 +444,19 @@ const ResultPage = ({
           </div>
 
           <div className="radar-chart-content" style={{ height: "220px" }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <RadarChart data={enhancedChartData?.radar || []}>
-                <PolarGrid stroke="var(--color-border-secondary)" />
-                <PolarAngleAxis dataKey="name" tick={{ fontSize: 10, fill: "var(--color-text-tertiary)" }} />
-                <PolarRadiusAxis 
-                  domain={[0, calculatedRadarMaxValue]} 
-                  tick={{ fontSize: 9, fill: "var(--color-text-tertiary)" }} 
-                  axisLine={false} 
-                />
-                {Array.isArray(selectedModels) && selectedModels.map(modelKey => (
-                  <Radar
-                    key={modelKey}
-                    name={modelKey}
-                    dataKey={modelKey}
-                    stroke={getModelColor(modelKey)}
-                    fill={getModelColor(modelKey)}
-                    fillOpacity={0.2}
-                  />
-                ))}
-              </RadarChart>
-            </ResponsiveContainer>
+            <RadarChartSection 
+              radarData={enhancedRadar}
+              modelKeys={selectedModels}
+              maxValue={calculatedRadarMaxValue}
+              height={220}
+            />
           </div>
         </div>
       </div>
 
       {/* 右侧注释列表 - 仅在优化模式下显示且有注释数据时显示 */}
-      {isOptimizeMode && comments && comments.length > 0 && (
-        <div className="comments-section" style={{ 
-          flex: 1, 
-          backgroundColor: 'var(--color-bg-container)',
-          borderRadius: '8px',
-          maxHeight: 'calc(100vh - 320px)',
-          overflow: 'hidden'
-        }}>
+      {isOptimizeMode && hasComments && (
+        <div className="comments-section w-1/3 flex-shrink-0 bg-[var(--color-bg-container)] rounded-lg max-h-[calc(100vh-320px)] overflow-hidden">
             <CommentsList 
             comments={comments} 
               title="注释列表"
@@ -445,14 +470,8 @@ const ResultPage = ({
           )}
 
       {/* 非优化模式下显示传递的评论 */}
-      {!isOptimizeMode && comments && comments.length > 0 && (
-        <div className="comments-section" style={{ 
-          flex: 1, 
-          backgroundColor: 'var(--color-bg-container)',
-          borderRadius: '8px',
-          maxHeight: 'calc(100vh - 320px)',
-          overflow: 'auto'
-        }}>
+      {!isOptimizeMode && hasComments && (
+        <div className="comments-section w-1/3 flex-shrink-0 bg-[var(--color-bg-container)] rounded-lg max-h-[calc(100vh-320px)] overflow-auto">
           <CommentsList 
             comments={comments} 
             title="注释列表"

@@ -40,20 +40,86 @@ const TemplateSection = ({ isEditable = false, taskId, steps, comments = [], onA
     setStepComments
   } = useContext(OptimizationContext);
 
+  // 优先使用 card?.templateData 作为数据源
+  const templateData = card?.templateData;
+
   useEffect(() => {
-    // 如果提供了steps参数，则使用它来设置模板数据
-    if (taskId && steps) {
-      // 优先检查是否有templateData
+    // 优先使用 flow_config 或 props.steps 里的新结构
+    const flowConfig = card?.flow_config || steps;
+    if (flowConfig && Array.isArray(flowConfig.steps) && Array.isArray(flowConfig.connections)) {
+      // 1. 处理节点
+      const flowNodes = flowConfig.steps.map((step) => {
+        let nodeStyle = {
+          background: '#fff',
+          border: '1px solid #d9d9d9',
+          borderRadius: '8px',
+          padding: '12px 20px',
+          fontSize: '14px'
+        };
+        // 入口节点高亮
+        if (Array.isArray(flowConfig.entry_points) && flowConfig.entry_points.includes(step.id)) {
+          nodeStyle = {
+            ...nodeStyle,
+            background: '#f0f7ff',
+            border: '1px solid #006ffd',
+            fontWeight: 'bold'
+          };
+        }
+        // 出口节点特殊样式
+        if (Array.isArray(flowConfig.exit_points) && flowConfig.exit_points.includes(step.id)) {
+          nodeStyle = {
+            ...nodeStyle,
+            background: '#fffbe6',
+            border: '1px solid #faad14',
+            fontWeight: 'bold'
+          };
+        }
+        return {
+          id: step.id,
+          data: { label: step.name },
+          position: { x: step.position?.x || 0, y: step.position?.y || 0 },
+          type: 'default',
+          style: nodeStyle
+        };
+      });
+      // 2. 处理边（from/to结构）
+      const flowEdges = flowConfig.connections.map(conn => ({
+        id: `${conn.from}-${conn.to}`,
+        source: conn.from,
+        target: conn.to,
+        animated: true,
+        style: { stroke: '#006ffd' }
+      }));
+      setNodes(flowNodes);
+      setEdges(flowEdges);
+      if (comments && comments.length > 0) {
+        setLoading(false);
+      } else {
+        fetchAnnotations().finally(() => {
+          setLoading(false);
+        });
+      }
+      return;
+    }
+    // 优先使用 templateData
+    if (taskId && templateData) {
+      setNodes(templateData.nodes || []);
+      setEdges(templateData.edges || []);
+      if (comments && comments.length > 0) {
+        setLoading(false);
+      } else {
+        fetchAnnotations().finally(() => {
+          setLoading(false);
+        });
+      }
+    } else if (taskId && steps) {
+      // 兼容旧逻辑
       if (steps.templateData) {
-        // 如果steps是对象且包含templateData属性
         setNodes(steps.templateData.nodes);
         setEdges(steps.templateData.edges);
-        
         if (comments && comments.length > 0) {
-          // 如果提供了comments属性，直接使用它
           setLoading(false);
         } else {
-          // 否则从服务获取注释
         fetchAnnotations().finally(() => {
           setLoading(false);
         });

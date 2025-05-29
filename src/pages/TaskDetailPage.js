@@ -8,35 +8,9 @@ import {
   StarOutlined,
   StarFilled,
   ShareAltOutlined,
-  LikeOutlined,
-  LikeFilled,
-  CommentOutlined,
-  ForkOutlined,
-  SettingOutlined,
-  CaretRightOutlined,
-  CaretDownOutlined,
-  PlusOutlined,
-  MinusOutlined,
   CheckOutlined,
 } from "@ant-design/icons"
-import {
-  LineChart,
-  Line,
-  ResponsiveContainer,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip as RechartsTooltip,
-  Radar,
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-  Area,
-  AreaChart,
-} from "recharts"
 import taskService from "../services/taskService"
-import cardService from "../services/cardService"
 import { useChatContext } from "../contexts/ChatContext"
 import TimelineIcon from "../components/icons/TimelineIcon"
 import { taskAnnotationData } from "../mocks/data"
@@ -253,7 +227,7 @@ const TaskDetailPage = () => {
     // 兼容step参数
     const category = stepType || newAnnotation.step || 'result';
     const updatedAnnotation = task.annotation ? { ...task.annotation } : {
-      result: [], qa: [], scene: [], template: []
+      result: [], qa: [], scenario: [], flow: []
     };
     if (!updatedAnnotation[category]) updatedAnnotation[category] = [];
     updatedAnnotation[category].push(newAnnotation);
@@ -497,7 +471,7 @@ const TaskDetailPage = () => {
         setTask(taskData)
 
         // 设置注释数据，直接使用task中的annotation对象
-        // annotation属性是一个对象，包含各类注释，如{result:[], qa:[], scene:[], template:[]}
+        // annotation属性是一个对象，包含各类注释，如{result:[], qa:[], scenario:[], flow:[]}
         if (taskData && taskData.annotation) {
           // 直接使用原始annotation对象
           setAnnotationData(taskData.annotation);
@@ -508,8 +482,8 @@ const TaskDetailPage = () => {
             setAnnotationData({
               result: taskData.annotations,
               qa: [],
-              scene: [],
-              template: []
+              scenario: [],
+              flow: []
             });
           } else {
             // 如果已经是对象，直接使用
@@ -523,8 +497,8 @@ const TaskDetailPage = () => {
           setAnnotationData({
             result: [],
             qa: [],
-            scene: [],
-            template: []
+            scenario: [],
+            flow: []
           });
         }
 
@@ -708,7 +682,7 @@ const TaskDetailPage = () => {
                 isEditable={true} 
                 taskId={task?.id}
                 scenario={task?.scenario}
-                comments={task?.annotation?.scene || []}
+                comments={task?.annotation?.scenario || []}
                 onAddAnnotation={addAnnotationToTask}
               />
             </div>
@@ -720,7 +694,7 @@ const TaskDetailPage = () => {
                 isEditable={true} 
                 taskId={task?.id}
                 steps={task?.templateData ? { templateData: task.templateData, ...task?.step } : task?.step}
-                comments={task?.annotation?.template || []}
+                comments={task?.annotation?.flow || []}
                 onAddAnnotation={addAnnotationToTask}
               />
             </div>
@@ -779,7 +753,7 @@ const TaskDetailPage = () => {
               isEditable={false} 
               taskId={task?.id}
               scenario={task?.scenario}
-              comments={task?.annotation?.scene || []}
+              comments={task?.annotation?.scenario || []}
               onAddAnnotation={addAnnotationToTask}
             />
           </div>
@@ -791,7 +765,7 @@ const TaskDetailPage = () => {
               isEditable={false} 
               taskId={task?.id}
               steps={task?.templateData ? { templateData: task.templateData, ...task?.step } : task?.step}
-              comments={task?.annotation?.template || []}
+              comments={task?.annotation?.flow || []}
               onAddAnnotation={addAnnotationToTask}
             />
           </div>
@@ -938,8 +912,8 @@ const TaskDetailPage = () => {
         annotationData={task?.annotation || {
           result: [],
           qa: [],
-          scene: [],
-          template: []
+          scenario: [],
+          flow: []
         }}
       />
     );
@@ -1642,7 +1616,7 @@ const TaskDetailPage = () => {
                 isEditable={true}
                 taskId={task?.id}
                 scenario={task?.scenario}
-                comments={task?.annotation?.scene || []}
+                comments={task?.annotation?.scenario || []}
                 onAddAnnotation={addAnnotationToTask}
               />;
             case 3:
@@ -1651,7 +1625,7 @@ const TaskDetailPage = () => {
                 isEditable={true}
                 taskId={task?.id}
                 steps={task?.templateData ? { templateData: task.templateData, ...task?.step } : task?.step}
-                comments={task?.annotation?.template || []}
+                comments={task?.annotation?.flow || []}
                 onAddAnnotation={addAnnotationToTask}
               />;
             case 4:
@@ -1671,8 +1645,8 @@ const TaskDetailPage = () => {
                 annotationData={task?.annotation || {
                   result: [],
                   qa: [],
-                  scene: [],
-                  template: []
+                  scenario: [],
+                  flow: []
                 }}
               />;
             case 5:

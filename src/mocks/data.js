@@ -2067,165 +2067,118 @@ export const explorationCardsData = [
 export const taskCardsData = [
   {
     "id": "44444444-4444-4444-4444-444444444444",
+    "name": "Python代码审查",
+    "priority": 2,
     "status": "pending",
     "version": "1.0",
+    "keywords": [],
     "prompt": "请审查这段Python代码并提供改进建议",
     "step": [
         {
-            "id": "f314b4cb-e8c6-4a82-a185-c33e3eb026aa",
-            "name": "代码审查",
-            "status": "completed",
-            "inserted_at": "2025-05-22T11:50:48Z",
-            "updated_at": "2025-05-22T11:50:48Z",
-            "executor_type": "agent",
-            "agent": "AI Agent",
-            "score": [
-                {
-                    "reason": "代码质量评估",
-                    "version": "1.0",
-                    "description": "Python代码整体质量良好，但存在部分安全隐患和性能优化空间",
-                    "dimension": [
-                        {
-                            "latitude": "代码质量",
-                            "weight": 0.25
-                        },
-                        {
-                            "latitude": "安全性",
-                            "weight": 0.25
-                        },
-                        {
-                            "latitude": "性能",
-                            "weight": 0.25
-                        },
-                        {
-                            "latitude": "可维护性",
-                            "weight": 0.25
-                        }
-                    ],
-                    "confidence": 0.92,
-                    "score": 88,
-                    "consumed_points": 80
-                }
-            ]
-        },
-        {
-            "id": "15cd60f8-b4d3-4b9d-b5ba-5af38367575a",
-            "name": "语法检查",
-            "status": "running",
-            "inserted_at": "2025-05-22T11:50:48Z",
-            "updated_at": "2025-05-22T11:50:48Z",
-            "executor_type": "agent",
-            "agent": "AI Agent",
-            "score": [
-                {
-                    "reason": "语法检查初始评估",
-                    "version": "1.0",
-                    "description": "开始进行Python代码语法检查，使用pylint静态分析工具",
-                    "dimension": [
-                        {
-                            "latitude": "语法规范",
-                            "weight": 0.5
-                        },
-                        {
-                            "latitude": "代码风格",
-                            "weight": 0.5
-                        }
-                    ],
-                    "confidence": 0.75,
-                    "score": 0.0,
-                    "consumed_points": 15
-                },
-                {
-                    "reason": "语法检查进行中",
-                    "version": "1.1",
-                    "description": "pylint静态分析进行中，已完成50%的代码检查，发现3处潜在问题",
-                    "dimension": [
-                        {
-                            "latitude": "语法规范",
-                            "weight": 0.5
-                        },
-                        {
-                            "latitude": "代码风格",
-                            "weight": 0.5
-                        }
-                    ],
-                    "confidence": 0.82,
-                    "score": 72.5,
-                    "consumed_points": 35
-                }
-            ]
-        },
-        {
-            "id": "58801e79-3a89-4826-b729-0857bf14cbb8",
+            "id": "48bbbd7f-f493-40e4-8800-91a6f7da2895",
             "name": "单元测试",
             "status": "pending",
-            "inserted_at": "2025-05-22T11:50:48Z",
-            "updated_at": "2025-05-22T11:50:48Z",
-            "executor_type": "agent",
-            "agent": "AI Agent",
             "score": [
                 {
                     "reason": "单元测试评估准备",
                     "version": "1.0",
                     "description": "已准备好单元测试框架和测试用例，等待执行测试并收集覆盖率数据",
+                    "score": 0,
                     "dimension": [
-                        {
-                            "latitude": "测试覆盖率",
-                            "weight": 0.3
-                        },
-                        {
-                            "latitude": "测试质量",
-                            "weight": 0.3
-                        },
-                        {
-                            "latitude": "边界情况处理",
-                            "weight": 0.2
-                        },
-                        {
-                            "latitude": "文档完整性",
-                            "weight": 0.2
-                        }
+                        { "weight": 0.3, "latitude": "测试覆盖率" },
+                        { "weight": 0.3, "latitude": "测试质量" },
+                        { "weight": 0.2, "latitude": "边界情况处理" },
+                        { "weight": 0.2, "latitude": "文档完整性" }
                     ],
                     "confidence": 0.85,
-                    "score": 0,
                     "consumed_points": 45
                 },
                 {
                     "reason": "单元测试首轮执行",
                     "version": "1.1",
                     "description": "首轮测试执行中，已完成基本功能测试，覆盖率达到65%",
+                    "score": 65,
                     "dimension": [
-                        {
-                            "latitude": "测试覆盖率",
-                            "weight": 0.3
-                        },
-                        {
-                            "latitude": "测试质量",
-                            "weight": 0.3
-                        },
-                        {
-                            "latitude": "边界情况处理",
-                            "weight": 0.2
-                        },
-                        {
-                            "latitude": "文档完整性",
-                            "weight": 0.2
-                        }
+                        { "weight": 0.3, "latitude": "测试覆盖率" },
+                        { "weight": 0.3, "latitude": "测试质量" },
+                        { "weight": 0.2, "latitude": "边界情况处理" },
+                        { "weight": 0.2, "latitude": "文档完整性" }
                     ],
                     "confidence": 0.88,
-                    "score": 65,
                     "consumed_points": 65
                 }
-            ]
+            ],
+            "inserted_at": "2025-05-27T07:46:04Z",
+            "updated_at": "2025-05-27T07:46:04Z",
+            "agent": "Gemini Pro",
+            "executor_type": "agent"
+        },
+        {
+            "id": "56c69ff5-29aa-46eb-8fbb-5b88342d581c",
+            "name": "代码审查",
+            "status": "completed",
+            "score": [
+                {
+                    "reason": "代码质量评估",
+                    "version": "1.0",
+                    "description": "Python代码整体质量良好，但存在部分安全隐患和性能优化空间",
+                    "score": 88,
+                    "dimension": [
+                        { "weight": 0.25, "latitude": "代码质量" },
+                        { "weight": 0.25, "latitude": "安全性" },
+                        { "weight": 0.25, "latitude": "性能" },
+                        { "weight": 0.25, "latitude": "可维护性" }
+                    ],
+                    "confidence": 0.92,
+                    "consumed_points": 80
+                }
+            ],
+            "inserted_at": "2025-05-27T07:46:04Z",
+            "updated_at": "2025-05-27T07:46:04Z",
+            "agent": "DeepSeek",
+            "executor_type": "agent"
+        },
+        {
+            "id": "02122b22-938c-44f0-8342-8beaf0ee60ef",
+            "name": "语法检查",
+            "status": "running",
+            "score": [
+                {
+                    "reason": "语法检查初始评估",
+                    "version": "1.0",
+                    "description": "开始进行Python代码语法检查，使用pylint静态分析工具",
+                    "score": 0,
+                    "dimension": [
+                        { "weight": 0.5, "latitude": "语法规范" },
+                        { "weight": 0.5, "latitude": "代码风格" }
+                    ],
+                    "confidence": 0.75,
+                    "consumed_points": 15
+                },
+                {
+                    "reason": "语法检查进行中",
+                    "version": "1.1",
+                    "description": "pylint静态分析进行中，已完成50%的代码检查，发现3处潜在问题",
+                    "score": 72.5,
+                    "dimension": [
+                        { "weight": 0.5, "latitude": "语法规范" },
+                        { "weight": 0.5, "latitude": "代码风格" }
+                    ],
+                    "confidence": 0.82,
+                    "consumed_points": 35
+                }
+            ],
+            "inserted_at": "2025-05-27T07:46:04Z",
+            "updated_at": "2025-05-27T07:46:04Z",
+            "agent": "Llama 3",
+            "executor_type": "agent"
         }
     ],
-    "like_count": 0,
     "scenarios": [],
-    "keywords": ["AI Agent", "Python", "代码审查", "语法检查", "单元测试"],
-    "is_public": true,
+    "created_at": "2025-05-27T07:46:03Z",
     "created_by": "Admin User",
+    "like_count": 0,
     "created_from": "web",
-    "created_at": "2025-05-22T11:50:48Z",
     "response_summary": "对Python代码进行安全性和性能审查"
 },
   // {
