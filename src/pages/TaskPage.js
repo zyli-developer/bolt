@@ -569,7 +569,6 @@ const TaskPage = () => {
     const fetchTasks = async () => {
       try {
         setLoading(true);
-        
         const params = {
           tab: selectedNav || "community",
           pagination: {
@@ -577,36 +576,32 @@ const TaskPage = () => {
             per_page: pagination.pageSize
           }
         };
-        
         // 添加筛选和排序条件
         if (filterParams) {
           params.filter = filterParams;
         }
-        
         if (sortParams) {
           params.sort = sortParams;
         }
-        
         console.log("任务页请求参数:", params);
-        
         // 调用API获取任务数据
         const response = await taskService.getTasks(params);
         console.log("response",response);
-        setTasks(response.cards);
+        // 保证 response.cards 是数组
+        setTasks(Array.isArray(response.cards) ? response.cards : []);
         setPagination(prev => ({
           ...prev,
-          total: response.pagination.total
+          total: response.pagination?.total || 0
         }));
         setError(null);
       } catch (err) {
         console.error("加载任务数据失败:", err);
         setError("加载数据失败，请稍后重试");
-        setTasks([]);
+        setTasks([]); // 保证 tasks 一定是数组
       } finally {
         setLoading(false);
       }
     };
-
     fetchTasks();
   }, [selectedNav, pagination.current, pagination.pageSize, filterParams, sortParams, forceRefresh]);
 
@@ -640,10 +635,10 @@ const TaskPage = () => {
           <div className="loading-container">
             <Spin tip="加载中..." />
           </div>
-        ) : tasks.length > 0 ? (
+        ) : tasks && tasks.length > 0 ? (
           <>
             <div className="tasks-grid">
-              {tasks.map((task) => (
+              {Array.isArray(tasks) && tasks.map((task) => (
                 <TaskCard key={task.id} task={task} onTaskUpdate={handleTaskUpdate} />
               ))}
             </div>

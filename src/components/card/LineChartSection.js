@@ -67,7 +67,7 @@ const LineChartSection = ({ card, showLinearGradient = false, height = 150, sele
   // 3. 获取所有唯一agent，并根据selectedModels过滤
   const allAgents = useMemo(() => {
     return [...new Set(chartData.map(d => d.agent))];
-  }, [chartData]);
+  }, [chartData]);  
   const agents = useMemo(() => {
     if (Array.isArray(selectedModels) && selectedModels.length > 0) {
       // selectedModels是modelKey（如claude3），agent是原始名，需要做映射

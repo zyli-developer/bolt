@@ -71,7 +71,7 @@ const SubmitResultSection = ({ task }) => {
     }
     
     console.log("modelData",modelData)
-
+    
     // 设置评估数据
     setEvaluationData(modelData);
     
@@ -346,7 +346,7 @@ const SubmitResultSection = ({ task }) => {
                                 return consumed !== undefined ? `${consumed} tokens` : '未知消耗';
                               })()
                             }
-                          </span>
+                            </span>
                         </div>
                       </div>
                     </div>
@@ -432,7 +432,7 @@ const SubmitResultSection = ({ task }) => {
                 modelKeys={selectedModels}
                 maxValue={100}
                 height={220}
-              />
+                    />
             </div>
           </div>
 

@@ -344,7 +344,7 @@ const ResultPage = ({
                       </Avatar>
                       <div className="model-info">
                         <div className="model-name" style={{ fontSize: "14px" }}>
-                          {modelData.name || 'Unknown Model'}
+                            {modelData.name || 'Unknown Model'}
                           <span className="model-tags" style={{ gap: "4px", marginLeft: "4px" }}>
                             <span className="model-tag" style={{ padding: "0 4px", fontSize: "11px" }}>
                               {
@@ -449,7 +449,7 @@ const ResultPage = ({
               modelKeys={selectedModels}
               maxValue={calculatedRadarMaxValue}
               height={220}
-            />
+                  />
           </div>
         </div>
       </div>

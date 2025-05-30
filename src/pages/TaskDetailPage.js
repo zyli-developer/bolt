@@ -386,7 +386,7 @@ const TaskDetailPage = () => {
         taskData.prompt = taskData.prompt || ''; // 用于显示在.task-title中
         taskData.summary = taskData.summary || ''; // 优先使用summary作为描述
         taskData.description = taskData.description || '暂无描述';  // 备用描述
-        taskData.response_summary = taskData.response_summary || ''; // 用于QA页面显示
+        taskData.response = taskData.response || ''; // 用于QA页面显示
         taskData.source = taskData.source || '未知来源';
         taskData.chartData = taskData.chartData || {
           radar: [
@@ -560,7 +560,7 @@ const TaskDetailPage = () => {
           source: '未知来源',
           tags: ['加载失败'],
           description: '无法加载任务数据，请刷新页面重试',
-          response_summary: '无法加载回答数据',
+          response: '无法加载回答数据',
           chartData: {
             radar: [],
             line: []
@@ -669,7 +669,7 @@ const TaskDetailPage = () => {
                 isEditable={true} 
                 taskId={task?.id}
                 prompt={task?.prompt} 
-                response={task?.response_summary}
+                response={task?.response}
                 comments={task?.annotation?.qa || []}
                 onAddAnnotation={addAnnotationToTask}
               />
@@ -741,7 +741,7 @@ const TaskDetailPage = () => {
               isEditable={true} 
               taskId={task?.id}
               prompt={task?.prompt} 
-              response={task?.response_summary}
+              response={task?.response}
               comments={task?.annotation?.qa || []}
               onAddAnnotation={addAnnotationToTask}
             />
@@ -983,7 +983,7 @@ const TaskDetailPage = () => {
     
     switch (stepNumber) {
       case 1: // QA步骤
-        return Boolean(task.prompt || task.response_summary);
+        return Boolean(task.prompt || task.response);
       case 2: // 场景步骤
         return Boolean(task.scenario);
       case 3: // 模板步骤
@@ -1145,7 +1145,7 @@ const TaskDetailPage = () => {
         id: reportId,
         title: `${task.title} 报告`,
         prompt: task.prompt,
-        response_summary: task.response_summary,
+        response: task.response,
         type: 'report',
         source: task.source,
         author: task.author,
@@ -1608,7 +1608,7 @@ const TaskDetailPage = () => {
                 isEditable={true}
                 taskId={task?.id}
                 prompt={task?.prompt}
-                response={task?.response_summary}
+                response={task?.response}
                 comments={task?.annotation?.qa || []}
                 onAddAnnotation={addAnnotationToTask}
               />;
