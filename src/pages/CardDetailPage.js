@@ -131,12 +131,13 @@ const SceneOptimizationSection = ({ card }) => {
 
 // 模板优化界面组件
 const TemplateOptimizationSection = ({ card }) => {
+  console.log('TemplateOptimizationSection', card);
   return (
     <div className="template-optimization-content" style={{ width: "100%" }}>
       <TemplateSection 
         isEditable={true} 
         taskId={card?.id}
-        steps={card?.templateData ? { templateData: card.templateData, ...card?.step } : card?.step} 
+        steps={card?.flow_config ? { templateData: card.flow_config, ...card?.step } : card?.step} 
         comments={card?.annotations?.flow || []}
         card={card}
       />

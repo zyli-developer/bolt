@@ -693,6 +693,7 @@ const TaskDetailPage = () => {
               <TemplateSection 
                 isEditable={true} 
                 taskId={task?.id}
+                card={task}
                 steps={task?.templateData ? { templateData: task.templateData, ...task?.step } : task?.step}
                 comments={task?.annotation?.flow || []}
                 onAddAnnotation={addAnnotationToTask}
@@ -764,6 +765,7 @@ const TaskDetailPage = () => {
             <TemplateSection 
               isEditable={false} 
               taskId={task?.id}
+              card={task}
               steps={task?.templateData ? { templateData: task.templateData, ...task?.step } : task?.step}
               comments={task?.annotation?.flow || []}
               onAddAnnotation={addAnnotationToTask}
@@ -1624,6 +1626,7 @@ const TaskDetailPage = () => {
                 ref={templateSectionRef}
                 isEditable={true}
                 taskId={task?.id}
+                card={task}
                 steps={task?.templateData ? { templateData: task.templateData, ...task?.step } : task?.step}
                 comments={task?.annotation?.flow || []}
                 onAddAnnotation={addAnnotationToTask}

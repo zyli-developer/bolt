@@ -39,7 +39,7 @@ const TemplateSection = ({ isEditable = false, taskId, steps, comments = [], onA
     addComment,
     setStepComments
   } = useContext(OptimizationContext);
-
+  console.log('TemplateSection', card);
   // 优先使用 card?.templateData 作为数据源
   const templateData = card?.templateData;
 

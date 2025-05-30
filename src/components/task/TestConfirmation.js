@@ -335,7 +335,8 @@ const TestConfirmation = ({
             <TemplateSection 
               isEditable={false} 
               taskId={task?.id}
-              steps={task?.flow_config ? { flow_config: task.flow_config, ...task?.step } : task?.step}
+              card={task}
+              
               comments={getCommentsFromTask('flow')} // 从task数据中获取模板注释
             />
           </div>
