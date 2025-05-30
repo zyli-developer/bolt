@@ -221,7 +221,6 @@ const ExplorePage = () => {
   // 加载卡片数据
   const loadCards = useCallback(async () => {
     if (!loading) return
-    
     try {
       const params = {
         tab: selectedNav,
@@ -230,32 +229,27 @@ const ExplorePage = () => {
           per_page: 10
         }
       };
-      
       // 添加筛选和排序条件
       if (filterParams) {
         params.filter = filterParams;
       }
-      
       if (sortParams) {
         params.sort = sortParams;
       }
       console.log("params---123",params);
       // 使用新的API调用方式
       const response = await cardService.getExplorations(params);
-      
       setCards((prevCards) => {
-        // 如果是第一页或导航变化，直接使用新数据
-        if (page === 1 || prevNav !== selectedNav) {
+        // 如果是第一页，直接使用新数据
+        if (page === 1) {
           return response.cards;
         }
         // 否则追加新数据
         return [...prevCards, ...response.cards];
       });
-      
       // 更新分页信息
       setTotalItems(response.pagination.total);
       setHasMore(response.cards.length > 0 && response.pagination.page * response.pagination.per_page < response.pagination.total);
-      setPrevNav(selectedNav);
       setError(null);
     } catch (err) {
       console.error("加载探索卡片失败:", err);
@@ -263,17 +257,15 @@ const ExplorePage = () => {
     } finally {
       setLoading(false);
     }
-  }, [selectedNav, page, filterParams, sortParams, prevNav]);
+  }, [selectedNav, page, filterParams, sortParams, loading]);
 
   // 导航变化时重置状态
   useEffect(() => {
-    if (prevNav !== selectedNav) {
-      setCards([])
-      setPage(1)
-      setHasMore(true)
-      setLoading(true)
-    }
-  }, [selectedNav, prevNav])
+    setCards([])
+    setPage(1)
+    setHasMore(true)
+    setLoading(true)
+  }, [selectedNav])
 
   // 页面加载或页码变化时加载数据
   useEffect(() => {
