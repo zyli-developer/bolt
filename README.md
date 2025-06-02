@@ -1,3 +1,32 @@
+# 启动与登录说明
+
+## 前端项目启动命令
+
+1. 安装依赖：
+
+```bash
+npm install || yarn install
+```
+
+2. 启动开发环境：
+
+```bash
+npm start || yarn start
+```
+
+3. 构建生产包：
+
+```bash
+npm run build || yarn build
+```
+
+## 默认账号密码
+
+- 账号：`admin`
+- 密码：`123456`
+
+登录后如需选择或创建 Workspace，请根据页面提示操作。
+
 ### 权限设计
 
 | 分类 | 说明 | 权限范围 |
