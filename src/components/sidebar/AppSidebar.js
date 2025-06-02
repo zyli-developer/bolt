@@ -36,7 +36,16 @@ const AppSidebar = () => {
   const location = useLocation()
   const [menuItems, setMenuItems] = useState([])
   const [loading, setLoading] = useState(true)
-  const [currentWorkspace, setCurrentWorkspace] = useState(null)
+  const [currentWorkspace, setCurrentWorkspace] = useState(() => {
+    try {
+      const userStr = localStorage.getItem('syntrust_user');
+      if (userStr) {
+        const userObj = JSON.parse(userStr);
+        return userObj.workspace || null;
+      }
+    } catch {}
+    return null;
+  })
   const [workspaceLoading, setWorkspaceLoading] = useState(true)
   // 添加折叠状态
   const [isCollapsed, setIsCollapsed] = useState(false)
@@ -280,6 +289,25 @@ const AppSidebar = () => {
       window.history.replaceState({}, document.title)
     }
   }, [location.state, isCollapsed])
+
+  useEffect(() => {
+    const handleStorage = () => {
+      try {
+        const userStr = localStorage.getItem('syntrust_user');
+        if (userStr) {
+          const userObj = JSON.parse(userStr);
+          setCurrentWorkspace(userObj.workspace || null);
+        }
+      } catch {}
+    };
+    window.addEventListener('storage', handleStorage);
+    // 兼容同页面内变更
+    const interval = setInterval(handleStorage, 500);
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      clearInterval(interval);
+    };
+  }, []);
 
   const getIconComponent = (iconName) => {
     switch (iconName) {
@@ -732,13 +760,12 @@ const AppSidebar = () => {
 
     return (
       <div className="flex items-center px-4 pb-1 h-[30px]">
-            <div className="flex items-center justify-center w-4 h-4 bg-[#1a1a1a] rounded-md text-white font-bold text-[10px] mr-3">
-              A
-            </div>
-            <div className="font-semibold text-xs">
-              {workspaceLoading ? "加载中..." : currentWorkspace ? currentWorkspace.name : "Alibaba"}
-            </div>
-    
+        <div className="flex items-center justify-center w-4 h-4 bg-[#1a1a1a] rounded-md text-white font-bold text-[10px] mr-3">
+          A
+        </div>
+        <div className="font-semibold text-xs">
+          {workspaceLoading ? "加载中..." : currentWorkspace ? currentWorkspace.name : "Alibaba"}
+        </div>
         <Button className="ml-auto" type="text" icon={<SearchIcon />} onClick={handleSearchClick} size="small" />
       </div>
     )

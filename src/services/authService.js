@@ -82,15 +82,16 @@ export const login = async (credentials) => {
           id: 'user123',
           name: 'Admin',
           email: 'admin@example.com',
-          role: 'admin'
+          role: 'admin',
+          workspace: ''
         },
         sidebar_list: {},
         user_signature: 'signature',
-        workspace: 'default'
+        workspace: ''
       };
       
       saveAuth(mockResponse);
-      resolve(mockResponse);
+      return resolve(mockResponse);
     } else {
       // 登录失败
       reject(new Error('用户名或密码错误'));
