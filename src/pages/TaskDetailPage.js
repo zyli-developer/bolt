@@ -1329,10 +1329,7 @@ const TaskDetailPage = () => {
           <Button
             type="primary"
             size="large"
-            onClick={() => {
-              setIsTesting(true);
-              setTestProgress(0);
-            }}
+            onClick={handleStartTest}
             className={`${styles.primaryButton} ${styles.flexButton2}`}
           >
             确认无误，开始测试
@@ -1783,10 +1780,42 @@ const TaskDetailPage = () => {
     }
   };
 
-  // 优化模式下：开始测试
+  // 新增：统一的新增version逻辑
+  const addNewVersionForAllAgents = () => {
+    if (!task || !Array.isArray(task.step)) return task?.step || [];
+    return task.step.map(stepItem => {
+      const lastScore = Array.isArray(stepItem.score) && stepItem.score.length > 0 ? stepItem.score[stepItem.score.length - 1] : null;
+      const lastScoreValue = lastScore ? parseFloat(lastScore.score) : 0.7;
+      // 新score为上升趋势
+      const newScoreValue = Math.min(1, (lastScoreValue * (1.05 + Math.random() * 0.05)).toFixed(2));
+      // 版本号规则：最新version+1，保留一位小数
+      let newVersion = '1.0';
+      if (lastScore && lastScore.version) {
+        const lastVer = parseFloat(lastScore.version);
+        newVersion = (lastVer + 1).toFixed(1);
+      }
+      const newScoreObj = {
+        version: newVersion,
+        score: newScoreValue,
+        description: "优化后得分上升",
+        confidence: "0.95",
+        consumed_points: 60,
+        dimension: lastScore?.dimension || []
+      };
+      return {
+        ...stepItem,
+        score: [...(stepItem.score || []), newScoreObj]
+      };
+    });
+  };
+
+  // 统一的handleStartTest
   const handleStartTest = () => {
     setIsTesting(true);
     setTestProgress(0);
+    // 新增version
+    const newStepArr = addNewVersionForAllAgents();
+    setTask(prev => ({ ...prev, step: newStepArr }));
     // 模拟测试进度
     const timer = setInterval(() => {
       setTestProgress(prev => {
@@ -1794,7 +1823,11 @@ const TaskDetailPage = () => {
         if (next >= 100) {
           clearInterval(timer);
           setIsTesting(false);
-          setCurrentOptimizationStep(5); // 测试完成自动跳转到提交结果
+          if (isOptimizationMode) {
+            setCurrentOptimizationStep(5); // 优化模式跳转到提交结果
+          } else {
+            setCurrentStep(5); // 普通模式跳转到结果
+          }
         }
         return next;
       });

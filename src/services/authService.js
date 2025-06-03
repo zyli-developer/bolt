@@ -3,6 +3,8 @@
  * 处理JWT Token的存储和获取
  */
 
+import { workspacesData } from '../mocks/data';
+
 // Token存储键名
 const TOKEN_KEY = 'syntrust_auth_token';
 const USER_KEY = 'syntrust_user';
@@ -73,28 +75,45 @@ export const clearAuth = () => {
  */
 export const login = async (credentials) => {
   return new Promise((resolve, reject) => {
-    // 检查用户名和密码
-    if (credentials.username === 'admin' && credentials.password === '123456') {
-      // 登录成功
+    // 支持admin账号
+    if (credentials.username === 'admin@explore.com' && credentials.password === 'Admin@123456') {
       const mockResponse = {
         token: 'mock_jwt_token',
         user: {
           id: 'user123',
-          name: 'Admin',
+          name: '测评员-1',
           email: 'admin@example.com',
-          role: 'admin'
+          role: 'admin',
+          workspace: ''
         },
         sidebar_list: {},
         user_signature: 'signature',
-        workspace: 'default'
+        workspace: ''
       };
-      
       saveAuth(mockResponse);
-      resolve(mockResponse);
-    } else {
-      // 登录失败
-      reject(new Error('用户名或密码错误'));
+      return resolve(mockResponse);
     }
+    // 支持 test@explore.com 账号，workspace 用 Baidu
+    if (credentials.username === 'test@explore.com' && credentials.password === 'Test@123456') {
+      const baiduWorkspace = workspacesData.find(ws => ws.name === 'Baidu');
+      const mockResponse = {
+        token: 'mock_jwt_token',
+        user: {
+          id: '2',
+          name: '测评员-2',
+          email: 'test@explore.com',
+          role: 'user',
+          workspace: baiduWorkspace
+        },
+        sidebar_list: {},
+        user_signature: 'signature',
+        workspace: baiduWorkspace
+      };
+      saveAuth(mockResponse);
+      return resolve(mockResponse);
+    }
+    // 登录失败
+    reject(new Error('用户名或密码错误'));
   });
 };
 

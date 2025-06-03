@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react"
 import { Avatar, Button } from "antd"
 import { MoreOutlined } from "@ant-design/icons"
-import userService from "../../services/userService"
 
 const UserInfo = () => {
   const [user, setUser] = useState(null)
@@ -13,7 +12,8 @@ const UserInfo = () => {
     const fetchCurrentUser = async () => {
       try {
         setLoading(true)
-        const userData = await userService.getCurrentUser()
+        const userStr = localStorage.getItem('syntrust_user')
+        const userData = userStr ? JSON.parse(userStr) : null
         setUser(userData)
       } catch (error) {
         console.error("获取用户信息失败:", error)

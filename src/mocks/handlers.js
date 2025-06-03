@@ -15,6 +15,7 @@ import {
   explorationCardsData,
   taskCardsData,
   assetData,
+  mockWorkspaces,
 } from "./data"
 
 const mockChatMessages = [
@@ -224,7 +225,10 @@ export const handlers = [
 
   // 获取工作区列表
   rest.get("/api/workspaces", (req, res, ctx) => {
-    return res(ctx.status(200), ctx.json(workspacesData))
+    return res(
+      ctx.status(200),
+      ctx.json({ workspaces: mockWorkspaces })
+    );
   }),
 
   // 获取当前工作区

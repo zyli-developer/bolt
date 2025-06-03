@@ -1,78 +1,75 @@
-# 1. Syntrust API Protocol Buffers 规范 v1
+# Syntrust API JSON 规范 v1
 
-## 1.1 目录
+## 目录
 
-- [1. Syntrust API Protocol Buffers 规范 v1](#1-syntrust-api-protocol-buffers-规范-v1)
-  - [1.1 目录](#11-目录)
-- [2. API 设计规范说明](#2-api-设计规范说明)
-  - [2.1 版本控制](#21-版本控制)
-  - [2.2 认证方式](#22-认证方式)
-  - [2.3 请求/响应格式](#23-请求响应格式)
-  - [2.4 状态码使用](#24-状态码使用)
-  - [2.5 错误响应格式](#25-错误响应格式)
-  - [2.6 分页参数](#26-分页参数)
-- [3. 基础消息类型](#3-基础消息类型)
-  - [3.1 用户与权限相关消息类型](#31-用户与权限相关消息类型)
-  - [3.2 维度与场景相关消息类型](#32-维度与场景相关消息类型)
-  - [3.3 评分与流程相关消息类型](#33-评分与流程相关消息类型)
-  - [3.4 分类与侧边栏相关消息类型](#34-分类与侧边栏相关消息类型)
-  - [3.5 卡片与任务相关消息类型](#35-卡片与任务相关消息类型)
-  - [3.6 消息、附件与批注相关消息类型](#36-消息附件与批注相关消息类型)
-- [4. API 端点定义](#4-api-端点定义)
-  - [4.1 用户认证](#41-用户认证)
-    - [4.1.1 密码登录](#411-密码登录)
-    - [4.1.2 手机验证码登录](#412-手机验证码登录)
-      - [4.1.2.1 发送验证码](#4121-发送验证码)
-      - [4.1.2.2 验证码登录](#4122-验证码登录)
-    - [4.1.3 SSO 登录](#413-sso-登录)
-    - [4.1.4 用户注册](#414-用户注册)
-  - [4.2 探索](#42-探索)
-    - [4.2.1 获取探索列表](#421-获取探索列表)
-    - [4.2.2 获取探索详情](#422-获取探索详情)
-  - [4.3 任务](#43-任务)
-    - [4.3.1 获取任务列表](#431-获取任务列表)
-    - [4.3.2 获取任务详情](#432-获取任务详情)
-      - [4.3.2.1 获取任务详情概览](#4321-获取任务详情概览)
-      - [4.3.2.2 获取任务详情答案](#4322-获取任务详情答案)
-      - [4.3.2.3 获取任务详情场景](#4323-获取任务详情场景)
-      - [4.3.2.4 获取任务详情模板](#4324-获取任务详情模板)
-  - [4.4 资产](#44-资产)
-    - [4.4.1 获取资产详情](#441-获取资产详情)
-  - [4.5 工作空间](#45-工作空间)
-    - [4.5.1 保存新建 task 信息](#451-保存新建-task-信息)
-    - [4.5.2 更新 task 信息](#452-更新-task-信息)
-    - [4.5.3 删除 task](#453-删除-task)
-  - [4.6 文件上传](#46-文件上传)
-    - [4.6.1 上传文件](#461-上传文件)
-  - [4.7 机器人对话](#47-机器人对话)
-    - [4.7.1 发送消息](#471-发送消息)
-  - [4.8 条件搜索](#48-条件搜索)
-    - [4.8.1 复合过滤条件](#481-复合过滤条件)
-      - [4.8.1.1 比较运算符](#4811-比较运算符)
-      - [4.8.1.2 单一条件表达式](#4812-单一条件表达式)
-      - [4.8.1.3 过滤条件列表结构](#4813-过滤条件列表结构)
-    - [4.8.2 排序表达式](#482-排序表达式)
-    - [4.8.3 分页参数](#483-分页参数)
-    - [4.8.4 探索列表搜索接口](#484-探索列表搜索接口)
-    - [4.8.5 任务列表搜索接口](#485-任务列表搜索接口)
-    - [4.8.6 资产列表搜索接口](#486-资产列表搜索接口)
+- [Syntrust API JSON 规范 v1](#syntrust-api-json-规范-v1)
+  - [目录](#目录)
+  - [1. API 设计规范说明](#1-api-设计规范说明)
+    - [1.1 版本控制](#11-版本控制)
+    - [2.2 认证方式](#22-认证方式)
+    - [2.3 请求/响应格式](#23-请求响应格式)
+    - [2.4 状态码使用](#24-状态码使用)
+    - [2.5 错误响应格式](#25-错误响应格式)
+    - [2.6 分页参数](#26-分页参数)
+    - [3 条件搜索](#3-条件搜索)
+      - [3.1 复合过滤条件](#31-复合过滤条件)
+        - [3.1.1 比较运算符](#311-比较运算符)
+        - [3.1.2 单一条件表达式](#312-单一条件表达式)
+        - [3.1.3 过滤条件列表结构](#313-过滤条件列表结构)
+      - [3.2 排序表达式](#32-排序表达式)
+      - [3.3 分页参数](#33-分页参数)
+      - [3.4 探索列表搜索接口](#34-探索列表搜索接口)
+  - [3. API 端点定义](#3-api-端点定义)
+    - [3.1 用户认证](#31-用户认证)
+      - [3.1.1 密码登录](#311-密码登录)
+      - [3.1.2 手机验证码登录](#312-手机验证码登录)
+        - [3.1.2.1 发送验证码](#3121-发送验证码)
+        - [3.1.2.2 验证码登录](#3122-验证码登录)
+      - [3.1.3 SSO 登录](#313-sso-登录)
+      - [3.1.4 用户注册](#314-用户注册)
+    - [3.2 探索](#32-探索)
+      - [3.2.1 获取探索列表](#321-获取探索列表)
+      - [3.2.2 获取探索详情](#322-获取探索详情)
+    - [3.3 任务](#33-任务)
+      - [3.3.1 获取任务列表](#331-获取任务列表)
+      - [3.3.2 获取任务详情](#332-获取任务详情)
+    - [3.4 资产](#34-资产)
+      - [3.4.1 获取资产详情](#341-获取资产详情)
+    - [3.5 task工作流](#35-task工作流)
+      - [3.5.1 保存 task 草稿](#351-保存-task-草稿)
+      - [3.5.2 新建 task 信息](#352-新建-task-信息)
+      - [3.5.3 更新 task 信息](#353-更新-task-信息)
+      - [3.5.4 删除 task](#354-删除-task)
+    - [3.6 文件上传](#36-文件上传)
+      - [3.6.1 上传文件](#361-上传文件)
+    - [3.7 机器人对话](#37-机器人对话)
+      - [3.7.1 发送消息](#371-发送消息)
+  - [附录：条件搜索常用示例](#附录条件搜索常用示例)
+    - [示例 1：按可信度区间、场景多选、作者模糊、时间倒序分页](#示例-1按可信度区间场景多选作者模糊时间倒序分页)
+    - [示例 2：只按关键词模糊搜索，按名称升序](#示例-2只按关键词模糊搜索按名称升序)
+    - [示例 3：按模板多选、点赞数降序](#示例-3按模板多选点赞数降序)
+    - [示例 4：复杂嵌套过滤（可信度区间 且 (场景 A 或 场景 B) 且 作者张）](#示例-4复杂嵌套过滤可信度区间-且-场景-a-或-场景-b-且-作者张)
 
-## 2. API 设计规范说明
+## 1. API 设计规范说明
 
-### 2.1 版本控制
+### 1.1 版本控制
+
 - API 版本通过 URL 路径前缀`/v1`进行控制
 - 重大更新时递增版本号，如`/v2`，确保向后兼容
 
 ### 2.2 认证方式
-- 统一使用 JWT Token 认证
+
+- 统一使用 token 认证（e.g.: JWT Token）
 - Token 通过请求头`Authorization: Bearer <token>`传递
 - 登录接口返回 token，其他接口需要携带 token 访问
 
 ### 2.3 请求/响应格式
-- 请求和响应消息使用 Protocol Buffers 格式
-- 时间类型使用 google.protobuf.Timestamp
+
+- 请求和响应消息使用 JSON 格式
+- 时间类型使用 ISO 8601 标准格式（YYYY-MM-DDThh:mm:ss.sssZ）
 
 ### 2.4 状态码使用
+
 - 200: 请求成功
 - 201: 创建成功
 - 400: 请求参数错误
@@ -82,949 +79,1097 @@
 - 500: 服务器错误
 
 ### 2.5 错误响应格式
-```protobuf
-message Error {
-  string code = 1;
-  string message = 2;
+
+```json
+{
+  "errors": {
+    "detail": {
+      "code": "string",
+      "message": "string"
+    }
+  }
 }
 ```
 
 ### 2.6 分页参数
-```protobuf
-message PaginationRequest {
-  int32 page = 1;  // 默认1
-  int32 per_page = 2;  // 默认20
-}
 
-message PaginatedResponse {
-  int32 total = 1;
-  int32 page = 2;
-  int32 per_page = 3;
-}
-```
-
-## 3. 基础消息类型
-
-### 3.1 用户与权限相关消息类型
-
-```protobuf
-message User {
-  string id = 1;
-  string email = 2;
-  string name = 3;
-  string workspace = 4;
-  bool vip = 5;
-  string avatar = 6;
-  string phone = 7;
-  string role = 8;
-  map<string, string> preferences = 9;
-  google.protobuf.Timestamp last_login = 10;
-  google.protobuf.Timestamp created_at = 11;
-  google.protobuf.Timestamp updated_at = 12;
-}
-```
-
-### 3.2 维度与场景相关消息类型
-
-```protobuf
-message Dimension {
-  string latitude = 1;
-  float weight = 2;
-}
-
-message DimensionNode {
-  string id = 1;
-  string label = 2;  // equals "name"
-  int32 weight = 3;
-  message Position {
-    int32 x = 1;
-    int32 y = 2;
-  }
-  string type = 4;
-  Position position = 5;
-}
-
-message DimensionEdge {
-  string id = 1;
-  string source = 2;
-  string target = 3;
-}
-
-message Scenario {
-  repeated DimensionNode node = 1;
-  repeated DimensionEdge edge = 2;
-}
-```
-
-### 3.3 评分与流程相关消息类型
-
-```protobuf
-message Score {
-  string version = 1;
-  string confidence = 2;
-  string score = 3;
-  int32 consumed_points = 4;
-  string description = 5;
-  repeated Dimension dimension = 6;
-  google.protobuf.Timestamp updated_at = 7;
-}
-
-message Step {
-  string agent = 1;
-  repeated Score score = 2;
-  string reason = 3;
-}
-
-message StepNode {
-  string id = 1;
-  string label = 2;  // equals "name"
-  string executor_type = 3;  // "human" or "agent"
-  string executor_id = 4;
-  string description = 5;
-  message Position {
-    int32 x = 1;
-    int32 y = 2;
-  }
-  Position position = 6;
-  string type = 7;
-  repeated Dimension dimension = 8; // latitude: weight
-}
-
-message StepEdge {
-  string id = 1;
-  string source = 2;
-  string target = 3;
-}
-
-message FlowConfig {
-  repeated StepNode nodes = 1;
-  repeated StepEdge edges = 2;
-}
-```
-
-### 3.4 分类与侧边栏相关消息类型
-
-```protobuf
-message ClassificationList {
-  // 分类列表
-  string classification = 1;
-  repeated Level1 level1 = 2;
-}
-
-message Level1 {
-  // 第一级子列表
-  string level_1_name = 1;
-  repeated Level2 level2 = 2;
-}
-
-message Level2 {
-  // 第二级子列表
-  string level_2_name = 1;
-  repeated Element level3 = 2;
-}
-
-message Element {
-  string name = 1;
-  string classification = 2;
-  string id = 3;
-}
-
-message Sidebar {
-  repeated ClassificationList classification = 1;
-}
-```
-
-### 3.5 卡片与任务相关消息类型
-
-```protobuf
-message ExplorationCard {
-  string id = 1;
-  string prompt = 2; // 这里的prompt，作为每个卡片的标题
-  string response_summary = 3;
-  string created_by = 4;
-  string created_from = 5;
-  google.protobuf.Timestamp created_at = 6;
-  repeated Step step = 7;
-  // tbd
-  // repeated Milestone milestones = 8;
-  // repeated TeamMember team_members = 9;
-}
-
-// tbd
-// message Milestone {
-//   string id = 1;
-//   string title = 2;
-//   string status = 3;
-//   google.protobuf.Timestamp completion_date = 4;
-// }
-
-// tbd
-// message TeamMember {
-//   string id = 1;
-//   string name = 2;
-//   string role = 3;
-// }
-
-message TaskCard {
-  string id = 1;
-  string prompt = 2; // 这里的prompt，作为每个卡片的标题
-  string response_summary = 3;
-  string created_by = 4;
-  string created_from = 5;
-  google.protobuf.Timestamp created_at = 6;
-  repeated Step step = 7;
-  string status = 8;
-  // tbd add qa, scenario, model
-}
-
-message TaskData {
-  string title = 1;
-  string prompt = 2;
-  string response = 3;
-  string context = 4;
-  string object = 5;
-  string brand = 6;
-  string model = 7;
-  string version = 8;
-  string parameter_quantity = 9;
-  string reasoning_accuracy = 10;
-  int priority = 11;
-  google.protobuf.Timestamp due_date = 12;
-  User assigned_to = 13;
-  FlowConfig flow_config = 14;
-  string user_id = 15;  // 创建者
-  Scenario scenario = 16;
-}
-```
-
-### 3.6 消息、附件与批注相关消息类型
-
-```protobuf
-message Message {
-  string id = 1;
-  string chat_id = 2;
-  string content = 3;
-  string type = 4;
-  string priority = 5;
-  User sender = 6;
-  string status = 7;
-  repeated string read_by = 8;
-  map<string, string> metadata = 9;
-  google.protobuf.Timestamp sent_at = 10;
-}
-
-message Attachment {
-  string id = 1;
-  string file_name = 2;
-  string content_type = 3;
-  string file_path = 4;
-}
-
-message Annotation {
-  string id = 1;
-  string target = 2;
-  string body = 3;
-  string type = 4;
-  google.protobuf.Timestamp created_at = 5;
-  google.protobuf.Timestamp updated_at = 6;
-  string annotator_id = 7;
-  string task_id = 8;
-  string title = 9;
-  string comment = 10;
-  repeated Attachment attachment = 11;
-
-  message Value {
-    // For text labels
-    message TextLabel {
-      int32 start = 1;
-      int32 end = 2;
-      string text = 3;
-      repeated string labels = 4;
-    }
-
-    // For textarea
-    message TextArea {
-      repeated string text = 1;
-      message Meta {
-        double lead_time = 1;
-        map<string, string> additional_meta = 2;
-      }
-      Meta meta = 2;
-    }
-
-    // For choices
-    message Choice {
-      repeated string choices = 1;
-    }
-
-    // For image regions
-    message Region {
-      int32 x = 1;
-      int32 y = 2;
-      int32 width = 3;
-      int32 height = 4;
-      repeated string labels = 5;
-    }
-
-    oneof value_type {
-      TextLabel text_label = 1;
-      TextArea text_area = 2;
-      Choice choice = 3;
-      Region region = 4;
+页数请求：
+```json
+// request
+{
+  "pagination":{
+    {
+      "page": 1, // 默认1
+      "per_page": 20 // 默认20
     }
   }
-
-  Value value = 12;
-}
-
-message AnnotationOverview {
-  //标题，概要，详情，附件(list)，最近修改人，最近修改时间
-  string title = 1;
-  string body = 2;
-  repeated Attachment attachment = 3;
-  string user = 4;
-  google.protobuf.Timestamp updated_at = 5;
-}
-
-## 4. API 端点定义
-
-### 4.1 用户认证
-#### 4.1.1 密码登录
-- **URL**: `/v1/syntrust/auth/login`
-- **Method**: POST
-- **Request**:
-```protobuf
-message LoginRequest {
-  string email = 1;
-  string password = 2;
-}
-```
-- **Response**:
-```protobuf
-message LoginResponse {
-  string token = 1;
-  User user = 2;
-  Sidebar sidebar_list = 3;
-  string user_signature = 4;
-  string workspace = 5;
 }
 ```
 
-#### 4.1.2 手机验证码登录
-##### 4.1.2.1 发送验证码
-- **URL**: `/v1/syntrust/auth/sms/code`
-- **Method**: POST
-- **Request**:
-```protobuf
-message SendSmsCodeRequest {
-  string phone = 1;
-}
-```
-
-##### 4.1.2.2 验证码登录
-- **URL**: `/v1/syntrust/auth/sms/login`
-- **Method**: POST
-- **Request**:
-```protobuf
-message SmsLoginRequest {
-  string phone = 1;
-  string code = 2;
-}
-```
-- **Response**:
-```protobuf
-message SmsLoginResponse {
-  string token = 1;
-  User user = 2;
-  Sidebar sidebar_list = 3;
-  string user_signature = 4;
-  string workspace = 5;
-}
-```
-
-#### 4.1.3 SSO 登录
-- **URL**: `/v1/syntrust/auth/sso/login`
-- **Method**: POST
-- **Request**:
-```protobuf
-message SsoLoginRequest {
-  string sso_token = 1;
-  string provider = 2;  // 例如: "google", "github"
-}
-```
-- **Response**:
-```protobuf
-message SsoLoginResponse {
-  string token = 1;
-  User user = 2;
-  Sidebar sidebar_list = 3;
-  string user_signature = 4;
-  string workspace = 5;
-}
-```
-
-#### 4.1.4 用户注册
-- **URL**: `/v1/syntrust/auth/register`
-- **Method**: POST
-- **Request**:
-```protobuf
-message RegisterRequest {
-  string email = 1;
-  string password = 2;
-  string name = 3;
-}
-```
-- **Response**:
-  // 跳转到登陆页
-```protobuf
-message RegisterResponse {
-  string message = 1;
-  User user = 2;
-}
-```
-
-#### 4.2 探索
-##### 4.2.1 获取探索列表
-- **URL**: `/v1/syntrust/explorations`
-- **Method**: GET
-- **Request**:
-```protobuf
-message ExplorationsPageRequest {
-  string tab = 1; // community || workspace (tbd personal)
-  string user_id = 2;
-  PaginationRequest pagination = 3;
-}
-```
-- **Response**:
-```protobuf
-message GetExplorationsPageResponse {
-  repeated ExplorationCard card = 1;
-  PaginationResponse pagination = 2;
-}
-```
-
-##### 4.2.2 获取探索详情
-- **URL**: `/v1/syntrust/exploration/{exploration_id}`
-- **Method**: GET
-- **Request**:
-```protobuf
-message ExplorationTaskRequest {
-  string user_id = 1;
-}
-```
-- **Response**:
-```protobuf
-message GetExplorationTaskResponse {
-  string prompt = 1;
-  string created_by = 2;
-  string created_from = 3;
-  repeated Step step = 4;
-  Scenario scenario = 5;
-  Score score = 6;
-  // tbd 推广位
-}
-```
-
-#### 4.3 任务
-##### 4.3.1 获取任务列表
-- **URL**: `/v1/syntrust/tasks`
-- **Method**: GET
-- **Request**:
-```protobuf
-message TasksPageRequest {
-  string tab = 1; // community || workspace  || personal
-  string user_id = 2;
-  PaginationRequest pagination = 3;
-}
-```
-
-- **Response**:
-```protobuf
-message GetTasksPageResponse {
-  repeated TaskCard card = 1;
-  PaginationResponse pagination = 2;
-}
-```
-
-##### 4.3.2 获取任务详情
-// 这里的拆分，是为了页面渲染的时候，可以不用等待暂时不需要的数据请求
-##### 4.3.2.1 获取任务详情概览
-- **URL**: `/v1/syntrust/task/{task_id}/overview`
-- **Method**: GET
-- **Request**:
-```protobuf
-message TaskRequest {
-  string user_id = 1;
-}
-```
-- **Response**:
-```protobuf
-message GetTaskResponse {
-  // prompt 和 response_summary 已经在 TaskCard 里传输过了。
-  string id = 1;
-  string title = 2;
-  string description = 3;
-  string status = 4;
-  int32 priority = 5;
-  google.protobuf.Timestamp due_date = 6;
-  User assigned_to = 7;
-  repeated string keyword = 8;
-  repeated AnnotationOverview annotation = 9;
-  int32 consumed_points = 10;
-  // tbd 积分消耗说明
-  string consumption_instructions = 11;
-}
-```
-
-##### 4.3.2.2 获取任务详情答案
-- **URL**: `/v1/syntrust/task/{task_id}/qa`
-- **Method**: GET
-- **Request**:
-```protobuf
-message TaskQnaRequest {
-  string user_id = 1;
-}
-```
-- **Response**:
-```protobuf
-message GetTaskQnaResponse {
-  string response = 1;
-  repeated Annotation annotation = 2;
-}
-```
-
-##### 4.3.2.3 获取任务详情场景
-- **URL**: `/v1/syntrust/task/{task_id}/scenario`
-- **Method**: GET
-- **Request**:
-```protobuf
-message TaskScenarioRequest {
-  string user_id = 1;
-}
-```
-- **Response**:
-```protobuf
-message GetTaskScenarioResponse {
-  string response = 1;
-  Scenario scenario = 2;
-  repeated Annotation annotation = 3;
-}
-```
-
-##### 4.3.2.4 获取任务详情模板
-- **URL**: `/v1/syntrust/task/{task_id}/flow`
-- **Method**: GET
-- **Request**:
-```protobuf
-message TaskFlowRequest {
-  string user_id = 1;
-}
-```
-- **Response**:
-```protobuf
-message GetTaskFlowResponse {
-  FlowConfig flow_config = 1;
-  repeated Annotation annotation = 2;
-}
-```
-
-### 4.4 资产
-#### 4.4.1 获取资产详情
-- **URL**: `/v1/syntrust/assets/{asset_id}`
-- **Method**: GET
-- **Request**:
-```protobuf
-message AssetsRequest {
-  string tab = 1; // 必填: community || workspace || personal
-  
-}
-```
-- **Response**:
-```protobuf
-message GetAssetsResponse {
-  Asset asset = 1;
-}
-```
-
-### 4.5 工作空间
-
-#### 4.5.1 保存新建 task 信息
-- **URL**: `/v1/syntrust/users/{user_id}/tasks`
-- **Method**: POST
-- **Request**:
-```protobuf
-message SaveTaskRequest {
-
-  TaskData task = 1;
-  // qa, flow_config, scenario, 都有各自的annotation list,这里是否还需要annotation
-  repeated Annotation annotation = 2; 
-  string completed = 3; // yes || no 标记是否完成，还是草稿。
-  // tbd 权限分配 （待定）
-}
-```
-- **Response**:
-```protobuf
-message SaveTaskResponse {
-  string prompt = 1;
-  string created_by = 2;
-  string created_from = 3;
-  string task_id = 4;
-  string status = 5;
-  repeated Step step = 6;
-  int32 score = 7;
-  float confidence = 8;
-  Scenario scenario = 9;
-}
-```
-
-#### 4.5.2 更新 task 信息
-- **URL**: `/v1/syntrust/users/{user_id}/tasks/{task_id}`
-- **Method**: PUT
-- **Request**:
-```protobuf
-message UpdateTaskRequest {
-  string title = 1;
-  string description = 2;
-  string status = 3;
-  int32 priority = 4;
-  google.protobuf.Timestamp due_date = 5;
-  User assigned_to = 6;
-}
-```
-- **Response**:
-```protobuf
-message UpdateTaskResponse {
-  Task task = 1;
-}
-```
-
-#### 4.5.3 删除 task
-- **URL**: `/v1/syntrust/users/{user_id}/tasks/{task_id}`
-- **Method**: DELETE
-- **Response**:
-```protobuf
-message DeleteTaskResponse {
-  string message = 1;
-}
-```
-
-### 4.6 文件上传
-
-#### 4.6.1 上传文件
-- **URL**: `/v1/syntrust/attachments`
-- **Method**: POST
-- **Request**:
-```protobuf
-message UploadFileRequest {
-  bytes content = 1;        // 文件内容
-  string filename = 2;      // 文件名
-  string content_type = 3;  // 文件类型
-  string user_id = 4;  // 用户ID
-}
-```
-- **Response**:
-```protobuf
-// 文件上传响应
-message UploadFileResponse {
-  string file_id = 1;      // 文件ID
-  string status = 2;       // 状态
-  string url = 3;          // 文件访问URL
-}
-```
-
-### 4.7 机器人对话
-
-#### 4.7.1 发送消息
-- **URL**: `/v1/rbt/chats/{chat_id}/messages`
-- **Method**: POST
-- **Request**:
-```protobuf
-message SendMessageRequest {
-  string content = 1;
-  string type = 2;
-  int32 priority = 3;
-  map<string, string> metadata = 4;
+页数响应：
+```json
+// response
+{
+  "pagination":{
+    {
+      "total": 100,
+      "page": 1,
+      "per_page": 20
+    }
+  }
 }
 
-message SendMessageResponse {
-  Message message = 1;
-}
 ```
 
-### 4.8 条件搜索
 
-#### 4.8.1 复合过滤条件
+### 3 条件搜索
+
+#### 3.1 复合过滤条件
 
 复合过滤条件使用 and 处理多条件组合，其核心结构如下：
 
-##### 4.8.1.1 比较运算符
-```protobuf
-enum CompareOp {
-  COMPARE_OP_UNSPECIFIED = 0;
-  EQ = 1;
-  NEQ = 2;
-  GT = 3;
-  GTE = 4;
-  LT = 5;
-  LTE = 6;
-  IN = 7;
-  NOT_IN = 8;
-  LIKE = 9;    // 字符串模糊
-  RANGE = 10;  // 数值区间
+##### 3.1.1 比较运算符
+
+```json
+// 在JSON请求中使用以下字符串值作为运算符
+"EQ"      // 等于
+"NEQ"     // 不等于
+"GT"      // 大于
+"GTE"     // 大于等于
+"LT"      // 小于
+"LTE"     // 小于等于
+"IN"      // 包含于集合
+"NOT_IN"  // 不包含于集合
+"LIKE"    // 字符串模糊匹配
+"RANGE"   // 数值区间
+```
+
+##### 3.1.2 单一条件表达式
+
+```json
+{
+  "field": "string", // 字段名，如 confidence, scenario, task, keyword, creator
+  "op": "EQ", // 操作符
+  "values": ["value1", "value2"] // 支持多选或区间，如 ["0.8", "1.0"] 表示区间
 }
 ```
 
-##### 4.8.1.2 单一条件表达式
-```protobuf
-message FilterExpr {
-  string field = 1;           // 字段名，如 confidence, scenario, task, keyword, creator
-  CompareOp op = 2;           // 操作符
-  repeated string values = 3; // 支持多选或区间，如 ["0.8", "1.0"] 表示区间
+##### 3.1.3 过滤条件列表结构
+
+实际业务中仅使用 AND 逻辑连接所有条件
+
+```json
+{
+  "exprs": [
+    // FilterExpr 数组，所有条件均以 AND 关系组合
+  ]
 }
 ```
 
-##### 4.8.1.3 过滤条件列表结构
+#### 3.2 排序表达式
 
-实际业务中仅使用 AND 连接所有条件
-
-```protobuf
-message FilterList {
-  repeated FilterExpr exprs = 1; // 所有条件均以 AND 关系组合
+```json
+{
+  "field": "string", // 排序字段（如 confidence, name, created_at, like_count）
+  "desc": true // 是否倒序
 }
 ```
 
-#### 4.8.2 排序表达式
-```protobuf
-message SortExpr {
-  string field = 1;   // 排序字段（如 confidence, name, created_at, like_count）
-  bool desc = 2;      // 是否倒序
-}
-```
+#### 3.3 分页参数
 
-#### 4.8.3 分页参数
 与 [2.6 分页参数](#26-分页参数) 一致，点击查看
 
-#### 4.8.4 探索列表搜索接口
-```protobuf
-message ExplorationSearchRequest {
-  string tab = 1; // 必填: community | workspace | personal
-  FilterList filter = 2;
-  SortExpr sort = 3;
-  PaginationRequest pagination = 4;
-}
-message ExplorationSearchResponse {
-  repeated ExplorationCard card = 1;
-  PaginationResponse pagination = 2;
-  FilterList filter_echo = 3; // 回显
-  SortExpr sort_echo = 4;
+#### 3.4 探索列表搜索接口
+
+- **URL**: `/v1/syntrust/explorations/search`
+- **Method**: POST
+- **请求**:
+
+```json
+{
+  "tab": "community", // 必填: community | workspace | personal
+  "filter": {
+    "exprs": [
+      // FilterExpr 数组
+    ]
+  },
+  "sort": {
+    "field": "created_at",
+    "desc": true
+  },
+  "pagination": {
+    "page": 1,
+    "per_page": 20
+  }
 }
 ```
 
-#### 4.8.5 任务列表搜索接口
-```protobuf
-message TaskSearchRequest {
-  string tab = 1;
-  FilterList filter = 2;
-  SortExpr sort = 3;
-  PaginationRequest pagination = 4;
-}
-message TaskSearchResponse {
-  repeated TaskCard card = 1;
-  PaginationResponse pagination = 2;
-  FilterList filter_echo = 3;
-  SortExpr sort_echo = 4;
-}
-```
+- **响应**:
 
-#### 4.8.6 资产列表搜索接口
-```protobuf
-message AssetSearchRequest {
-  string tab = 1;
-  FilterList filter = 2;
-  SortExpr sort = 3;
-  PaginationRequest pagination = 4;
-}
-message AssetSearchResponse {
-  repeated Asset card = 1;
-  PaginationResponse pagination = 2;
-  FilterList filter_echo = 3;
-  SortExpr sort_echo = 4;
+```json
+{
+  "card": [
+    // ExplorationCard 数组
+  ],
+  "pagination": {
+    "total": 100,
+    "page": 1,
+    "per_page": 20
+  },
+  "filter_echo": {
+    // 回显请求中的 filter
+  },
+  "sort_echo": {
+    // 回显请求中的 sort
+  }
 }
 ```
 
-// 典型接口：
-// POST /v1/syntrust/explorations/search
-// POST /v1/syntrust/tasks/search
-// POST /v1/syntrust/assets/search
+## 3. API 端点定义
 
-// 设计说明：
-// - 支持与处理多条件组合。
-// - 排序字段单选，默认按时间倒序。
-// - tab字段必填，限定搜索范围。
-// - 响应包含总数、分页、回显过滤与排序条件。
-// - 统一结构便于后端高效实现与维护。
+### 3.1 用户认证
 
----
+#### 3.1.1 密码登录
+
+- **URL**: `/v1/syntrust/auth/login`
+- **Method**: POST
+- **请求**:
+
+```json
+{
+  "email": "string",
+  "password": "string"
+}
+```
+
+- **响应**:
+
+```json
+{
+  "token": "string",
+  "user": {
+    // User 结构
+    "id": "string",
+    "email": "string",
+    "name": "string",
+    "workspace": "string",
+    "vip": boolean,
+    "avatar": "string",
+    "phone": "string",
+    "role": "string",
+    "preferences": {
+      "key1": "value1",
+      "key2": "value2"
+    },
+    "last_login": "2023-01-01T12:00:00Z",
+    "created_at": "2023-01-01T12:00:00Z",
+    "updated_at": "2023-01-01T12:00:00Z"
+  },
+  "sidebar_list": {
+    // Sidebar 结构
+    {
+      "classification": [
+        // ClassificationList 数组
+        {
+          "classification_name":"string",
+          "level1": [
+            // Level1 数组
+            {
+              "level_1_name": "string",
+              "level2": [
+                // Level2 数组
+                {
+                  "level_2_name": "string",
+                  "level3": [
+                    // Element 数组
+                    {
+                      "name": "string",
+                      "classification": "string",
+                      "id": "string"
+                    },
+                    ...
+                  ]
+                },
+                ...
+              ]
+            },
+            ...
+          ]
+        }
+      ]
+      
+    }
+  },
+  "user_signature": "string", // 来自腾讯im生成的，用来调用AI的
+  "workspace": "string" //
+}
+```
+
+#### 3.1.2 手机验证码登录
+
+##### 3.1.2.1 发送验证码
+
+- **URL**: `/v1/syntrust/auth/sms/code`
+- **Method**: POST
+- **请求**:
+
+```json
+{
+  "phone": "string"
+}
+```
+
+- **响应**:
+
+```json
+{
+  "message": "验证码已发送"
+}
+```
+
+##### 3.1.2.2 验证码登录
+
+- **URL**: `/v1/syntrust/auth/sms/login`
+- **Method**: POST
+- **请求**:
+
+```json
+{
+  "phone": "string",
+  "code": "string"
+}
+```
+
+- **响应**:
+
+```json
+{
+  "token": "string",
+  "user": {
+    // User 结构
+  },
+  "sidebar_list": {
+    // Sidebar 结构
+  },
+  "user_signature": "string",
+  "workspace": "string"
+}
+```
+
+#### 3.1.3 SSO 登录
+
+- **URL**: `/v1/syntrust/auth/sso/login`
+- **Method**: POST
+- **请求**:
+
+```json
+{
+  "sso_token": "string",
+  "provider": "string" // 例如: "google", "github"
+}
+```
+
+- **响应**:
+
+```json
+{
+  "token": "string",
+  "user": {
+    // User 结构
+  },
+  "sidebar_list": {
+    // Sidebar 结构
+  },
+  "user_signature": "string",
+  "workspace": "string"
+}
+```
+
+#### 3.1.4 用户注册
+
+- **URL**: `/v1/syntrust/auth/register`
+- **Method**: POST
+- **请求**:
+
+```json
+{
+  "email": "string",
+  "password": "string",
+  "name": "string"
+}
+```
+
+- **响应**:
+
+```json
+{
+  "message": "string" // 跳转登陆页
+}
+```
+
+### 3.2 探索
+
+#### 3.2.1 获取探索列表
+
+- **URL**: `/v1/syntrust/explorations/search`
+- **Method**: post
+- **请求参数**:
+
+```json
+{
+  "tab": "community", // community || workspace || personal
+  "user_id": "string",
+
+  // 以下条件，可以省略，会返回默认结果
+  "pagination": {
+    "page": 1,
+    "per_page": 20
+  },
+  "filter": [
+    { 
+      "field":"name",  // "name" || "description" || "status" || "priority" || "keyword" || "creator" 
+      "campare_operationn": "EQ", // EQ 等于 || NEQ 不等于 || GT 大于 || GTE 大于等于 || LT 小于 || LTE 小于等于 || IN 范围内 || NOT_IN 范围外 || LIKE:字符串模糊 || RANGE:数值区间
+      "values": [
+        1,
+        2,
+        ...
+      ]
+    },
+    ...
+  ],
+  "sort": {
+    "field": "created_at", // "created_at" -> :inserted_at || "updated_at" -> :updated_at || "name" -> :name || "status" -> :status || "priority" -> :priority || "due_date" -> :due_date || "like_count" -> :like_count
+    "desc": true // true || false
+  },
+}
+```
+
+- **响应**:
+
+```json
+{
+  "pagination": {
+    "total": 100,
+    "page": 1,
+    "per_page": 20
+  },
+  // Cards 结构
+  "cards": [
+    {
+      "id": "string",
+      "name": "string",
+      "prompt": "string", 
+      "response_summary": "string",
+      "created_by": "string",
+      "created_from": "string",
+      "created_at": "2023-01-01T12:00:00Z",
+      "like_count": 42,
+      "keywords": ["安全性", "儿童", "语音交互"],
+      "status": "string", // pending || in_progress || completed || failed || reviewing
+      // Step 数组
+      "step": [
+        {
+          "id": "string",
+          "name": "string",
+          "status": "completed",
+          "agent": "GPT-4",
+          "result": {
+            "version": "1.0",
+            "confidence": 0.88,
+            "score": 92,
+            "consumed_points": 100,
+            "description": "该AI玩具在语音识别方面表现优秀，能够准确识别儿童的语音指令。安全性设计符合国际标准，无小零件脱落风险。交互体验流畅，响应速度快。",
+            "updated_at": "2025-05-18T07:36:12Z",
+            "dimension": [
+              { "latitude": "语音识别", "weight": 0.85 },
+              { "latitude": "内容安全", "weight": 0.78 },
+              { "latitude": "隐私保护", "weight": 0.65 },
+              { "latitude": "数据加密", "weight": 0.70 },
+              { "latitude": "家长控制", "weight": 0.60 },
+              { "latitude": "系统稳定", "weight": 0.88 }
+            ],
+            "reason": "综合评估结果良好，但在隐私保护和家长控制方面需要改进"
+          },
+        },
+        ...
+      ]
+    },
+    ...
+  ],
+  
+}
+```
+
+#### 3.2.2 获取探索详情
+
+- **URL**: `/v1/syntrust/exploration/{exploration_id}`
+- **Method**: GET
+
+- **响应**:
+
+```json
+// task 结构
+{
+  "id": "string",
+  "name": "string",
+  "prompt": "string",
+  "response": "string",
+  "description": "string",
+  "status": "string",
+  // "object": "string",
+  // "brand": "string",
+  // "model": "string",
+  "version": "string",
+  // "parameter_quantity": "string",
+  // "reasoning_accuracy": "string",
+  "priority": 1,
+  "due_date": "2023-01-01T12:00:00Z",
+  "created_by": "string",
+  "created_from": "string",
+  "keyword": ["string", ...],
+  "assigned_to": {
+    // User 结构
+    "id": "string",
+    "email": "string",
+    "name": "string",
+    "workspace": "string",
+    "vip": boolean,
+    "avatar": "string",
+    "phone": "string",
+    "role": "string",
+    "preferences": {
+      "key1": "value1",
+      "key2": "value2"
+    },
+    "last_login": "2023-01-01T12:00:00Z",
+    "created_at": "2023-01-01T12:00:00Z",
+    "updated_at": "2023-01-01T12:00:00Z"
+  },
+  "step": [
+    // Step 数组
+    {
+      "id": "string",
+      // "name": "string", // 冗余
+      // "status": "completed",
+      "agent": "GPT-4",
+      // scores 表中type是result, 代表给QA打分
+      "result":[
+        {
+          "version": "1.0",
+          "confidence": 0.88,
+          "score": 92,
+          "consumed_points": 100,
+          // "consumption_instructions": "string",  // UI中暂时还没有"消费积分介绍"
+          "description": "该AI玩具在语音识别方面表现优秀，能够准确识别儿童的语音指令。安全性设计符合国际标准，无小零件脱落风险。交互体验流畅，响应快。",
+          "updated_at": "2025-05-18T07:36:12Z",
+          "dimension": [
+            { "latitude": "语音识别", "weight": 0.85 },
+            { "latitude": "内容安全", "weight": 0.78 },
+            { "latitude": "隐私保护", "weight": 0.65 },
+            { "latitude": "数据加密", "weight": 0.70 },
+            { "latitude": "家长控制", "weight": 0.60 },
+            { "latitude": "系统稳定", "weight": 0.88 }
+          ],
+          "reason": "综合评估结果良好，但在隐私保护和家长控制方面需要改进"
+        },
+        ...
+      ] 
+    },
+    ...
+  ],
+  "flow_config": {
+    // FlowConfig 结构
+    "step_nodes": [
+      // StepNode 数组
+      {
+        "id": "string",
+        "name": "string",  
+        "executor_type": "human",  // "human" or "agent"
+        "executor_id": "string",
+        "description": "string",
+        "position": {
+          "x": 100,
+          "y": 200
+        },
+        "type": "string",
+        "dimension": [
+          // Dimension 数组, 用于雷达图
+          {"latitude": "string", "weight": 0.81},
+          {"latitude": "string", "weight": 0.82},
+          ...
+        ],
+      }
+    ],
+    "step_edges": [
+      // StepEdge 数组
+      {
+        "id": "string",
+        "source": "step node id",
+        "target": "step node id"
+      }
+    ]
+  },
+  "scenario":{
+    // Scenario 结构
+    "dimension_node": [
+      // DimensionNode 数组
+      {
+        "id": "string",
+        "label": "string",  // equals "name"
+        // "weight": 0.5,
+        "type": "string",
+        // "position": {
+        //   "x": 100,
+        //   "y": 200
+        // }
+      },
+      ...
+    ],
+    "dimension_edge": [
+      // DimensionEdge 数组
+      {
+        "id": "string",
+        "source": "string",
+        "target": "string"
+      },
+      ...
+    ]
+  },
+  "annotations": [
+    // Annotation 数组
+    {
+      "id": "string", 
+      "type": "string", // prompt || response || task || flow || step || score || dimension || scenario || annotation
+      "target_id": "string", // 根据annotatable_type，判断 annotatable_id 指向那种目标
+      "created_at": "2023-01-01T12:00:00Z",
+      "updated_at": "2023-01-01T12:00:00Z",
+      "body": "string", 
+      "name": "string",
+      // Attachment 结构
+      "attachment": [
+        {
+          "id": "string",
+          "file_name": "string",
+          "content_type": "string",
+          "file_path": "string",
+          "description": "string",
+        },
+        ...
+      ],
+      "target_detail": 
+        // 根据不同类型，可能包含以下之一：根据annotations表中的annotation_detail字段复制到这里，
+        {
+          "type": "image",
+          "path": "string", // 图片标注的文件路径, attachment@id
+          "position": {
+            "x": integer(),   // 图片标注的 x 坐标
+            "y": integer(),   // 图片标注的 y 坐标
+            "width": integer(),   // 图片标注的宽度
+            "height": integer()   // 图片标注的高度
+          }
+        }
+        // 或
+        {
+          "type": "text",
+          "path": "string",   // 文本标注的文件路径, prompt@id || task@id || score@id || dimension@id
+          "position": {
+            "start": integer(),   // 文本标注的起始位置
+            "end": integer()      // 文本标注的结束位置
+          }
+        }
+      }
+  ],
+}
+```
+
+### 3.3 任务
+
+#### 3.3.1 获取任务列表
+
+- **URL**: `/v1/syntrust/tasks/search`
+- **Method**: POST
+- **请求参数**:
+
+```json
+{
+  "tab": "community", // community || workspace || personal
+  "user_id": "string",
+ 
+  // 以下条件，可以省略，会返回默认结果
+  "pagination": {
+    "page": 1,
+    "per_page": 20
+  },
+  "filter": [
+    { 
+      "field":"name",  // "name" || "description" || "status" || "priority" || "keyword" -|| "creator" 
+      "campare_operationn": "EQ", // EQ 等于 || NEQ 不等于 || GT 大于 || GTE 大于等于 || LT 小于 || LTE 小于等于 || IN 范围内 || NOT_IN 范围外 || LIKE:字符串模糊 || RANGE:数值区间
+      "values": [
+        1,
+        2,
+        ...
+      ]
+    },
+    ...
+  ],
+  "sort": {
+    "field": "created_at", // "created_at" -> :inserted_at || "updated_at" -> :updated_at || "name" -> :name || "status" -> :status || "priority" -> :priority || "due_date" -> :due_date || "like_count" -> :like_count
+    "desc": true // true || false
+  },
+}
+```
+
+- **响应**:
+
+```json
+{
+  // Cards 结构
+  "cards": [
+    {
+      "id": "string",
+      "name": "string",
+      "prompt": "string", 
+      "response_summary": "string",
+      "created_by": "string",
+      "created_from": "string",
+      "created_at": "2023-01-01T12:00:00Z",
+      "like_count": 42,
+      "keywords": ["安全性", "儿童", "语音交互"],
+      "status": "string", // pending || in_progress || completed || failed || reviewing
+      // Step 数组
+      "step": [
+        {
+          "id": "string",
+          "name": "string",
+          "status": "completed",
+          "agent": "GPT-4",
+          "result": {
+            "version": "1.0",
+            "confidence": 0.88,
+            "score": 92,
+            "consumed_points": 100,
+            "description": "该AI玩具在语音识别方面表现优秀，能够准确识别儿童的语音指令。安全性设计符合国际标准，无小零件脱落风险。交互体验流畅，响应速度快。",
+            "updated_at": "2025-05-18T07:36:12Z",
+            "dimension": [
+              { "latitude": "语音识别", "weight": 0.85 },
+              { "latitude": "内容安全", "weight": 0.78 },
+              { "latitude": "隐私保护", "weight": 0.65 },
+              { "latitude": "数据加密", "weight": 0.70 },
+              { "latitude": "家长控制", "weight": 0.60 },
+              { "latitude": "系统稳定", "weight": 0.88 }
+            ],
+            "reason": "综合评估结果良好，但在隐私保护和家长控制方面需要改进"
+          },
+        },
+        ...
+      ]
+    },
+    ...
+  ],
+  "pagination": {
+    "total": 100,
+    "page": 1,
+    "per_page": 20
+  }
+}
+```
+
+#### 3.3.2 获取任务详情
+
+- **URL**: `/v1/syntrust/task/{task_id}`
+- **Method**: GET
+- **请求参数**:
+
+- **响应**:
+
+```json
+{
+  // task 结构
+}
+```
+
+
+### 3.4 资产
+
+#### 3.4.1 获取资产详情
+
+- **URL**: `/v1/syntrust/assets/{asset_id}`
+- **Method**: GET
+- **请求参数**:
+
+```json
+{
+  "tab": "community" // 必填: community || workspace || personal
+}
+```
+
+- **响应**:
+
+```json
+{
+  "asset": {
+    // Asset 结构
+  }
+}
+```
+
+### 3.5 task工作流
+
+#### 3.5.1 保存 task 草稿
+- **URL**: `/v1/syntrust/users/{user_id}/tasks`
+- **Method**: POST
+- **请求**:
+
+```json
+{
+  "task": {
+    // Task 结构
+  },
+  "completed": "yes" // yes || no 标记是否完成，还是草稿
+}
+```
+
+
+#### 3.5.2 新建 task 信息
+
+- **URL**: `/v1/syntrust/users/{user_id}/tasks`
+- **Method**: POST
+- **请求**:
+
+```json
+{
+  "task": {
+    // Task 结构
+  },
+  "completed": "yes" // yes || no 标记是否完成，还是草稿
+}
+```
+
+- **响应**:
+
+```json
+{
+  "code": 201,
+  "message": "string"
+}
+```
+
+#### 3.5.3 更新 task 信息
+
+- **URL**: `/v1/syntrust/users/{user_id}/tasks/{task_id}`
+- **Method**: PUT
+- **请求**:
+
+```json
+{
+  //Task 结构
+}
+```
+
+- **响应**:
+
+```json
+{
+  "code": 200,
+  "message": "Created"
+}
+```
+
+#### 3.5.4 删除 task
+
+- **URL**: `/v1/syntrust/users/{user_id}/tasks/{task_id}`
+- **Method**: DELETE
+- **响应**:
+
+```json
+{
+  "message": "Task successfully deleted"
+}
+```
+
+### 3.6 文件上传
+
+#### 3.6.1 上传文件
+
+- **URL**: `/v1/syntrust/attachments`
+- **Method**: POST
+- **请求**:
+  使用 multipart/form-data 格式上传:
+
+```
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="example.jpg"
+Content-Type: image/jpeg
+
+(二进制文件内容)
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="user_id"
+
+user123
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+```
+
+- **响应**:
+
+```json
+{
+  "file_id": "string",
+  "status": "string",
+  "url": "string"
+}
+```
+
+### 3.7 机器人对话
+
+#### 3.7.1 发送消息
+
+- **URL**: `/v1/rbt/chats/{chat_id}/messages`
+- **Method**: POST
+- **请求**:
+
+```json
+{
+  "content": "string",
+  "type": "string",
+  "priority": 1,
+  "metadata": {
+    "key1": "value1",
+    "key2": "value2"
+  }
+}
+```
+
+- **响应**:
+
+```json
+{
+  "message": {
+    // Message 结构
+  }
+}
+```
+
 
 ## 附录：条件搜索常用示例
 
-以下为基于 4.8 条件搜索 API 设计的典型请求示例，便于开发和测试参考：
+以下为基于 条件搜索 API 设计的典型请求示例，便于开发和测试参考：
 
-### 示例1：按可信度区间、场景多选、作者模糊、时间倒序分页
+### 示例 1：按可信度区间、场景多选、作者模糊、时间倒序分页
+
 - **API**: `POST /v1/syntrust/explorations/search`
-- **Request**
-```protobuf
-ExplorationSearchRequest {
-  tab: "community",
-  filter: [
-    exprs: [
-      { field: "confidence", op: RANGE, values: ["0.8", "1.0"] }
-    ],
-    exprs: [
-      { field: "scenario", op: IN, values: ["foo", "bar"] }
-    ]，
-    exprs: [
-      { field: "creator", op: LIKE, values: ["张"] }
-    ]
-     
-  ]
-  sort: { field: "created_at", desc: true },
-  pagination: { page: 2, per_page: 20 }
-}
-```
-- **Response**
-```protobuf
-ExplorationSearchResponse {
-  card: [
-    ExplorationCard {
-      id: "exp123",
-      prompt: "AI 智能助手探索",
-      response_summary: "本探索介绍了AI助手的核心能力...",
-      created_by: "张三",
-      created_from: "web",
-      created_at: { seconds: 1714377600 },
-      step: [] 
-    },
-    ... // 其余19条
-  ],
-  pagination: { total: 100, page: 2, per_page: 20 },
-  filter_echo: <同请求...>,
-  sort_echo: { field: "created_at", desc: true }
-}
-```
+- **请求**
 
-### 示例2：只按关键词模糊搜索，按名称升序
-- **API**: `POST /v1/syntrust/tasks/search`
-- **Request**
-```protobuf
-TaskSearchRequest {
-  tab: "personal",
-  filter: [
-    exprs: [
-      { field: "keyword", op: LIKE, values: ["AI"] }
-    ]
-  ]
-  sort: { field: "name", desc: false },
-  pagination: { page: 1, per_page: 20 }
-}
-```
-**Response**
-```protobuf
-TaskSearchResponse {
-  card: [
-    TaskCard {
-      id: "task001",
-      prompt: "AI 自动摘要任务",
-      response_summary: "本任务要求对长文本进行自动摘要...",
-      created_by: "李四",
-      created_from: "web",
-      created_at: { seconds: 1714377600 },
-      step: [],
-      status: "open"
-    }
-    // ... 其余19条
-  ],
-  pagination: { total: 35, page: 1, per_page: 20 },
-  filter_echo: <同请求>,
-  sort_echo: { field: "name", desc: false }
-}
-```
-
-### 示例3：按模板多选、点赞数降序
-- **API**: `POST /v1/syntrust/assets/search`
-- **Request**
-```protobuf
-AssetSearchRequest {
-  tab: "workspace",
-  filter: {
-    exprs: [
-      { field: "task", op: IN, values: ["T1", "T2"] }
+```json
+{
+  "tab": "community",
+  "filter": {
+    "exprs": [
+      { "field": "confidence", "op": "RANGE", "values": ["0.8", "1.0"] },
+      { "field": "scenario", "op": "IN", "values": ["foo", "bar"] },
+      { "field": "creator", "op": "LIKE", "values": ["张"] }
     ]
   },
-  sort: { field: "like_count", desc: true },
-  pagination: { page: 1, per_page: 10 }
-}
-```
-**Response**
-```protobuf
-AssetSearchResponse {
-  card: [
-    Asset {
-      id: "asset001",
-      name: "模型模板T1资产",
-      ...
-    },
-    // ... 其余9条
-  ],
-  pagination: { total: 18, page: 1, per_page: 10 },
-  filter_echo: <同请求>,
-  sort_echo: { field: "like_count", desc: true }
+  "sort": {
+    "field": "created_at",
+    "desc": true
+  },
+  "pagination": {
+    "page": 2,
+    "per_page": 20
+  }
 }
 ```
 
-### 示例4：复杂嵌套过滤（可信度区间 且 (场景A 或 场景B) 且 作者张）
-- **API**: `POST /v1/syntrust/tasks/search`
-- **Request**
-```protobuf
-TaskSearchRequest {
-  tab: "community",
-  filter: [
-    exprs: [
-      { field: "confidence", op: RANGE, values: ["0.7", "0.95"] }
-    ],
-    exprs: [
-      { field: "scenario", op: EQ, values: ["A"] },
-      { field: "scenario", op: EQ, values: ["B"] }
-    ],
-    exprs: [
-      { field: "creator", op: LIKE, values: ["张"] }
-    ]
-     
-  ]
-  sort: { field: "created_at", desc: true },
-  pagination: { page: 1, per_page: 20 }
-}
-```
-**Response**
-```protobuf
-TaskSearchResponse {
-  card: [
-    TaskCard {
-      id: "task888",
-      prompt: "场景A高可信度任务",
-      response_summary: "该任务聚焦于A场景下的高可信度...",
-      created_by: "张三",
-      created_from: "web",
-      created_at: { seconds: 1714377600 },
-      step: [],
-      status: "closed"
+- **响应**
+
+```json
+{
+  "card": [
+    {
+      "id": "exp123",
+      "prompt": "AI 智能助手探索",
+      "response_summary": "本探索介绍了AI助手的核心能力...",
+      "created_by": "张三",
+      "created_from": "web",
+      "created_at": "2024-04-30T12:00:00Z",
+      "step": []
     }
-    // ... 其余19条
+    // 其余19条
   ],
-  pagination: { total: 22, page: 1, per_page: 20 },
-  filter_echo: <同请求>,
-  sort_echo: { field: "created_at", desc: true }
+  "pagination": {
+    "total": 100,
+    "page": 2,
+    "per_page": 20
+  },
+  "filter_echo": {
+    // 同请求中的filter
+  },
+  "sort_echo": {
+    "field": "created_at",
+    "desc": true
+  }
 }
 ```
 
----
+### 示例 2：只按关键词模糊搜索，按名称升序
+
+- **API**: `POST /v1/syntrust/tasks/search`
+- **请求**
+
+```json
+{
+  "tab": "personal",
+  "filter": {
+    "exprs": [{ "field": "keyword", "op": "LIKE", "values": ["AI"] }]
+  },
+  "sort": {
+    "field": "name",
+    "desc": false
+  },
+  "pagination": {
+    "page": 1,
+    "per_page": 20
+  }
+}
+```
+
+- **响应**
+
+```json
+{
+  "card": [
+    {
+      "id": "task001",
+      "prompt": "AI 自动摘要任务",
+      "response_summary": "本任务要求对长文本进行自动摘要...",
+      "created_by": "李四",
+      "created_from": "web",
+      "created_at": "2024-04-30T12:00:00Z",
+      "step": [],
+      "status": "open"
+    }
+    // 其余19条
+  ],
+  "pagination": {
+    "total": 35,
+    "page": 1,
+    "per_page": 20
+  },
+  "filter_echo": {
+    // 同请求中的filter
+  },
+  "sort_echo": {
+    "field": "name",
+    "desc": false
+  }
+}
+```
+
+### 示例 3：按模板多选、点赞数降序
+
+- **API**: `POST /v1/syntrust/assets/search`
+- **请求**
+
+```json
+{
+  "tab": "workspace",
+  "filter": {
+    "exprs": [{ "field": "task", "op": "IN", "values": ["T1", "T2"] }]
+  },
+  "sort": {
+    "field": "like_count",
+    "desc": true
+  },
+  "pagination": {
+    "page": 1,
+    "per_page": 10
+  }
+}
+```
+
+- **响应**
+
+```json
+{
+  "card": [
+    {
+      "id": "asset001",
+      "name": "模型模板T1资产"
+      // 其它资产字段
+    }
+    // 其余9条
+  ],
+  "pagination": {
+    "total": 18,
+    "page": 1,
+    "per_page": 10
+  },
+  "filter_echo": {
+    // 同请求中的filter
+  },
+  "sort_echo": {
+    "field": "like_count",
+    "desc": true
+  }
+}
+```
+
+### 示例 4：复杂嵌套过滤（可信度区间 且 (场景 A 或 场景 B) 且 作者张）
+
+- **API**: `POST /v1/syntrust/tasks/search`
+- **请求**
+
+```json
+{
+  "tab": "community",
+  "filter": {
+    "exprs": [
+      { "field": "confidence", "op": "RANGE", "values": ["0.7", "0.95"] },
+      { "field": "scenario", "op": "IN", "values": ["A", "B"] },
+      { "field": "creator", "op": "LIKE", "values": ["张"] }
+    ]
+  },
+  "sort": {
+    "field": "created_at",
+    "desc": true
+  },
+  "pagination": {
+    "page": 1,
+    "per_page": 20
+  }
+}
+```
+
+- **响应**
+
+```json
+{
+  "card": [
+    {
+      "id": "task888",
+      "prompt": "场景A高可信度任务",
+      "response_summary": "该任务聚焦于A场景下的高可信度...",
+      "created_by": "张三",
+      "created_from": "web",
+      "created_at": "2024-04-30T12:00:00Z",
+      "step": [],
+      "status": "closed"
+    }
+    // 其余19条
+  ],
+  "pagination": {
+    "total": 22,
+    "page": 1,
+    "per_page": 20
+  },
+  "filter_echo": {
+    // 同请求中的filter
+  },
+  "sort_echo": {
+    "field": "created_at",
+    "desc": true
+  }
+}
+```
