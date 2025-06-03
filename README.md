@@ -22,8 +22,11 @@ npm run build || yarn build
 
 ## 默认账号密码
 
-- 账号：`admin`
-- 密码：`123456`
+- 账号：`admin@explore.com`
+- 密码：`Admin@123456`
+
+- 账号：`test@explore.com`
+- 密码：`Test@123456`
 
 登录后如需选择或创建 Workspace，请根据页面提示操作。
 

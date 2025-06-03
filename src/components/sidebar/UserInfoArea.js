@@ -35,7 +35,9 @@ const UserInfoArea = ({ isCollapsed }) => {
     const fetchCurrentUser = async () => {
       try {
         setLoading(true)
-        const userData = await userService.getCurrentUser()
+        // 直接从 localStorage 获取
+        const userStr = localStorage.getItem('syntrust_user')
+        const userData = userStr ? JSON.parse(userStr) : null
         setUser(userData)
       } catch (error) {
         console.error("获取用户信息失败:", error)
@@ -43,7 +45,6 @@ const UserInfoArea = ({ isCollapsed }) => {
         setLoading(false)
       }
     }
-
     fetchCurrentUser()
 
     // Add keyboard shortcut listener for logout

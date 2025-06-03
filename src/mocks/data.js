@@ -227,6 +227,25 @@ export const currentUser = {
   updated_at: { seconds: "1714377600" }
 }
 
+// 新增测试账号（带 workspace）
+export const testUser = {
+  id: "2",
+  name: "探索用户",
+  email: "test@explore.com",
+  password: "Test@123456", // 仅 mock 用，实际不会下发
+  avatar: null,
+  workspace: {
+    name: "Baidudu"
+  },
+  vip: false,
+  phone: "",
+  role: "user",
+  preferences: {},
+  last_login: { seconds: "1714377600" },
+  created_at: { seconds: "1704067200" },
+  updated_at: { seconds: "1714377600" }
+}
+
 // 任务数据 - 更新为每个任务都有不同的数据
 export const tasksData = [
   {
@@ -691,8 +710,8 @@ export const modelEvaluationData = {
 export const explorationCardsData = [
   {
     id: "1001",
-    prompt: "我发明了一款‘超级定位手环’，能实时告诉家长我在哪里，还能发光当手电筒。我想在学校摆摊卖给同学，应该怎么做？要不要写宣传语？有没有什么要注意的？",
-    response_summary: "找个醒目的桌子，摆上手环实物，写口号，比如 `爸妈不慌，我手环报位置！` 或者 `黑夜也不怕，有我手环当小灯塔～就这么简单，祝你卖爆！`",
+    prompt: "我发明了一款'超级定位手环'，能实时告诉家长我在哪里，还能发光当手电筒。我想在学校摆摊卖给同学，应该怎么做？要不要写宣传语？有没有什么要注意的？",
+    response_summary: "找个醒目的桌子，摆上手环实物，写口号，比如 '爸妈不慌，我手环报位置！' 或者 '黑夜也不怕，有我手环当小灯塔～就这么简单，祝你卖爆！'",
     created_by: "测评员-1",
     created_from: "AI toy",
     created_at: { seconds: 1714377600 },
@@ -2012,8 +2031,8 @@ export const explorationCardsData = [
 export const taskCardsData = [
   {
     id: "101",
-    prompt: "我发明了一款‘超级定位手环’，能实时告诉家长我在哪里，还能发光当手电筒。我想在学校摆摊卖给同学，应该怎么做？要不要写宣传语？有没有什么要注意的？",
-    response_summary: "找个醒目的桌子，摆上手环实物，写口号，比如 “爸妈不慌，我手环报位置！” 或者 “黑夜也不怕，有我手环当小灯塔～就这么简单，祝你卖爆！",
+    prompt: "我发明了一款'超级定位手环'，能实时告诉家长我在哪里，还能发光当手电筒。我想在学校摆摊卖给同学，应该怎么做？要不要写宣传语？有没有什么要注意的？",
+    response_summary: "找个醒目的桌子，摆上手环实物，写口号，比如 '爸妈不慌，我手环报位置！' 或者 '黑夜也不怕，有我手环当小灯塔～就这么简单，祝你卖爆！'",
     created_by: "测评员-1",
     created_from: "AI toy",
     created_at: { seconds: 1714377600 },
