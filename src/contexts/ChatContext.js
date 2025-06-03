@@ -31,65 +31,31 @@ export const ChatProvider = ({ children }) => {
   const [sessionHistory, setSessionHistory] = useState([])
   const [expandedSessions, setExpandedSessions] = useState({})
 
-  // 初始化TIM
-  useEffect(() => {
-    const initializeChat = async () => {
-      try {
-        // 初始化TIM SDK
-        const initResult = await timService.initTIM();
-        if (!initResult) {
-          console.error("TIM SDK初始化失败");
-          return;
-        }
-        
-        // 添加SDK_READY事件监听
-        timService.addEventListener(TIM_EVENT.SDK_READY, () => {
-          console.log("SDK已准备就绪");
-          setSdkReady(true);
-          
-          // SDK就绪后，尝试从本地存储恢复会话历史
-          try {
-            const savedHistory = localStorage.getItem('session_history');
-            if (savedHistory) {
-              const parsedHistory = JSON.parse(savedHistory);
-              if (Array.isArray(parsedHistory)) {
-                console.log("从本地存储恢复会话历史", parsedHistory);
-                setSessionHistory(parsedHistory);
-              }
-            }
-          } catch(err) {
-            console.error("恢复会话历史失败", err);
-          }
-        });
-
-        // 添加SDK_NOT_READY事件监听
-        timService.addEventListener(TIM_EVENT.SDK_NOT_READY, () => {
-          console.log("SDK未准备就绪");
-          setSdkReady(false);
-        });
-        
-        // 登录TIM
-        await timService.loginTIM();
-        setInitialized(true);
-        console.log("TIM登录成功，等待SDK Ready");
-      } catch (error) {
-        console.error("聊天初始化失败:", error);
+  // 新增：暴露初始化和登录IM的方法
+  const initChat = async (userID, userSig) => {
+    try {
+      // 初始化TIM SDK
+      const initResult = await timService.initTIM();
+      if (!initResult) {
+        console.error("TIM SDK初始化失败");
+        return;
       }
-    };
-
-    initializeChat();
-    
-    // 组件卸载时清理
-    return () => {
-      if (initialized) {
-        timService.removeEventListener(TIM_EVENT.SDK_READY, () => {});
-        timService.removeEventListener(TIM_EVENT.SDK_NOT_READY, () => {});
-        timService.logoutTIM().catch(err => {
-          console.error("登出失败:", err);
-        });
-      }
-    };
-  }, []);
+      // 添加SDK_READY事件监听
+      timService.addEventListener(TIM_EVENT.SDK_READY, () => {
+        setSdkReady(true);
+        // ... existing SDK_READY logic ...
+      });
+      timService.addEventListener(TIM_EVENT.SDK_NOT_READY, () => {
+        setSdkReady(false);
+      });
+      // 登录TIM
+      await timService.loginTIM(userID, userSig);
+      setInitialized(true);
+      console.log("TIM登录成功，等待SDK Ready");
+    } catch (error) {
+      console.error("聊天初始化失败:", error);
+    }
+  };
 
   // 监听新消息事件
   useEffect(() => {
@@ -928,7 +894,8 @@ export const ChatProvider = ({ children }) => {
         expandedSessions,
         endCurrentSession,
         toggleSessionExpand,
-        refreshMessages // 添加刷新消息的函数
+        refreshMessages, // 添加刷新消息的函数
+        initChat, // 新增暴露
       }}
     >
       {children}
