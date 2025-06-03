@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Form, Input, Button, Checkbox, message, Typography, Spin, Alert, Modal, List, Select } from "antd";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { useChatContext } from "../contexts/ChatContext";
 import loginLeft from '../styles/images/login-left.png';
 import loginTitle from '../styles/images/login-title.png';
 import workspaceCreate from '../styles/images/workspace-create.png';
@@ -13,6 +14,7 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { login, isAuthenticated } = useAuth();
+  const { initChat } = useChatContext();
   const [loading, setLoading] = useState(false);
   const [loginError, setLoginError] = useState("");
   const [checked, setChecked] = useState(false);
@@ -115,14 +117,24 @@ const LoginPage = () => {
   };
 
   const handleLoginSuccess = async (user) => {
-    console.log('handleLoginSuccess user:', user);
+    // 先完成页面跳转和 UI 反馈
     if (!user?.workspace) {
-      console.log('用户无workspace，弹出modal');
       setShowWorkspaceModal(true);
     } else {
-      console.log('用户有workspace，直接登录');
       message.success('登录成功');
       navigate("/");
+    }
+
+    // IM 登录异步执行，不阻塞主流程
+    if (user && user.user_signature) {
+      setTimeout(async () => {
+        try {
+          await initChat(user.id || user.email, user.user_signature);
+          console.log('IM登录成功');
+        } catch (e) {
+          console.error('IM登录失败', e);
+        }
+      }, 0);
     }
   };
 

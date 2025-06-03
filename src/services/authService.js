@@ -4,6 +4,7 @@
  */
 
 import { workspacesData } from '../mocks/data';
+import * as timService from './timService';
 
 // Token存储键名
 const TOKEN_KEY = 'syntrust_auth_token';
@@ -80,14 +81,15 @@ export const login = async (credentials) => {
       const mockResponse = {
         token: 'mock_jwt_token',
         user: {
-          id: 'user123',
+          id: 'test-123456', // IM userID
           name: '测评员-1',
           email: 'admin@example.com',
           role: 'admin',
-          workspace: ''
+          workspace: '' ,
+          user_signature: 'eJwtzFELgjAUhuH-sttKzjbPdEIXQRBSF1FGdRltxaFcojPK6L9n6uX3vPB9WLbaBk9bsoSJANi422Ss83Shjr2t-IQLGaIacmVup6IgwxKuACDSWmFf7Kug0raOiKJNvXrK-xaFEoHHYtCKru17Dq6uH*9oY87z5b2JM93IbJFqDrvR4eiOs3UpU*X2KNMp*-4ABiwx2g__'
         },
         sidebar_list: {},
-        user_signature: 'signature',
+        user_signature: 'eJwtzFELgjAUhuH-sttKzjbPdEIXQRBSF1FGdRltxaFcojPK6L9n6uX3vPB9WLbaBk9bsoSJANi422Ss83Shjr2t-IQLGaIacmVup6IgwxKuACDSWmFf7Kug0raOiKJNvXrK-xaFEoHHYtCKru17Dq6uH*9oY87z5b2JM93IbJFqDrvR4eiOs3UpU*X2KNMp*-4ABiwx2g__',
         workspace: ''
       };
       saveAuth(mockResponse);
@@ -99,14 +101,15 @@ export const login = async (credentials) => {
       const mockResponse = {
         token: 'mock_jwt_token',
         user: {
-          id: '2',
+          id: 'test-1411', // IM userID
           name: '测评员-2',
           email: 'test@explore.com',
           role: 'user',
-          workspace: baiduWorkspace
+          workspace: baiduWorkspace,
+          user_signature: 'eJwtzLEOgjAUheF36VolvZVSIGHCQRLBQRfcjC14VRRLAxLju4vAeL4-OR9y2O6dVhsSEu4wshg3Kv2wWODIVjd2CS7AHBt1O9U1KhKCxxiTQeCJqeh3jUYPLoTgQ5rUYvU36fqBy6XvzS9YDt-XNMvjzuyqtLhv2iN9nhMGeU9pX8LqksS*jTNa6vULuoh8f7nnMeU_'
         },
         sidebar_list: {},
-        user_signature: 'signature',
+        user_signature: 'eJwtzLEOgjAUheF36VolvZVSIGHCQRLBQRfcjC14VRRLAxLju4vAeL4-OR9y2O6dVhsSEu4wshg3Kv2wWODIVjd2CS7AHBt1O9U1KhKCxxiTQeCJqeh3jUYPLoTgQ5rUYvU36fqBy6XvzS9YDt-XNMvjzuyqtLhv2iN9nhMGeU9pX8LqksS*jTNa6vULuoh8f7nnMeU_',
         workspace: baiduWorkspace
       };
       saveAuth(mockResponse);
@@ -120,9 +123,14 @@ export const login = async (credentials) => {
 /**
  * 登出
  */
-export const logout = () => {
+export const logout = async () => {
+  try {
+    await timService.logoutTIM(); // 先退出IM
+  } catch (e) {
+    // 可以忽略IM登出异常
+    console.warn('IM登出失败', e);
+  }
   clearAuth();
-  // 可以在这里添加其他登出逻辑，如重定向到登录页
   window.location.href = '/login';
 };
 
