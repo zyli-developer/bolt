@@ -31,10 +31,10 @@ export const AuthProvider = ({ children }) => {
   // 登录函数
   const login = async (credentials) => {
     try {
-      await authService.login(credentials);
+      const result = await authService.login(credentials);
       setIsAuthenticated(true);
-      navigate('/');
-      return true;
+      // 不要自动 navigate('/')，让页面自己跳转
+      return result; // 返回真实的登录结果对象
     } catch (error) {
       return false;
     }

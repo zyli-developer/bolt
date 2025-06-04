@@ -35,7 +35,9 @@ const UserInfoArea = ({ isCollapsed }) => {
     const fetchCurrentUser = async () => {
       try {
         setLoading(true)
-        const userData = await userService.getCurrentUser()
+        // 直接从 localStorage 获取
+        const userStr = localStorage.getItem('syntrust_user')
+        const userData = userStr ? JSON.parse(userStr) : null
         setUser(userData)
       } catch (error) {
         console.error("获取用户信息失败:", error)
@@ -43,7 +45,6 @@ const UserInfoArea = ({ isCollapsed }) => {
         setLoading(false)
       }
     }
-
     fetchCurrentUser()
 
     // Add keyboard shortcut listener for logout
@@ -86,14 +87,35 @@ const UserInfoArea = ({ isCollapsed }) => {
 
   const handleWorkspaceChange = async (workspaceId) => {
     try {
-      await workspaceService.switchWorkspace(workspaceId)
-      // 刷新页面以应用新的工作区
+      // 本地切换：找到目标workspace对象
+      const target = workspaces.find(ws => ws.id === workspaceId)
+      if (target) {
+        const userStr = localStorage.getItem('syntrust_user')
+        if (userStr) {
+          const userObj = JSON.parse(userStr)
+          userObj.workspace = target
+          localStorage.setItem('syntrust_user', JSON.stringify(userObj))
+        }
+      }
       window.location.reload()
     } catch (error) {
       console.error(`切换工作区失败 (ID: ${workspaceId}):`, error)
     }
     setWorkspacePopoverVisible(false)
   }
+
+  // 获取当前激活的workspaceId
+  const getActiveWorkspaceId = () => {
+    try {
+      const userStr = localStorage.getItem('syntrust_user');
+      if (userStr) {
+        const userObj = JSON.parse(userStr);
+        return userObj.workspace?.id;
+      }
+    } catch {}
+    return null;
+  };
+  const activeWorkspaceId = getActiveWorkspaceId();
 
   // User profile popover content
   const userPopoverContent = (
@@ -212,7 +234,7 @@ const UserInfoArea = ({ isCollapsed }) => {
             <div
               key={workspace.id}
               className={`flex justify-between items-center p-2 rounded cursor-pointer hover:bg-gray-100 ${
-                workspace.current ? "bg-gray-50" : ""
+                activeWorkspaceId === workspace.id ? "bg-gray-50" : ""
               }`}
               onClick={() => handleWorkspaceChange(workspace.id)}
             >
@@ -225,7 +247,7 @@ const UserInfoArea = ({ isCollapsed }) => {
                   <div className="text-xs text-gray-500">{workspace.role || "成员"}</div>
                 </div>
               </div>
-              {workspace.current && <CheckOutlined className="text-blue-500" />}
+              {activeWorkspaceId === workspace.id && <CheckOutlined className="text-blue-500" />}
             </div>
           ))
         )}

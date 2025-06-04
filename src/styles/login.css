@@ -51,4 +51,37 @@
   .login-card-wrapper {
     max-width: 90%;
   }
+}
+
+.custom-select .ant-select-selector {
+  border-color: #B7C4B7 !important;
+  border-radius: 16px !important;
+  height: 40px !important;
+  padding: 0 12px !important;
+  font-size: 14px;
+  background: #F7F9F8 !important;
+  transition: border-color 0.2s;
+  box-shadow: none !important;
+}
+.custom-select .ant-select-selector:focus,
+.custom-select .ant-select-selector:hover {
+  border-color: #58BD6D !important;
+  box-shadow: 0 0 0 2px rgba(88,189,109,0.12);
+}
+.custom-select .ant-select-arrow {
+  color: #5D6D67 !important;
+  font-size: 18px !important;
+  right: 12px !important;
+}
+.custom-select-dropdown {
+  border-radius: 12px !important;
+  font-size: 14px;
+  padding: 4px 0;
+}
+.custom-select-dropdown .ant-select-item-option-selected {
+  background: #E6F7EC !important;
+  color: #122415 !important;
+}
+.custom-select-dropdown .ant-select-item-option-active {
+  background: #F0F5F2 !important;
 } 

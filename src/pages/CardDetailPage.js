@@ -938,23 +938,62 @@ const CardDetailPage = () => {
   }, [isTesting, testProgress]);
 
   // 开始测试方法
-  const handleStartTest = () => {
+  const handleStartTest = async () => {
     // 关闭连续选择模式并清除高亮
     if (isMultiSelectActive) {
       setIsMultiSelectActive(false);
       clearAllHighlights();
     }
-    
     setIsTesting(true);
     setTestProgress(0);
-    
-    // 模拟测试进度，完成后自动跳转到下一步
+
+    // 1. 发起API调用，模拟生成新version
+    try {
+      let newStepArr = Array.isArray(card?.step) ? [...card.step] : [];
+      // 针对每个agent都新增一个version
+      newStepArr = newStepArr.map(stepItem => {
+        const lastScore = Array.isArray(stepItem.score) && stepItem.score.length > 0 ? stepItem.score[stepItem.score.length - 1] : null;
+        const lastScoreValue = lastScore ? parseFloat(lastScore.score) : 0.7;
+        // 新score为上升趋势
+        const newScoreValue = Math.min(1, (lastScoreValue * (1.05 + Math.random() * 0.05)).toFixed(2));
+        // 版本号规则：最新version+1，保留一位小数
+        let newVersion = '1.0';
+        if (lastScore && lastScore.version) {
+          const lastVer = parseFloat(lastScore.version);
+          newVersion = (lastVer + 1).toFixed(1);
+        }
+        const newScoreObj = {
+          version: newVersion,
+          score: newScoreValue,
+          description: "优化后得分上升",
+          confidence: "0.95",
+          consumed_points: 60,
+          dimension: lastScore?.dimension || []
+        };
+        return {
+          ...stepItem,
+          score: [...(stepItem.score || []), newScoreObj]
+        };
+      });
+      // 3. 发起API调用（模拟）
+      await taskService.submitOptimizationResult({
+        cardId: card.id,
+        step: newStepArr,
+        comments: currentStepComments,
+        models: selectedModels,
+        optimization: true
+      });
+      // 4. 更新本地card数据
+      setCard(prev => ({ ...prev, step: newStepArr }));
+    } catch (e) {
+      message.error("测试API调用失败");
+    }
+    // 5. 模拟测试进度，完成后自动跳转到下一步
     const timer = setInterval(() => {
       setTestProgress(prev => {
         const next = prev + 1;
         if (next >= 100) {
           clearInterval(timer);
-          // 测试完成后自动进入结果页面
           setCurrentOptimizationStep('submit');
           setIsTesting(false);
         }

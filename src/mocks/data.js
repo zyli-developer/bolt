@@ -227,6 +227,25 @@ export const currentUser = {
   updated_at: { seconds: "1714377600" }
 }
 
+// 新增测试账号（带 workspace）
+export const testUser = {
+  id: "2",
+  name: "探索用户",
+  email: "test@explore.com",
+  password: "Test@123456", // 仅 mock 用，实际不会下发
+  avatar: null,
+  workspace: {
+    name: "Baidudu"
+  },
+  vip: false,
+  phone: "",
+  role: "user",
+  preferences: {},
+  last_login: { seconds: "1714377600" },
+  created_at: { seconds: "1704067200" },
+  updated_at: { seconds: "1714377600" }
+}
+
 // 任务数据 - 更新为每个任务都有不同的数据
 export const tasksData = [
   {
@@ -2765,4 +2784,14 @@ export const assetData = [
     confidence: 0.86,
     score: 0.82
   }
+];
+
+// mock workspace 列表
+export const mockWorkspaces = [
+  { id: 'ws1', name: 'Personal Workspace', type: 'personal' },
+  { id: 'ws2', name: 'Enterprise Workspace 1', type: 'enterprise' },
+  { id: 'ws3', name: 'Enterprise Workspace 2', type: 'enterprise' },
+  { id: 'ws4', name: 'Enterprise Workspace 3', type: 'enterprise' },
+  { id: 'ws5', name: 'Enterprise Workspace 4', type: 'enterprise' },
+  { id: 'ws6', name: 'Enterprise Workspace 5', type: 'enterprise' },
 ];

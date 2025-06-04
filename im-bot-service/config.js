@@ -82,7 +82,15 @@ module.exports = {
       APIEndpoint: process.env.BOT6_API_ENDPOINT || 'https://openrouter.ai/api/v1/chat/completions',
       Description: 'anthropic/claude-3.7-sonnet:thinking 机器人，成本低、响应快'
     },
-
+    {
+      BotID: process.env.BOT7_ID || '@RBT#007',
+      Name: process.env.BOT7_NAME || 'deepseek-hongkong',
+      AIProvider: process.env.BOT7_AI_PROVIDER || 'deepseek',
+      AIModel: process.env.BOT7_AI_MODEL || 'deepseek-chat',
+      APIKey: process.env.BOT7_API_KEY || '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',
+      APIEndpoint: process.env.BOT7_API_ENDPOINT || 'https://203.86.115.43/api/v1/chat/completions',
+      Description: 'deepseek-hongkong 机器人，成本低、响应快'
+    },
     // 可以添加更多机器人配置...
   ]
 };
