@@ -33,29 +33,29 @@ export const ChatProvider = ({ children }) => {
 
   // 新增：暴露初始化和登录IM的方法
   const initChat = async (userID, userSig) => {
-    try {
-      // 初始化TIM SDK
-      const initResult = await timService.initTIM();
-      if (!initResult) {
-        console.error("TIM SDK初始化失败");
-        return;
-      }
-      // 添加SDK_READY事件监听
-      timService.addEventListener(TIM_EVENT.SDK_READY, () => {
-        setSdkReady(true);
+      try {
+        // 初始化TIM SDK
+        const initResult = await timService.initTIM();
+        if (!initResult) {
+          console.error("TIM SDK初始化失败");
+          return;
+        }
+        // 添加SDK_READY事件监听
+        timService.addEventListener(TIM_EVENT.SDK_READY, () => {
+          setSdkReady(true);
         // ... existing SDK_READY logic ...
       });
-      timService.addEventListener(TIM_EVENT.SDK_NOT_READY, () => {
-        setSdkReady(false);
-      });
-      // 登录TIM
+        timService.addEventListener(TIM_EVENT.SDK_NOT_READY, () => {
+          setSdkReady(false);
+        });
+        // 登录TIM
       await timService.loginTIM(userID, userSig);
-      setInitialized(true);
-      console.log("TIM登录成功，等待SDK Ready");
-    } catch (error) {
-      console.error("聊天初始化失败:", error);
-    }
-  };
+        setInitialized(true);
+        console.log("TIM登录成功，等待SDK Ready");
+      } catch (error) {
+        console.error("聊天初始化失败:", error);
+      }
+    };
 
   // 监听新消息事件
   useEffect(() => {

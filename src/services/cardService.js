@@ -11,7 +11,7 @@ import { explorationCardsData, taskCardsData } from "../mocks/data"
 import { filterCardsByConditions } from "../mocks/filterData"
 
 // 判断是否使用本地模拟数据
-const USE_MOCK_DATA = false;
+const USE_MOCK_DATA = (process.env.USE_MOCK_DATA === 'true');
 
 const cardService = {
   /**

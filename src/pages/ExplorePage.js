@@ -243,18 +243,18 @@ const ExplorePage = () => {
         params.sort = sortParams;
       }
       const response = await cardService.getExplorations(params);
-      console.log("loadCards 获取到数据:", response.card, "当前页:", page);
+      console.log("loadCards 获取到数据:", response.cards, "当前页:", page);
       setCards((prevCards) => {
         if (page === 1 || prevNav !== selectedNav) {
-          console.log("setCards: 覆盖卡片数据", response.card);
-          return response.card;
+          console.log("setCards: 覆盖卡片数据", response.cards);
+          return response.cards;
         }
-        console.log("setCards: 追加卡片数据", [...prevCards, ...response.card]);
-        return [...prevCards, ...response.card];
+        console.log("setCards: 追加卡片数据", [...prevCards, ...response.cards]);
+        return [...prevCards, ...response.cards];
       });
       setTotalItems(response.pagination.total);
-      setHasMore(response.card.length > 0 && response.pagination.page * response.pagination.per_page < response.pagination.total);
-      console.log("setHasMore:", response.card.length > 0 && response.pagination.page * response.pagination.per_page < response.pagination.total);
+      setHasMore(response.cards.length > 0 && response.pagination.page * response.pagination.per_page < response.pagination.total);
+      console.log("setHasMore:", response.cards.length > 0 && response.pagination.page * response.pagination.per_page < response.pagination.total);
       setPrevNav(selectedNav);
       console.log("setPrevNav:", selectedNav);
       setError(null);
