@@ -11,7 +11,7 @@ import {
   extractSessionData
 } from "../lib/tim/message"
 import { SESSION_STATUS, CUSTOM_MESSAGE_TYPE } from "../lib/tim/constants"
-
+import { getCurrentUser } from "../services/authService"
 const ChatContext = createContext()
 
 export const useChatContext = () => useContext(ChatContext)
@@ -869,6 +869,16 @@ export const ChatProvider = ({ children }) => {
       setLoading(false);
     }
   };
+
+   // 自动IM登录：页面刷新后自动检测本地用户并登录IM
+   useEffect(() => {
+    if (!initialized) {
+      const user = getCurrentUser();
+      if (user && user.id && user.user_signature) {
+        initChat(user.id, user.user_signature);
+      }
+    }
+  }, [initialized]);
 
   return (
     <ChatContext.Provider

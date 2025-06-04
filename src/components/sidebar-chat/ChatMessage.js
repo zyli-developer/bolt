@@ -27,6 +27,7 @@ const ChatMessage = ({ message }) => {
   
   const isUser = message.sender === "user";
   const [isAnnotationModalVisible, setIsAnnotationModalVisible] = useState(false);
+  console.log('[ChatMessage] useState 初始化', { isAnnotationModalVisible });
   const [contextMenu, setContextMenu] = useState(null);
   const [initialContentForModal, setInitialContentForModal] = useState('');
   const [isMultiSelectActive, setIsMultiSelectActive] = useState(false);
@@ -50,6 +51,7 @@ const ChatMessage = ({ message }) => {
   
   // 监听步骤变更事件
   useEffect(() => {
+    console.log('[ChatMessage] useEffect 监听步骤变更事件');
     const handleStepChange = (event) => {
       const { step, isOptimizationMode } = event.detail;
       console.log(`收到步骤变更事件，步骤: ${step}, 优化模式: ${isOptimizationMode}`);
@@ -68,6 +70,7 @@ const ChatMessage = ({ message }) => {
   
   // 当全局步骤变更时，同步到本地状态
   useEffect(() => {
+    console.log('[ChatMessage] useEffect 同步全局步骤到本地', { currentOptimizationStep, isOptimizationMode });
     setLocalOptimizationStep(currentOptimizationStep);
     setLocalOptimizationMode(isOptimizationMode);
   }, [currentOptimizationStep, isOptimizationMode]);
@@ -173,6 +176,8 @@ const ChatMessage = ({ message }) => {
 
   // 处理右键菜单
   const handleContextMenu = (e) => {
+    console.log('[ChatMessage] handleContextMenu', e);
+    if(!isOptimizationMode) return;
     e.preventDefault();
     
     // 获取选中的文本
@@ -234,40 +239,87 @@ const ChatMessage = ({ message }) => {
   };
 
   // 应用高亮样式到选中文本
-  const applyHighlightToSelection = (range, text) => {
-    if (!range) return;
-    
-    // 创建高亮元素
+  const applyHighlightToSelection = (ranges, text) => {
+    console.log('[ChatMessage] applyHighlightToSelection', { ranges, text });
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return;
+  
+    const range = selection.getRangeAt(0);
+  
+    // 只允许高亮同一个文本节点中的选区
+    if (
+      range.startContainer.nodeType !== Node.TEXT_NODE ||
+      range.endContainer.nodeType !== Node.TEXT_NODE ||
+      range.startContainer !== range.endContainer
+    ) {
+      console.warn('仅支持同一文本节点内的高亮');
+      return;
+    }
+  
+    // 检查是否已经被高亮
+    if (
+      range.startContainer.parentNode.closest('.text-highlight-selection')
+    ) {
+      console.warn('该文本已被高亮，跳过处理');
+      return;
+    }
+  
+    const textNode = range.startContainer;
+    const fullText = textNode.textContent;
+    const start = range.startOffset;
+    const end = range.endOffset;
+  
+    if (start === end) {
+      console.warn('未选中任何文本，不处理');
+      return;
+    }
+  
+    const before = fullText.slice(0, start);
+    const selected = fullText.slice(start, end);
+    const after = fullText.slice(end);
+  
+    // 创建高亮 span 元素
     const highlightEl = document.createElement('span');
     highlightEl.className = 'text-highlight-selection';
-    highlightEl.textContent = text;
-    
-    // 清除原有内容，插入高亮元素
-    range.deleteContents();
-    range.insertNode(highlightEl);
+    highlightEl.textContent = selected;
+  
+    const parent = textNode.parentNode;
+  
+    // 替换原始文本节点为三个部分
+    const frag = document.createDocumentFragment();
+    if (before) frag.appendChild(document.createTextNode(before));
+    frag.appendChild(highlightEl);
+    if (after) frag.appendChild(document.createTextNode(after));
+  
+    parent.replaceChild(frag, textNode);
+  
+    // 清除原选区，防止光标跳动
+    selection.removeAllRanges();
   };
   
   // 清除所有高亮
   const clearAllHighlights = () => {
-    // 清除消息内的所有高亮元素
-    const highlights = messageRef.current?.querySelectorAll('.text-highlight-selection') || [];
-    highlights.forEach(el => {
-      const parent = el.parentNode;
-      if (parent) {
-        // 将高亮元素替换为其文本内容
-        const textNode = document.createTextNode(el.textContent);
-        parent.replaceChild(textNode, el);
-        parent.normalize(); // 合并相邻的文本节点
-      }
-    });
-    
-    // 重置选择状态
-    setSelectedTexts([]);
-    setSelectionRanges([]);
+    console.log('[ChatMessage] clearAllHighlights');
+      // 清除所有高亮元素
+      const highlights = document.querySelectorAll('.text-highlight-selection');
+      highlights.forEach(el => {
+        const parent = el.parentNode;
+        if (parent) {
+          // 将高亮元素替换为其文本内容
+          const textNode = document.createTextNode(el.textContent);
+          parent.replaceChild(textNode, el);
+          parent.normalize(); // 合并相邻的文本节点
+        }
+      });
+      
+      // 重置选择状态
+      setSelectedTexts([]);
+      setSelectionRanges([]);
   };
 
   // 处理引用消息
   const handleQuoteMessage = () => {
+    console.log('[ChatMessage] handleQuoteMessage');
     // 如果是多选模式，使用所有选择的文本
     let contentToQuote = '';
     
@@ -296,6 +348,7 @@ const ChatMessage = ({ message }) => {
 
   // 处理讨论
   const handleDiscuss = () => {
+    console.log('[ChatMessage] handleDiscuss');
     // 设置讨论内容并显示讨论对话框
     setDiscussModalVisible(true);
     
@@ -310,6 +363,7 @@ const ChatMessage = ({ message }) => {
 
   // 处理右键菜单项点击
   const handleContextMenuAction = (action) => {
+    console.log('[ChatMessage] handleContextMenuAction', action);
     switch (action) {
       case 'discuss':
         handleDiscuss();
@@ -340,104 +394,9 @@ const ChatMessage = ({ message }) => {
     }
   };
 
-  // 处理点击事件关闭右键菜单
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      // 点击其他区域关闭右键菜单
-      if (contextMenu && !e.target.closest('.message-context-menu')) {
-        setContextMenu(null);
-      }
-      
-      // 检查是否点击了高亮元素
-      const isClickOnHighlight = e.target.closest('.text-highlight-selection');
-      if (isClickOnHighlight) {
-        return; // 点击高亮文本时不清除高亮
-      }
-      
-      // 如果不是连续选择模式，且不是临时多选模式，且不是按着Ctrl/Command，点击其他区域时清除高亮
-      if (!isMultiSelectActive && !isMultiSelectTempMode && !(e.ctrlKey || e.metaKey)) {
-        clearAllHighlights();
-      }
-    };
-    
-    // 监听键盘事件，处理Ctrl/Command键
-    const handleKeyDown = (e) => {
-      if ((e.ctrlKey || e.metaKey) && !isMultiSelectActive) {
-        // Ctrl/Command键按下，临时进入多选模式
-        document.body.classList.add('multi-select-temp');
-        setIsMultiSelectTempMode(true);
-      }
-    };
-    
-    const handleKeyUp = (e) => {
-      if (!e.ctrlKey && !e.metaKey) {
-        // Ctrl/Command键释放，如果不是永久多选模式，清除临时标记
-        if (!isMultiSelectActive) {
-          document.body.classList.remove('multi-select-temp');
-          setIsMultiSelectTempMode(false);
-        }
-      }
-    };
-    
-    document.addEventListener('click', handleClickOutside);
-    document.addEventListener('keydown', handleKeyDown);
-    document.addEventListener('keyup', handleKeyUp);
-    
-    return () => {
-      document.removeEventListener('click', handleClickOutside);
-      document.removeEventListener('keydown', handleKeyDown);
-      document.removeEventListener('keyup', handleKeyUp);
-    };
-  }, [contextMenu, isMultiSelectActive, isMultiSelectTempMode]);
-
-  // 添加自动高亮处理函数
-  useEffect(() => {
-    const handleAutoSelection = (event) => {
-      // 只在连续选择模式下启用自动选择高亮
-      if (!isMultiSelectActive && !isMultiSelectTempMode) return;
-      
-      // 检查事件是否发生在消息容器内
-      if (!messageRef.current?.contains(event.target)) return;
-      
-      // 从window获取当前选区
-      const selection = window.getSelection();
-      const selectedText = selection.toString().trim();
-      
-      // 如果有选中文本
-      if (selectedText) {
-        // 创建选择的范围信息
-        const range = selection.getRangeAt(0);
-        
-        // 检查此文本是否已被高亮，避免重复选择
-        const hasHighlight = range.commonAncestorContainer.closest?.('.text-highlight-selection');
-        if (hasHighlight) return; // 如果已经是高亮元素，不再处理
-        
-        // 检查该文本是否已经在选中列表中，避免重复添加
-        if (selectedTexts.includes(selectedText)) return;
-        
-        // 添加到已选择的文本列表
-        setSelectedTexts(prev => [...new Set([...prev, selectedText])]);
-        
-        // 保存当前选中的文本
-        setSelectedText(selectedText);
-        
-        // 应用高亮样式，保持选中状态
-        applyHighlightToSelection(range, selectedText);
-      }
-    };
-    
-    // 在连续选择模式或临时多选模式下添加监听
-    if (isMultiSelectActive || isMultiSelectTempMode) {
-      document.addEventListener('mouseup', handleAutoSelection);
-    }
-    
-    return () => {
-      document.removeEventListener('mouseup', handleAutoSelection);
-    };
-  }, [isMultiSelectActive, isMultiSelectTempMode, selectedTexts]);
-
   // 提取纯文本内容，去除引用部分
   const extractPlainTextContent = (content) => {
+    console.log('[ChatMessage] extractPlainTextContent', content);
     if (!content) return '';
     
     // 移除所有引用标记
@@ -454,6 +413,7 @@ const ChatMessage = ({ message }) => {
 
   // 处理添加观点
   const handleAddAnnotation = () => {
+    console.log('[ChatMessage] handleAddAnnotation');
     // 每次打开modal前，重新计算提取纯文本内容
     let contentForModal = '';
     
@@ -482,10 +442,10 @@ const ChatMessage = ({ message }) => {
 
   // 保存观点
   const handleSaveAnnotation = async (data) => {
+    console.log('[ChatMessage] handleSaveAnnotation', data);
     try {
       // 使用localOptimizationStep确保使用最新的步骤值
       const stepValue = localOptimizationStep || 'result';
-      
       // 创建新的注释对象
       const newAnnotation = {
         ...data,
@@ -493,23 +453,15 @@ const ChatMessage = ({ message }) => {
         messageId: message.id,
         timestamp: new Date().toISOString()
       };
-      
-      // 调用添加注释服务
+      console.log('[ChatMessage] newAnnotation', newAnnotation);
+      // 先调用后端服务持久化
       const savedAnnotation = await annotationService.addAnnotation(newAnnotation);
-      
       // 使用addComment函数添加注释，确保注释立即显示在列表中
       addComment({
-        id: savedAnnotation.id,
-        author: savedAnnotation.author.name,
-        time: savedAnnotation.time,
-        text: savedAnnotation.content,
-        summary: savedAnnotation.summary,
-        step: stepValue, // 使用当前步骤确保添加到正确分类
+        ...savedAnnotation
       });
-      
       messageApi.success('观点已添加');
       setIsAnnotationModalVisible(false);
-      
       // 清除高亮
       clearAllHighlights();
     } catch (error) {
