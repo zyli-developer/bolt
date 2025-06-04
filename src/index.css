@@ -1241,7 +1241,7 @@ code {
 }
 
 .model-selector {
-  min-width: 120px;
+  flex: 1
 }
 
 .evaluation-model-info {

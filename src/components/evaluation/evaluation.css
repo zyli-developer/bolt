@@ -571,7 +571,7 @@
 
 /* 左侧评估区域 */
 .evaluation-left-section {
-  flex: 0 0 330px;
+  flex: 1 1;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -844,9 +844,7 @@
   padding: 12px;
 }
 
-.model-selector {
-  min-width: 200px;
-}
+
 
 .model-selector .ant-select-selection-item {
   color: #1f2024;

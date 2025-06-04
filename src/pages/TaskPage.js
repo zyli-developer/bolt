@@ -497,7 +497,7 @@ const TaskPage = () => {
         ) : !loading ? (
           <Empty description="暂无任务数据" />
         ) : null}
-        <ListFooter loading={loading} hasMore={hasMore} />
+        {tasks.length > 0 && <ListFooter loading={loading} hasMore={hasMore} />}
         {error && <div className="error-message">{error}</div>}
       </div>
     </div>

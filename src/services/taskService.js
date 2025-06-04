@@ -608,58 +608,6 @@ const taskService = {
       
       console.log("提交优化结果(模拟):", newTask);
       
-      // 将新任务添加到mock数据
-      try {
-        const { taskCardsData } = require("../mocks/data");
-        
-        // 构建符合taskCardsData结构的新任务对象
-        const newMockTask = {
-          id: newTaskId.toString(),
-          prompt: optimizationData.title || `优化任务 ${newTaskId}`,
-          response_summary: optimizationData.result?.models?.[0]?.description || "优化结果",
-          created_by: currentUser?.name || "当前用户",
-          created_from: "优化测试",
-          created_at: { seconds: Math.floor(timestamp / 1000) },
-          status: "completed",
-          type: "optimization",
-          title: optimizationData.title || `优化任务 ${newTaskId}`,
-          author: {
-            id: currentUser?.id || "1",
-            name: currentUser?.name || "当前用户",
-            avatar: null
-          },
-          source: "优化测试",
-          tags: ["优化任务"],
-          evaluations: [optimizationData.result],
-          step: [
-            {
-              agent: "优化助手",
-              score: [
-                {
-                  version: "1.0",
-                  confidence: "0.9",
-                  score: "0.9",
-                  consumed_points: 60,
-                  description: "优化后的任务评估",
-                  dimension: optimizationData.result?.models?.[0]?.strengths?.map((strength, index) => ({
-                    latitude: `维度${index + 1}`,
-                    weight: (0.8 + index * 0.02).toFixed(2)
-                  })) || []
-                }
-              ],
-              reason: "通过优化模式改进"
-            }
-          ]
-        };
-        
-        // 将新任务添加到taskCardsData数组的开头
-        taskCardsData.unshift(newMockTask);
-        
-        console.log("新的优化任务已添加:", newMockTask);
-      } catch (error) {
-        console.error("添加优化任务到mock数据失败:", error);
-      }
-      
       // 模拟API延迟
       await new Promise(resolve => setTimeout(resolve, 800));
       

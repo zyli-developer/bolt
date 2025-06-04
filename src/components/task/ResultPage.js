@@ -299,7 +299,6 @@ const ResultPage = ({
                 className="model-selector"
                 maxTagCount={2}
                 maxTagTextLength={10}
-                style={{ minWidth: "270px", flex: 1 }}
                 dropdownRender={(menu) => (
                   <>
                     <div className="select-all-option" onClick={() => handleSelectAll(selectedModels?.length < modelOptions?.length)} style={{ padding: "4px 8px" }}>

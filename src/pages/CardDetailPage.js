@@ -19,6 +19,7 @@ import {
   DownOutlined,
   UpOutlined,
 } from "@ant-design/icons"
+import taskService from "../services/taskService"
 import cardService from "../services/cardService"
 import { useChatContext } from "../contexts/ChatContext"
 import CreateTaskModal from "../components/modals/CreateTaskModal"
@@ -1735,12 +1736,12 @@ const CardDetailPage = () => {
             />
             
             {/* 优化模式内容区域 */}
-            <div className="optimization-content" style={{ display: "flex", gap: "4px" }}>
+            <div className="optimization-content" style={{ display: "flex", gap: "4px"  }}>
               {currentOptimizationStep === 'result' ? (
                 // 结果质询界面
                 <>
                   {/* 左侧评估结果区域 - 使用ResultPage组件 */}
-                  <div style={{ flex: currentStepComments.length > 0 ? 2 : 3, display: "flex", flexDirection: "column", gap: "4px" }}>
+                  <div style={{ flex: currentStepComments.length > 0 ? 2 : 3, display: "flex", flexDirection: "column", gap: "4px",width: "100%" }}>
                     <ResultPage 
                       task={card}
                       enhancedChartData={enhancedChartData}

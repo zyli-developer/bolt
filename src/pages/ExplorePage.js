@@ -317,8 +317,8 @@ const ExplorePage = () => {
           <div className="no-data">暂无数据</div>
         ) : null}
 
-        {/* 统一底部提示组件 */}
-        <ListFooter loading={loading} hasMore={hasMore} />
+        {/* 只有有数据时才显示 ListFooter */}
+        {cards.length > 0 && <ListFooter loading={loading} hasMore={hasMore} />}
 
         {error && <div className="error-message">{error}</div>}
       </div>

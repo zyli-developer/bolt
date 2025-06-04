@@ -708,7 +708,7 @@ export const modelEvaluationData = {
 
 // 探索卡片数据 - 符合 Protocol Buffers API 规范
 export const explorationCardsData = [
-    {
+  {
         "id": "44444444-4444-4444-4444-444444444444",
         "name": "Python代码审查",
         "priority": 2,
@@ -1634,7 +1634,7 @@ export const explorationCardsData = [
 
 // 任务卡片数据 - 符合 Protocol Buffers API 规范
 export const taskCardsData = [
-    {
+  {
         "id": "44444444-4444-4444-4444-444444444444",
         "name": "Python代码审查",
         "priority": 2,
