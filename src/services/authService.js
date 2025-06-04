@@ -97,7 +97,7 @@ export const login = async (credentials) => {
     }
     // 支持 test@explore.com 账号，workspace 用 Baidu
     if (credentials.username === 'test@explore.com' && credentials.password === 'Test@123456') {
-      const baiduWorkspace = workspacesData.find(ws => ws.name === 'Baidu');
+      const baiduWorkspace = workspacesData.find(ws => ws.name === '智能座舱');
       const mockResponse = {
         token: 'mock_jwt_token',
         user: {

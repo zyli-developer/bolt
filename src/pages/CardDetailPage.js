@@ -956,6 +956,9 @@ const CardDetailPage = () => {
       let newStepArr = Array.isArray(card?.step) ? [...card.step] : [];
       // 针对每个agent都新增一个version
       newStepArr = newStepArr.map(stepItem => {
+
+        const isTrafficLLM =  stepItem.agent  === 'TrafficLLM'
+        
         const lastScore = Array.isArray(stepItem.score) && stepItem.score.length > 0 ? stepItem.score[stepItem.score.length - 1] : null;
         const lastScoreValue = lastScore ? parseFloat(lastScore.score) : 0.7;
         // 新score为上升趋势
@@ -974,6 +977,10 @@ const CardDetailPage = () => {
           consumed_points: 60,
           dimension: lastScore?.dimension || []
         };
+        if(isTrafficLLM){
+          newScoreObj.reason = "根据专家提示，回答不需要特定的法律条款引用，只做出技术性判断，不存在合规风险。"
+        }
+          
         return {
           ...stepItem,
           score: [...(stepItem.score || []), newScoreObj]
@@ -1003,7 +1010,7 @@ const CardDetailPage = () => {
         }
         return next;
       });
-    }, 100);
+    }, 50);
   };
   
   // 处理提交测试结果
