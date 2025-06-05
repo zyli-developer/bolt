@@ -71,6 +71,7 @@ import { OptimizationContext } from "../contexts/OptimizationContext"
 
 // 导入通用评论列表组件
 import CommentsList from "../components/common/CommentsList";
+import useTextHighlight from '../hooks/useTextHighlight';
 
 const { Option } = Select
 
@@ -1541,6 +1542,34 @@ const CardDetailPage = () => {
       console.error("生成报告失败:", error);
       message.error("生成报告失败，请重试");
     }
+  };
+
+  // 假设 messages 是 [{id, text}] 或类似结构
+  const messages = Array.isArray(card?.step)
+    ? card.step.map((s, i) => ({
+        id: s.id || i,
+        text: s.text || s.prompt || s.description || ''
+      }))
+    : [];
+
+  // 受控高亮 hook
+  const { highlightMap, addHighlight, clearHighlights, renderHighlightedText } = useTextHighlight();
+
+  // 鼠标松开时添加高亮
+  const handleMouseUp = (msgId, text) => {
+    const selection = window.getSelection();
+    if (!selection || selection.isCollapsed) return;
+    const anchorNode = selection.anchorNode;
+    if (!anchorNode || anchorNode.nodeType !== Node.TEXT_NODE) return;
+    const start = selection.anchorOffset;
+    const end = selection.focusOffset;
+    if (start === end) return;
+    const s = Math.min(start, end);
+    const e = Math.max(start, end);
+    const msgHighlights = highlightMap[msgId] || [];
+    if (msgHighlights.some(hl => s >= hl.start && e <= hl.end)) return;
+    addHighlight(msgId, s, e);
+    selection.removeAllRanges();
   };
 
   if (loading) {

@@ -9,6 +9,7 @@ import TextContextMenu from '../context/TextContextMenu';
 import { extractSessionData } from '../../lib/tim/message';
 import { CUSTOM_MESSAGE_TYPE } from '../../lib/tim/constants';
 import '../../styles/components/sidebar-chat/ChatMessage.css'; // 导入样式文件
+import useTextHighlight from '../../hooks/useTextHighlight';
 
 // 引用类型定义
 const QUOTE_TYPES = {
@@ -48,6 +49,10 @@ const ChatMessage = ({ message }) => {
   // 本地状态跟踪当前优化步骤
   const [localOptimizationStep, setLocalOptimizationStep] = useState(currentOptimizationStep);
   const [localOptimizationMode, setLocalOptimizationMode] = useState(isOptimizationMode);
+  
+  // 受控高亮 hook，id 用 message.id
+  const { highlightMap, addHighlight, clearHighlights, renderHighlightedText } = useTextHighlight();
+  const textRef = useRef();
   
   // 监听步骤变更事件
   useEffect(() => {
@@ -240,7 +245,6 @@ const ChatMessage = ({ message }) => {
 
   // 应用高亮样式到选中文本
   const applyHighlightToSelection = (ranges, text) => {
-    console.log('[ChatMessage] applyHighlightToSelection', { ranges, text });
     const selection = window.getSelection();
     if (!selection || selection.rangeCount === 0) return;
   
@@ -686,21 +690,6 @@ const ChatMessage = ({ message }) => {
     return true;
   };
   
-  // 渲染会话顶部悬浮引用
-  const renderActiveSessionBar = () => {
-    if (!currentSession) return null;
-    
-    return (
-      <div className="active-session-bar">
-        <div className="active-session-content">
-          <div className="active-session-quote">{currentSession.quoteContent}</div>
-          <button className="close-session-btn" onClick={handleCloseSession}>
-            关闭引用
-          </button>
-        </div>
-      </div>
-    );
-  };
 
   // 检查消息是否在会话中
   const isInActiveSession = () => {
@@ -715,6 +704,23 @@ const ChatMessage = ({ message }) => {
                      (message.cloudCustomData && JSON.parse(message.cloudCustomData)?.sessionId);
     
     return !!sessionId;
+  };
+
+  // 鼠标松开时添加高亮
+  const handleMouseUp = () => {
+    const selection = window.getSelection();
+    if (!selection || selection.isCollapsed) return;
+    const anchorNode = selection.anchorNode;
+    if (!anchorNode || anchorNode.nodeType !== Node.TEXT_NODE) return;
+    const start = selection.anchorOffset;
+    const end = selection.focusOffset;
+    if (start === end) return;
+    const s = Math.min(start, end);
+    const e = Math.max(start, end);
+    const msgHighlights = highlightMap[message.id] || [];
+    if (msgHighlights.some(hl => s >= hl.start && e <= hl.end)) return;
+    addHighlight(message.id, s, e);
+    selection.removeAllRanges();
   };
 
   // 如果是分割线消息，渲染分割线
@@ -766,7 +772,13 @@ const ChatMessage = ({ message }) => {
             </span>
           </div>
         )}
-        {formatMessageContent(message.text)}
+        <div
+          ref={textRef}
+          onMouseUp={handleMouseUp}
+          style={{ userSelect: 'text', cursor: 'text', fontSize: 16 }}
+        >
+          {renderHighlightedText(message.text, highlightMap[message.id] || [])}
+        </div>
         {message.pending && <span className="message-status">发送中...</span>}
         {message.error && (
           <span className="message-status error" title={message.errorMessage || "发送失败"}>

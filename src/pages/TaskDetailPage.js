@@ -1289,8 +1289,7 @@ const TaskDetailPage = () => {
                   clearAllHighlights();
                   setSelectedTexts([]);
                   setSelectionRanges([]);
-                  lastHighlightedTextRef.current = '';
-                  lastHighlightedRangeRef.current = null;
+             
                 }
               }}
               size="small"
@@ -1417,11 +1416,10 @@ const TaskDetailPage = () => {
     setTestProgress(0);
     if (!checked) {
       // 关闭优化模式时清除所有高亮和相关状态
-      clearAllHighlights();
+      clearAllHighlightsGlobal();
       setSelectedTexts([]);
       setSelectionRanges([]);
-      lastHighlightedTextRef.current = '';
-      lastHighlightedRangeRef.current = null;
+
     }
   };
 
@@ -1441,20 +1439,18 @@ const TaskDetailPage = () => {
   // 新增ref
   const sceneSectionRef = useRef();
   const templateSectionRef = useRef();
-  // 新增高亮文本和range的ref
-  const lastHighlightedTextRef = useRef('');
-  const lastHighlightedRangeRef = useRef(null);
+
 
   // 右键菜单action处理
   const handleContextMenuAction = (action) => {
     setContextMenu(null);
     switch (action) {
       case 'discuss':
-        setSelectedModalText(lastHighlightedTextRef.current || selectedText);
+        setSelectedModalText( selectedText);
         setDiscussModalVisible(true);
         break;
       case 'annotate':
-        setSelectedModalText(lastHighlightedTextRef.current || selectedText);
+        setSelectedModalText( selectedText);
         setAnnotationModalVisible(true);
         break;
       case 'edit':
@@ -1478,8 +1474,7 @@ const TaskDetailPage = () => {
     }
     // 菜单关闭后清除高亮
     clearAllHighlights();
-    lastHighlightedTextRef.current = '';
-    lastHighlightedRangeRef.current = null;
+   
   };
 
   // 添加观点modal保存
@@ -1545,8 +1540,7 @@ const TaskDetailPage = () => {
       const hasHighlight = range.commonAncestorContainer.closest?.('.text-highlight-selection');
       if (hasHighlight) {
         setSelectedText(selected); // 只更新状态，不弹菜单
-        lastHighlightedTextRef.current = selected;
-        lastHighlightedRangeRef.current = range.cloneRange();
+
         return;
       }
       if (isMultiSelectActive || isMultiSelectTempMode || isModifierKeyPressed) {
@@ -1562,8 +1556,7 @@ const TaskDetailPage = () => {
         applyHighlightToSelection(range, selected);
       }
       setSelectedText(selected);
-      lastHighlightedTextRef.current = selected;
-      lastHighlightedRangeRef.current = range.cloneRange();
+
     }
   };
 
@@ -1571,8 +1564,8 @@ const TaskDetailPage = () => {
   const handleOptimizeContextMenu = (e, type = 'text') => {
     if (!isOptimizationMode) return;
     e.preventDefault();
-    // 优先用lastHighlightedTextRef
-    const selected = lastHighlightedTextRef.current || window.getSelection().toString().trim();
+   
+    const selected =  window.getSelection().toString().trim();
     if (selected) {
       setContextMenu({ x: e.clientX, y: e.clientY });
       setContextType(type);
@@ -1948,65 +1941,97 @@ const TaskDetailPage = () => {
   };
 
   // 应用高亮样式到选中文本（与ChatMessage.js一致）
-  const applyHighlightToSelection = (range, text) => {
-    if (!range) return;
+  const applyHighlightToSelection = (ranges, text) => {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return;
+  
+    const range = selection.getRangeAt(0);
+  
     // 只允许高亮同一个文本节点中的选区
     if (
       range.startContainer.nodeType !== Node.TEXT_NODE ||
       range.endContainer.nodeType !== Node.TEXT_NODE ||
       range.startContainer !== range.endContainer
     ) {
-      message.warning('请只选择同一文本节点内的内容进行高亮');
+      console.warn('仅支持同一文本节点内的高亮');
       return;
     }
+  
     // 检查是否已经被高亮
-    if (range.startContainer.parentNode.closest('.text-highlight-selection')) {
-      message.warning('该文本已被高亮');
+    if (
+      range.startContainer.parentNode.closest('.text-highlight-selection')
+    ) {
+      console.warn('该文本已被高亮，跳过处理');
       return;
     }
+  
     const textNode = range.startContainer;
     const fullText = textNode.textContent;
     const start = range.startOffset;
     const end = range.endOffset;
-    if (start === end) return;
+  
+    if (start === end) {
+      console.warn('未选中任何文本，不处理');
+      return;
+    }
+  
     const before = fullText.slice(0, start);
     const selected = fullText.slice(start, end);
     const after = fullText.slice(end);
+  
     // 创建高亮 span 元素
     const highlightEl = document.createElement('span');
     highlightEl.className = 'text-highlight-selection';
     highlightEl.textContent = selected;
+  
     const parent = textNode.parentNode;
+  
     // 替换原始文本节点为三个部分
     const frag = document.createDocumentFragment();
     if (before) frag.appendChild(document.createTextNode(before));
     frag.appendChild(highlightEl);
     if (after) frag.appendChild(document.createTextNode(after));
+  
     parent.replaceChild(frag, textNode);
+  
     // 清除原选区，防止光标跳动
-    window.getSelection().removeAllRanges();
+    selection.removeAllRanges();
   };
-
-  // 清除所有高亮（与ChatMessage.js一致）
+// 全局高亮清理函数
+const clearAllHighlightsGlobal = () => {
+  document.querySelectorAll('.text-highlight-selection').forEach(el => {
+    if (el.parentNode) {
+      const textNode = document.createTextNode(el.textContent);
+      el.parentNode.replaceChild(textNode, el);
+      el.parentNode.normalize();
+    }
+  });
+};
+  // 清除所有高亮
   const clearAllHighlights = () => {
-    // 清除所有高亮元素
-    const highlights = document.querySelectorAll('.text-highlight-selection');
-    highlights.forEach(el => {
-      const parent = el.parentNode;
-      if (parent) {
-        // 将高亮元素替换为其文本内容
-        const textNode = document.createTextNode(el.textContent);
-        parent.replaceChild(textNode, el);
-        parent.normalize(); // 合并相邻的文本节点
-      }
-    });
-    // 重置选择状态
-    setSelectedTexts([]);
-    setSelectionRanges([]);
-    lastHighlightedTextRef.current = '';
-    lastHighlightedRangeRef.current = null;
+    console.log('[ChatMessage] clearAllHighlights');
+      // 清除所有高亮元素
+      const highlights = document.querySelectorAll('.text-highlight-selection');
+      highlights.forEach(el => {
+        const parent = el.parentNode;
+        if (parent) {
+          // 将高亮元素替换为其文本内容
+          const textNode = document.createTextNode(el.textContent);
+          parent.replaceChild(textNode, el);
+          parent.normalize(); // 合并相邻的文本节点
+        }
+      });
+      
+      // 重置选择状态
+      setSelectedTexts([]);
+      setSelectionRanges([]);
   };
-
+// 组件卸载时也清理
+useEffect(() => {
+  return () => {
+    clearAllHighlightsGlobal();
+  };
+}, []);
   // useEffect(() => {
   //   if (isTesting && task && task.step && task.step.length > 0 && testProgress === 0) {
   //     // step 补充后自动进入测试流程
