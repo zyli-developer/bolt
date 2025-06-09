@@ -245,6 +245,7 @@ const ChatMessage = ({ message }) => {
 
   // 应用高亮样式到选中文本
   const applyHighlightToSelection = (ranges, text) => {
+    console.log('[ChatMessage] applyHighlightToSelection', { ranges, text });
     const selection = window.getSelection();
     if (!selection || selection.rangeCount === 0) return;
   
