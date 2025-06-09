@@ -141,7 +141,7 @@ const ResultPage = ({
           }
         }
         
-        let confidenceValue = 75;
+        let confidenceValue = 0;
         if (selectedStep.score && Array.isArray(selectedStep.score) && selectedStep.score.length > 0) {
           const scoreObj = selectedStep.score[0];
           if (scoreObj && typeof scoreObj === 'object' && 
@@ -170,8 +170,8 @@ const ResultPage = ({
     
     return {
       name: '未知模型',
-      score: 70,
-      credibility: 75,
+      score: 0,
+      credibility: 0,
       scoreChange: '+0.0',
       credibilityChange: '+0.0',
       reason: '暂无数据',

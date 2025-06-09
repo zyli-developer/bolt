@@ -69,9 +69,10 @@ export const OptimizationProvider = ({ children }) => {
     // 如果没有step字段，使用当前步骤
     console.log('addComment----------comment', comment);
     const commentType = comment.step || currentOptimizationStep;
-    
     setCommentsMap(prevMap => {
       const stepComments = prevMap[commentType] || [];
+      // 防止重复添加（根据id去重）
+      if (stepComments.some(c => c.id === comment.id)) return prevMap;
       return {
         ...prevMap,
         [commentType]: [...stepComments, comment]
@@ -116,13 +117,12 @@ export const OptimizationProvider = ({ children }) => {
   // 监听路由变化，当离开详情页时自动关闭优化模式
   useEffect(() => {
     const path = location.pathname;
-    
-    // 检查是否在探索详情页
+    // 检查是否在探索详情页或任务详情页
     const isExplorationDetail = path.includes('/explore/detail/');
-    
-    // 如果不在探索详情页，且优化模式开启，则关闭优化模式
-    if (!isExplorationDetail && isOptimizationMode) {
-      console.log('已离开探索详情页，重置优化模式');
+    const isTaskDetail = path.includes('/tasks/detail/') || (/^\/tasks\/(\w+)/.test(path));
+    // 允许在探索详情页和任务详情页都能开启优化模式
+    if (!isExplorationDetail && !isTaskDetail && isOptimizationMode) {
+      console.log('已离开详情页，重置优化模式');
       setIsOptimizationMode(false);
       setInternalCurrentOptimizationStep('result'); // 重置为result(结果质询)步骤
     }
