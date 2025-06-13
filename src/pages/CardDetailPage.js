@@ -213,7 +213,7 @@ const CardDetailPage = () => {
   const [contextMenu, setContextMenu] = useState(null); // {x, y}
   const [showAnnotationModal, setShowAnnotationModal] = useState(false);
   const [showDiscussModal, setShowDiscussModal] = useState(false);
-  
+
   // 添加注释展开状态
   const [expandedComment, setExpandedComment] = useState(null);
   
@@ -408,14 +408,14 @@ const CardDetailPage = () => {
         return;
     }
     
-    saveCurrentData(); // 先保存当前步骤数据
-    
-    // 关闭连续选择模式并清除高亮
-    if (isMultiSelectActive) {
-      setIsMultiSelectActive(false);
-      clearAllHighlights();
-    }
-    
+      saveCurrentData(); // 先保存当前步骤数据
+      
+      // 关闭连续选择模式并清除高亮
+      if (isMultiSelectActive) {
+        setIsMultiSelectActive(false);
+        clearAllHighlights();
+      }
+      
     setCurrentOptimizationStep(prevStep);
   };
 
@@ -950,7 +950,7 @@ const CardDetailPage = () => {
     }
     setIsTesting(true);
     setTestProgress(0);
-
+    
     // 1. 发起API调用，模拟生成新version
     try {
       let newStepArr = Array.isArray(card?.step) ? [...card.step] : [];
@@ -1780,7 +1780,7 @@ const CardDetailPage = () => {
                       comments={currentStepComments}
                     />
                   </div>
-        
+                  
                 </>
               ) : currentOptimizationStep === 'qa' ? (
                 // QA优化界面
@@ -2145,7 +2145,7 @@ const CardDetailPage = () => {
           onClose={() => setContextMenu(null)}
         />
       )}
-      
+
       {/* 添加观点弹窗 */}
       <AnnotationModal
         visible={showAnnotationModal}

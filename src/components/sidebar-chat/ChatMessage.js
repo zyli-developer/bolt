@@ -11,6 +11,7 @@ import { CUSTOM_MESSAGE_TYPE } from '../../lib/tim/constants';
 import '../../styles/components/sidebar-chat/ChatMessage.css'; // 导入样式文件
 import useTextHighlight from '../../hooks/useTextHighlight';
 import DiscussModal from '../modals/DiscussModal';
+import useMultiSelect from '../../hooks/useMultiSelect';
 
 // 引用类型定义
 const QUOTE_TYPES = {
@@ -46,8 +47,14 @@ const ChatMessage = ({ message }) => {
   const [localOptimizationMode, setLocalOptimizationMode] = useState(isOptimizationMode);
   
   // 受控高亮 hook，id 用 message.id
-  const { highlightMap, addHighlight, clearHighlights, renderHighlightedText } = useTextHighlight();
+  const { highlightMap, addHighlight, clearHighlights, renderHighlightedText, applyHighlightToSelection } = useTextHighlight();
   const textRef = useRef();
+  
+  // 多选 hook
+  const { isMultiSelectActive, endMultiSelectAndGetText, setIsMultiSelectActive, setSelectedTexts, clearAllHighlights } = useMultiSelect(messageRef);
+  
+  // 在组件顶部 useRef 区域加：
+  const lastSelectionRangeRef = useRef(null);
   
   // 监听步骤变更事件
   useEffect(() => {
@@ -191,10 +198,28 @@ const ChatMessage = ({ message }) => {
   // 右键菜单操作
   const handleContextMenuAction = (action) => {
     setContextMenu(null);
-    if (action === 'annotate') {
-      setShowAnnotationModal(true);
-    } else if (action === 'discuss') {
-      setShowDiscussModal(true);
+    if (action === 'select') {
+      if (!isMultiSelectActive) {
+        // 开启连续选时，保留当前已选文本高亮
+        if (selectedText && lastSelectionRangeRef.current) {
+          setSelectedTexts(prev => prev.includes(selectedText) ? prev : [...prev, selectedText]);
+          applyHighlightToSelection(lastSelectionRangeRef.current, selectedText);
+        }
+        setIsMultiSelectActive(true);
+      } else {
+        setIsMultiSelectActive(false);
+        clearAllHighlights();
+      }
+      return;
+    }
+    if (action === 'annotate' || action === 'discuss') {
+      let textToShow = selectedText;
+      if (isMultiSelectActive && endMultiSelectAndGetText) {
+        textToShow = endMultiSelectAndGetText();
+      }
+      setSelectedText(textToShow);
+      if (action === 'annotate') setShowAnnotationModal(true);
+      if (action === 'discuss') setShowDiscussModal(true);
     }
     // 其它操作可扩展
   };
@@ -506,7 +531,7 @@ const ChatMessage = ({ message }) => {
 
   return (
     <div className={`message-container ${isUser ? "message-right" : "message-left"}`} ref={messageRef} onContextMenu={handleContextMenu}>
-      <div
+      <div 
         className={`message-bubble ${isUser ? "message-user" : "message-other"}`}
         style={{ position: 'relative' }}
       >
@@ -515,7 +540,7 @@ const ChatMessage = ({ message }) => {
           style={{ userSelect: 'text', cursor: 'text', fontSize: 16 }}
         >
           {renderHighlightedText(message.text, highlightMap[message.id] || [])}
-        </div>
+          </div>
       </div>
       
       {/* 右键菜单 */}
@@ -533,10 +558,7 @@ const ChatMessage = ({ message }) => {
       {/* 添加观点弹窗 */}
       <AnnotationModal
         visible={showAnnotationModal}
-        onClose={() => {
-          setShowAnnotationModal(false);
-          clearHighlights();
-        }}
+        onClose={() => setShowAnnotationModal(false)}
         onSave={handleSaveAnnotation}
         selectedText={selectedText}
         initialContent={selectedText}
@@ -545,18 +567,11 @@ const ChatMessage = ({ message }) => {
       
       {/* 讨论弹窗 */}
       {showDiscussModal && (
-        <div className="discuss-modal">
-          <div className="discuss-modal-header">
-            <h3>讨论</h3>
-            <button onClick={() => {
-              setShowDiscussModal(false);
-              clearHighlights();
-            }}>关闭</button>
-          </div>
-          <div className="discuss-modal-content">
-            <p>{selectedText}</p>
-          </div>
-        </div>
+        <DiscussModal
+          visible={showDiscussModal}
+          onClose={() => setShowDiscussModal(false)}
+          selectedText={selectedText}
+        />
       )}
     </div>
   );

@@ -8,43 +8,14 @@ import {
   StarOutlined,
   StarFilled,
   ShareAltOutlined,
-  LikeOutlined,
-  LikeFilled,
-  CommentOutlined,
-  ForkOutlined,
-  SettingOutlined,
-  CaretRightOutlined,
-  CaretDownOutlined,
-  PlusOutlined,
-  MinusOutlined,
   CheckOutlined,
-  FileTextOutlined,
-  CloseCircleOutlined,
-  SendOutlined,
-  DownOutlined,
-  UpOutlined,
 } from "@ant-design/icons"
-import {
-  LineChart,
-  Line,
-  ResponsiveContainer,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip as RechartsTooltip,
-  Radar,
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-  Area,
-  AreaChart,
-} from "recharts"
+
 import taskService from "../services/taskService"
 import cardService from "../services/cardService"
 import { useChatContext } from "../contexts/ChatContext"
 import TimelineIcon from "../components/icons/TimelineIcon"
-import { taskAnnotationData } from "../mocks/data"
+import { taskAnnotationData,testFirstEvautionData,testSecondEvautionData } from "../mocks/data"
 import StartTaskIcon from "../components/icons/StartTaskIcon"
 import QASection from "../components/qa/QASection"
 import SceneSection from '../components/scene/SceneSection'
@@ -470,51 +441,20 @@ const TaskDetailPage = () => {
           const next = prev + 1;
           if (next >= 100) {
             clearInterval(timer);
-            // 测试完成后自动进入结果页面
-            setCurrentStep(5);
             setIsTesting(false);
-            
-            // 更新评估数据，模拟测试完成后得到的新数据
-            const updatedEvaluationData = { ...evaluationData };
-            
-            // 更新所有选中模型的评估数据
-            selectedModels.forEach(modelKey => {
-              if (updatedEvaluationData[modelKey]) {
-                // 更新综合得分（credibility）
-                const originalCredibility = parseFloat(updatedEvaluationData[modelKey].credibility) || 0;
-                const credibilityImprovement = (Math.random() * 5 + 1).toFixed(1);
-                const newCredibility = Math.min(100, originalCredibility + parseFloat(credibilityImprovement));
-                
-                // 更新各维度得分（score）
-                const originalScore = parseFloat(updatedEvaluationData[modelKey].score) || 0;
-                const scoreImprovement = (Math.random() * 0.8 + 0.2).toFixed(1);
-                const newScore = Math.min(10, originalScore + parseFloat(scoreImprovement)).toFixed(1);
-                
-                // 更新评估数据
-                updatedEvaluationData[modelKey] = {
-                  ...updatedEvaluationData[modelKey],
-                  credibility: newCredibility,
-                  credibilityChange: `+${credibilityImprovement}`,
-                  score: newScore,
-                  scoreChange: `+${scoreImprovement}`,
-                  updatedAt: new Date().toLocaleString(),
-                  reason: `${updatedEvaluationData[modelKey].reason || '模型表现良好'}\n测试显示在多数场景中性能稳定，优化后的响应更加准确。`
-                };
-              }
-            });
-            
-            // 更新评估数据状态
-            setEvaluationData(updatedEvaluationData);
-            
-            // 重置图表数据缓存，以便重新计算
-            chartDataRef.current = { radar: [], line: [] };
+            // 优化模式下自动跳转到提交结果
+            if (isOptimizationMode) {
+              setCurrentOptimizationStep('submit');
+            } else {
+              setCurrentStep(5);
+            }
           }
           return next;
         });
-      }, 100);
+      }, 50);
     }
     return () => timer && clearInterval(timer);
-  }, [isTesting, testProgress, evaluationData, selectedModels]);
+  }, [isTesting, testProgress, isOptimizationMode]);
 
   const handleGoBack = () => {
     navigate(-1)
@@ -1766,12 +1706,87 @@ const TaskDetailPage = () => {
     '根据《中华人民共和国车辆维修保养条例》，未提及不能主动说明关闭气囊的技术手段，合规性风险较小'
   ];
 
+  useEffect(() => {
+    console.log('currentTaskId', task);
+  }, [task]);
+
   // 统一的handleStartTest
   const handleStartTest = () => {
     setIsTesting(true);
     setTestProgress(0);
-    // 如果 step 为空，直接填充 defaultStepData 并赋默认 reason
-    if (!task || !task.step || task.step.length === 0) {
+
+    // 检查task是否存在
+    if (!task) return;
+
+    // 获取当前task的id
+    const currentTaskId = task.id;
+
+
+    // 获取当前task中所有不同的version数量
+    const versions = new Set();
+    task.step.forEach(stepItem => {
+      if (stepItem.score && Array.isArray(stepItem.score)) {
+        stepItem.score.forEach(score => {
+          if (score.version) {
+            versions.add(score.version);
+          }
+        });
+      }
+    });
+    const versionCount = versions.size;
+
+    // 根据version数量判断使用哪个数据源
+    if (versionCount === 0) {
+      // 从testFirstEvautionData中查找匹配的数据
+      const matchedData = testFirstEvautionData.find(item => item.id === currentTaskId);
+      if (matchedData) {
+        // 如果当前step为空，直接使用matchedData的step
+        if (!task.step || task.step.length === 0) {
+          setTask(prev => ({ ...prev, step: matchedData.step }));
+          return;
+        }
+        // 如果step不为空，则按agent合并score
+        const mergedSteps = task.step.map(stepItem => {
+          const matchedStep = matchedData.step.find(s => s.agent === stepItem.agent);
+          if (matchedStep) {
+            return {
+              ...stepItem,
+              score: [...(stepItem.score || []), ...(matchedStep.score || [])]
+            };
+          }
+          return stepItem;
+        });
+        setTask(prev => ({ ...prev, step: mergedSteps }));
+
+        return;
+      }
+    } else if (versionCount === 1) {
+      // 从testSecondEvautionData中查找匹配的数据
+      const matchedData = testSecondEvautionData.find(item => item.id === currentTaskId);
+      if (matchedData) {
+        // 如果当前step为空，直接使用matchedData的step
+        if (!task.step || task.step.length === 0) {
+          setTask(prev => ({ ...prev, step: matchedData.step }));
+          return;
+        }
+        // 如果step不为空，则按agent合并score
+        const mergedSteps = task.step.map(stepItem => {
+          const matchedStep = matchedData.step.find(s => s.agent === stepItem.agent);
+          if (matchedStep) {
+            return {
+              ...stepItem,
+              score: [...(stepItem.score || []), ...(matchedStep.score || [])]
+            };
+          }
+          return stepItem;
+        });
+        setTask(prev => ({ ...prev, step: mergedSteps }));
+        return;
+      }
+    }
+
+    // 如果找不到匹配数据或version数量 >= 2，执行原有逻辑
+    if (!task.step || task.step.length === 0) {
       const filledStep = defaultStepData.map((item, idx) => {
         if (item.agent === 'TrafficLLM') return item;
         return {
@@ -1780,24 +1795,27 @@ const TaskDetailPage = () => {
         };
       });
       setTask(prev => ({ ...prev, step: filledStep }));
-      return; // 关键：setTask 后立即 return，等待 useEffect 自动进入测试流程
+      return;
     }
-    // step 不为空，执行原有增长逻辑，且 reason 赋默认值（TrafficLLM 不变）
+
+    // step 不为空，执行原有增长逻辑
     let reasonIdx = 0;
     const newStepArr = task.step.map((stepItem) => {
       if (stepItem.agent === 'TrafficLLM') return stepItem;
       const lastScore = Array.isArray(stepItem.score) && stepItem.score.length > 0 ? stepItem.score[stepItem.score.length - 1] : null;
       const lastScoreValue = lastScore ? parseFloat(lastScore.score) : 0.7;
-      // 增长幅度 5%~10%
+      
       const minIncrease = 0.05;
       const maxIncrease = 0.10;
       const increase = minIncrease + Math.random() * (maxIncrease - minIncrease);
       const newScoreValue = Math.min(1, (lastScoreValue * (1 + increase)).toFixed(2));
+      
       let newVersion = '1.0';
       if (lastScore && lastScore.version) {
         const lastVer = parseFloat(lastScore.version);
         newVersion = (lastVer + 1).toFixed(1);
       }
+      
       const newScoreObj = {
         version: newVersion,
         score: newScoreValue,
@@ -1806,9 +1824,10 @@ const TaskDetailPage = () => {
         consumed_points: 60,
         dimension: lastScore?.dimension || []
       };
-      // reason 依次分配
+      
       const newReason = defaultReasons[reasonIdx] || stepItem.reason;
       reasonIdx++;
+      
       return {
         ...stepItem,
         score: [...(stepItem.score || []), newScoreObj],
@@ -1877,39 +1896,6 @@ const TaskDetailPage = () => {
 
   };
 
-  // useEffect(() => {
-  //   if (isTesting && task && task.step && task.step.length > 0 && testProgress === 0) {
-  //     // step 补充后自动进入测试流程
-  //     const newStepArr = task.step.map(stepItem => {
-  //       const lastScore = Array.isArray(stepItem.score) && stepItem.score.length > 0 ? stepItem.score[stepItem.score.length - 1] : null;
-  //       const lastScoreValue = lastScore ? parseFloat(lastScore.score) : 0.7;
-  //       // 增长幅度 5%~10%
-  //       const minIncrease = 0.05;
-  //       const maxIncrease = 0.10;
-  //       const increase = minIncrease + Math.random() * (maxIncrease - minIncrease);
-  //       const newScoreValue = Math.min(1, (lastScoreValue * (1 + increase)).toFixed(2));
-  //       let newVersion = '1.0';
-  //       if (lastScore && lastScore.version) {
-  //         const lastVer = parseFloat(lastScore.version);
-  //         newVersion = (lastVer + 1).toFixed(1);
-  //       }
-  //       const newScoreObj = {
-  //         version: newVersion,
-  //         score: newScoreValue,
-  //         description: "优化后得分上升",
-  //         confidence: "0.95",
-  //         consumed_points: 60,
-  //         dimension: lastScore?.dimension || []
-  //       };
-  //       return {
-  //         ...stepItem,
-  //         score: [...(stepItem.score || []), newScoreObj]
-  //       };
-  //     });
-  //     setTask(prev => ({ ...prev, step: newStepArr }));
-  //     setTestProgress(1); // 启动进度
-  //   }
-  // }, [isTesting, task, testProgress]);
 
   useEffect(() => {
     // 只有 step 有数据时才同步

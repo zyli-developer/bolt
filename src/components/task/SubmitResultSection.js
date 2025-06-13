@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Typography, 
+
   Avatar, 
-  Tag, 
+
   Select,
   Checkbox,
   Spin
@@ -12,20 +12,8 @@ import {
   PlusOutlined,
   MinusOutlined
 } from '@ant-design/icons';
-import {
-  Area,
-  AreaChart,
-  ResponsiveContainer,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip as RechartsTooltip,
-  Radar,
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-} from 'recharts';
+import LineChartSection from '../card/LineChartSection';
+import RadarChartSection from '../card/RadarChartSection';
 
 const { Option } = Select;
 
@@ -53,7 +41,17 @@ const SubmitResultSection = ({ task }) => {
           modelKeys.push(modelKey);
           
           // 获取评分数据（默认使用第一个评分记录）
-          const scoreData = step.score && step.score.length > 0 ? step.score[0] : {};
+          let scoreData = {};
+          let matchedReason = '暂无评估原因';
+          if (Array.isArray(step.score) && step.score.length > 0) {
+            // 优先查找与task.version匹配的score
+            scoreData = step.score.find(s => s.version === task.version) || step.score[0];
+            if (scoreData && scoreData.version === task.version && scoreData.reason) {
+              matchedReason = scoreData.reason;
+            } else if (scoreData && scoreData.reason) {
+              matchedReason = scoreData.reason;
+            }
+          }
           
           modelData[modelKey] = {
             name: step.agent,
@@ -62,14 +60,17 @@ const SubmitResultSection = ({ task }) => {
             credibility: scoreData.confidence || "0.0",
             credibilityChange: scoreData.credibilityChange || "+0.0%",
             tags: scoreData.dimension ? scoreData.dimension.map(d => d.latitude) : ['未知维度'],
-            description: step.reason || '暂无评估原因',
+            description: matchedReason,
             updatedAt: scoreData.updated_at ? new Date(scoreData.updated_at.seconds * 1000).toLocaleDateString() : '未知时间',
             updatedBy: '系统',
-            history: ''
+            history: '',
+            reason: matchedReason
           };
         }
       });
     }
+    
+    console.log("modelData",modelData)
     
     // 设置评估数据
     setEvaluationData(modelData);
@@ -334,7 +335,17 @@ const SubmitResultSection = ({ task }) => {
                         </div>
                         <div className="model-tags" style={{ gap: "4px" }}>
                           <span className="model-tag" style={{ padding: "0 4px", fontSize: "11px" }}>
-                            {task.paramCount || '未知参数'}
+                            {
+                              (() => {
+                                const step = Array.isArray(task.step)
+                                  ? task.step.find(s => s.agent && s.agent.toLowerCase().replace(/\s+/g, '') === modelKey)
+                                  : null;
+                                const consumed = step && Array.isArray(step.score) && step.score[0]
+                                  ? step.score[0].consumed_points
+                                  : undefined;
+                                return consumed !== undefined ? `${consumed} tokens` : '未知消耗';
+                              })()
+                            }
                             </span>
                         </div>
                       </div>
@@ -347,7 +358,17 @@ const SubmitResultSection = ({ task }) => {
                   {expandedModel === modelKey && (
                     <div className="model-panel-content" style={{ padding: "0 8px 8px" }}>
                       <div className="evaluation-content" style={{ padding: "8px" }}>
-                        <p className="evaluation-text" style={{ fontSize: "12px", margin: 0, lineHeight: "1.4" }}>{evaluationData[modelKey]?.description}</p>
+                        <p className="evaluation-text" style={{ fontSize: "12px", margin: 0, lineHeight: "1.4" }}>
+                          {
+                            evaluationData[modelKey]?.reason ||
+                            (() => {
+                              const step = Array.isArray(task.step)
+                                ? task.step.find(s => s.agent && s.agent.toLowerCase().replace(/\s+/g, '') === modelKey)
+                                : null;
+                              return step?.reason || '暂无描述';
+                            })()
+                          }
+                        </p>
                       </div>
                     </div>
                   )}
@@ -371,59 +392,16 @@ const SubmitResultSection = ({ task }) => {
             </div>
 
             <div className="line-chart-container" style={{ height: "150px", marginTop: "4px" }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart 
-                  data={enhancedChartData.line} 
-                  margin={{ top: 2, right: 5, left: 0, bottom: 2 }}
-                >
-                  {/* 渐变定义 */}
-                  <defs>
-                    {Object.keys(evaluationData).map(modelKey => (
-                      <linearGradient key={modelKey} id={`color${modelKey}`} x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor={getModelColor(modelKey)} stopOpacity={0.2}/>
-                        <stop offset="95%" stopColor={getModelColor(modelKey)} stopOpacity={0}/>
-                      </linearGradient>
-                    ))}
-                  </defs>
-                  <CartesianGrid 
-                    vertical={false} 
-                    horizontal={true}
-                    stroke={colorToken.colorBorderSecondary}
-                  />
-                  <XAxis 
-                    dataKey="month" 
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 10, fill: colorToken.colorTextTertiary }}
-                  />
-                  <YAxis 
-                    hide={true}
-                    domain={[0, 'dataMax + 20']}
-                  />
-                  <RechartsTooltip 
-                    cursor={false}
-                    contentStyle={{
-                      background: colorToken.colorBgContainer,
-                      border: 'none',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                      borderRadius: '4px',
-                      padding: '4px 8px'
-                    }}
-                  />
-                  {selectedModels.map(modelKey => (
-                    <Area
-                      key={modelKey}
-                      type="monotone"
-                      dataKey={modelKey}
-                      name={evaluationData[modelKey]?.name || modelKey}
-                      stroke={getModelColor(modelKey)}
-                      strokeWidth={1.5}
-                      fill={`url(#color${modelKey})`}
-                      dot={false}
-                    />
-                  ))}
-                </AreaChart>
-              </ResponsiveContainer>
+              <LineChartSection 
+                card={{
+                  ...task,
+                  step: task.step,
+                  chartData: { line: enhancedChartData.line }
+                }}
+                showLinearGradient={true}
+                height={150}
+                selectedModels={selectedModels}
+              />
             </div>
           </div>
 
@@ -449,23 +427,12 @@ const SubmitResultSection = ({ task }) => {
 
             {/* 雷达图 */}
             <div className="radar-chart-content" style={{ height: "220px" }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <RadarChart data={enhancedChartData.radar}>
-                  <PolarGrid stroke={colorToken.colorBorderSecondary} />
-                  <PolarAngleAxis dataKey="name" tick={{ fontSize: 10, fill: colorToken.colorTextTertiary }} />
-                  <PolarRadiusAxis domain={[0, 100]} tick={{ fontSize: 9, fill: colorToken.colorTextTertiary }} axisLine={false} />
-                  {selectedModels.map(modelKey => (
-                    <Radar 
-                      key={modelKey}
-                      name={evaluationData[modelKey]?.name || modelKey} 
-                      dataKey={modelKey} 
-                      stroke={getModelColor(modelKey)} 
-                      fill={getModelColor(modelKey)} 
-                      fillOpacity={0.2} 
+              <RadarChartSection 
+                radarData={enhancedChartData.radar}
+                modelKeys={selectedModels}
+                maxValue={100}
+                height={220}
                     />
-                  ))}
-                </RadarChart>
-              </ResponsiveContainer>
             </div>
           </div>
 
