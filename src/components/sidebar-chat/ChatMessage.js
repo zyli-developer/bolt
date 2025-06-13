@@ -10,6 +10,7 @@ import { extractSessionData } from '../../lib/tim/message';
 import { CUSTOM_MESSAGE_TYPE } from '../../lib/tim/constants';
 import '../../styles/components/sidebar-chat/ChatMessage.css'; // 导入样式文件
 import useTextHighlight from '../../hooks/useTextHighlight';
+import DiscussModal from '../modals/DiscussModal';
 
 // 引用类型定义
 const QUOTE_TYPES = {
@@ -27,16 +28,10 @@ const ChatMessage = ({ message }) => {
   } = useChatContext();
   
   const isUser = message.sender === "user";
-  const [isAnnotationModalVisible, setIsAnnotationModalVisible] = useState(false);
-  console.log('[ChatMessage] useState 初始化', { isAnnotationModalVisible });
-  const [contextMenu, setContextMenu] = useState(null);
-  const [initialContentForModal, setInitialContentForModal] = useState('');
-  const [isMultiSelectActive, setIsMultiSelectActive] = useState(false);
-  const [isMultiSelectTempMode, setIsMultiSelectTempMode] = useState(false);
-  const [selectedTexts, setSelectedTexts] = useState([]);
-  const [selectionRanges, setSelectionRanges] = useState([]);
-  const [discussModalVisible, setDiscussModalVisible] = useState(false);
   const [selectedText, setSelectedText] = useState('');
+  const [contextMenu, setContextMenu] = useState(null);
+  const [showAnnotationModal, setShowAnnotationModal] = useState(false);
+  const [showDiscussModal, setShowDiscussModal] = useState(false);
   const messageRef = useRef(null);
   
   // 使用全局的OptimizationContext
@@ -179,224 +174,29 @@ const ChatMessage = ({ message }) => {
     }
   };
 
-  // 处理右键菜单
+  // 右键菜单弹出，实时获取选中文本
   const handleContextMenu = (e) => {
-    console.log('[ChatMessage] handleContextMenu', e);
-    if(!isOptimizationMode) return;
+    if (!isOptimizationMode) return;
     e.preventDefault();
-    
-    // 获取选中的文本
-    const selection = window.getSelection();
-    const selectedText = selection.toString().trim();
-    
-    const isModifierKeyPressed = e.ctrlKey || e.metaKey; // 检测Ctrl/Command键
-    
-    // 如果有选中文本，处理连续选择
-    if (selectedText) {
-      // 创建选择的范围信息
-      const range = selection.getRangeAt(0);
-      const newSelectionRange = {
-        range: range.cloneRange(),
-        text: selectedText
-      };
-      
-      // 检查此文本是否已被高亮，避免重复选择
-      const hasHighlight = range.commonAncestorContainer.closest?.('.text-highlight-selection');
-      if (hasHighlight) {
-        // 如果已经是高亮元素，仅显示右键菜单，不进行其他处理
-        setContextMenu({
-          x: e.clientX,
-          y: e.clientY
-        });
-        return;
-      }
-      
-      // 连续选择模式处理
-      if (isMultiSelectActive || isMultiSelectTempMode || isModifierKeyPressed) {
-        // 检查文本是否已存在于选择列表中
-        if (!selectedTexts.includes(selectedText)) {
-          // 添加到已选择的文本列表
-          setSelectedTexts(prev => [...prev, selectedText]);
-          setSelectionRanges(prev => [...prev, newSelectionRange]);
-          
-          // 应用高亮样式，保持选中状态
-          applyHighlightToSelection(range, selectedText);
-        }
-      } else {
-        // 普通选择，清除之前的选择
-        clearAllHighlights();
-        setSelectedTexts([selectedText]);
-        setSelectionRanges([newSelectionRange]);
-        
-        // 对第一次选中的文本也应用高亮
-        applyHighlightToSelection(range, selectedText);
-      }
-      
-      // 设置当前选中的文本
-      setSelectedText(selectedText);
-    }
-    
-    // 显示右键菜单
-    setContextMenu({
-      x: e.clientX,
-      y: e.clientY
-    });
-  };
-
-  // 应用高亮样式到选中文本
-  const applyHighlightToSelection = (ranges, text) => {
-    console.log('[ChatMessage] applyHighlightToSelection', { ranges, text });
-    const selection = window.getSelection();
-    if (!selection || selection.rangeCount === 0) return;
-  
-    const range = selection.getRangeAt(0);
-  
-    // 只允许高亮同一个文本节点中的选区
-    if (
-      range.startContainer.nodeType !== Node.TEXT_NODE ||
-      range.endContainer.nodeType !== Node.TEXT_NODE ||
-      range.startContainer !== range.endContainer
-    ) {
-      console.warn('仅支持同一文本节点内的高亮');
-      return;
-    }
-  
-    // 检查是否已经被高亮
-    if (
-      range.startContainer.parentNode.closest('.text-highlight-selection')
-    ) {
-      console.warn('该文本已被高亮，跳过处理');
-      return;
-    }
-  
-    const textNode = range.startContainer;
-    const fullText = textNode.textContent;
-    const start = range.startOffset;
-    const end = range.endOffset;
-  
-    if (start === end) {
-      console.warn('未选中任何文本，不处理');
-      return;
-    }
-  
-    const before = fullText.slice(0, start);
-    const selected = fullText.slice(start, end);
-    const after = fullText.slice(end);
-  
-    // 创建高亮 span 元素
-    const highlightEl = document.createElement('span');
-    highlightEl.className = 'text-highlight-selection';
-    highlightEl.textContent = selected;
-  
-    const parent = textNode.parentNode;
-  
-    // 替换原始文本节点为三个部分
-    const frag = document.createDocumentFragment();
-    if (before) frag.appendChild(document.createTextNode(before));
-    frag.appendChild(highlightEl);
-    if (after) frag.appendChild(document.createTextNode(after));
-  
-    parent.replaceChild(frag, textNode);
-  
-    // 清除原选区，防止光标跳动
-    selection.removeAllRanges();
-  };
-  
-  // 清除所有高亮
-  const clearAllHighlights = () => {
-    console.log('[ChatMessage] clearAllHighlights');
-      // 清除所有高亮元素
-      const highlights = document.querySelectorAll('.text-highlight-selection');
-      highlights.forEach(el => {
-        const parent = el.parentNode;
-        if (parent) {
-          // 将高亮元素替换为其文本内容
-          const textNode = document.createTextNode(el.textContent);
-          parent.replaceChild(textNode, el);
-          parent.normalize(); // 合并相邻的文本节点
-        }
-      });
-      
-      // 重置选择状态
-      setSelectedTexts([]);
-      setSelectionRanges([]);
-  };
-
-  // 处理引用消息
-  const handleQuoteMessage = () => {
-    console.log('[ChatMessage] handleQuoteMessage');
-    // 如果是多选模式，使用所有选择的文本
-    let contentToQuote = '';
-    
-    if (isMultiSelectActive && selectedTexts.length > 0) {
-      contentToQuote = selectedTexts.join('\n\n');
+    const sel = window.getSelection();
+    const text = sel ? sel.toString().trim() : '';
+    if (text) {
+      setSelectedText(text);
+      setContextMenu({ x: e.clientX, y: e.clientY });
     } else {
-      // 使用单个选择或消息内容
-      contentToQuote = selectedTexts[0] || extractPlainTextContent(message.text);
+      setContextMenu(null);
     }
-    
-    // 通过自定义事件设置引用内容
-    const event = new CustomEvent('chat-set-quote-content', {
-      detail: {
-        quoteContent: contentToQuote,
-        quoteType: QUOTE_TYPES.TEXT,
-        quoteId: `quote-${Date.now()}`
-      }
-    });
-    
-    document.dispatchEvent(event);
-    
-    // 关闭右键菜单并清除高亮
-    setContextMenu(null);
-    clearAllHighlights();
   };
 
-  // 处理讨论
-  const handleDiscuss = () => {
-    console.log('[ChatMessage] handleDiscuss');
-    // 设置讨论内容并显示讨论对话框
-    setDiscussModalVisible(true);
-    
-    // 关闭右键菜单
-    setContextMenu(null);
-    
-    // 讨论后关闭连续选择模式和临时多选模式
-    setIsMultiSelectActive(false);
-    setIsMultiSelectTempMode(false);
-    // 在这里我们不清除高亮，因为用户可能还需要看到讨论内容
-  };
-
-  // 处理右键菜单项点击
+  // 右键菜单操作
   const handleContextMenuAction = (action) => {
-    console.log('[ChatMessage] handleContextMenuAction', action);
-    switch (action) {
-      case 'discuss':
-        handleDiscuss();
-        break;
-      case 'annotate':
-        handleAddAnnotation();
-        break;
-      case 'select':
-        // 切换连续选择模式
-        setIsMultiSelectActive(!isMultiSelectActive);
-        
-        // 关闭右键菜单
-        setContextMenu(null);
-        
-        // 只有在关闭连续选择模式时才清除高亮
-        if (isMultiSelectActive) {
-          // 关闭连续选择模式时清除所有高亮
-          clearAllHighlights();
-        }
-        // 如果是开启连续选择模式，且右键菜单是因为选中文本出现的，保留该文本高亮
-        else if (selectedText) {
-          // 当前选中文本已经加入了selectedTexts中，不需要额外操作
-          // 关闭右键菜单后文本会保持高亮状态
-        }
-        break;
-      default:
-        break;
+    setContextMenu(null);
+    if (action === 'annotate') {
+      setShowAnnotationModal(true);
+    } else if (action === 'discuss') {
+      setShowDiscussModal(true);
     }
+    // 其它操作可扩展
   };
 
   // 提取纯文本内容，去除引用部分
@@ -422,26 +222,13 @@ const ChatMessage = ({ message }) => {
     // 每次打开modal前，重新计算提取纯文本内容
     let contentForModal = '';
     
-    if ((isMultiSelectActive || isMultiSelectTempMode) && selectedTexts.length > 0) {
-      // 使用Set对选中文本进行去重，并以换行分隔
-      contentForModal = Array.from(new Set(selectedTexts)).join('\n\n');
-      console.log("连续选择的文本内容:", contentForModal);
-    } else {
-      console.log("message.text", message.text);
-      contentForModal = selectedText || selectedTexts[0] || extractPlainTextContent(message.text);
-    }
+    contentForModal = selectedText || extractPlainTextContent(message.text);
     
     // 确保设置内容后再显示模态框
-    setInitialContentForModal(contentForModal);
     setTimeout(() => {
-    setIsAnnotationModalVisible(true);
+    setShowAnnotationModal(true);
     }, 10);
     
-    // 添加观点后关闭连续选择模式和临时多选模式
-    setIsMultiSelectActive(false);
-    setIsMultiSelectTempMode(false);
-    // 关闭右键菜单
-    setContextMenu(null);
     // 不立即清除高亮，等用户完成添加观点后再清除
   };
 
@@ -466,9 +253,9 @@ const ChatMessage = ({ message }) => {
         ...savedAnnotation
       });
       messageApi.success('观点已添加');
-      setIsAnnotationModalVisible(false);
+      setShowAnnotationModal(false);
       // 清除高亮
-      clearAllHighlights();
+      clearHighlights();
     } catch (error) {
       console.error('保存观点失败:', error);
       messageApi.error('添加观点失败，请重试');
@@ -707,23 +494,6 @@ const ChatMessage = ({ message }) => {
     return !!sessionId;
   };
 
-  // 鼠标松开时添加高亮
-  const handleMouseUp = () => {
-    const selection = window.getSelection();
-    if (!selection || selection.isCollapsed) return;
-    const anchorNode = selection.anchorNode;
-    if (!anchorNode || anchorNode.nodeType !== Node.TEXT_NODE) return;
-    const start = selection.anchorOffset;
-    const end = selection.focusOffset;
-    if (start === end) return;
-    const s = Math.min(start, end);
-    const e = Math.max(start, end);
-    const msgHighlights = highlightMap[message.id] || [];
-    if (msgHighlights.some(hl => s >= hl.start && e <= hl.end)) return;
-    addHighlight(message.id, s, e);
-    selection.removeAllRanges();
-  };
-
   // 如果是分割线消息，渲染分割线
   if (isSessionDivider()) {
     return renderSessionDivider();
@@ -735,57 +505,17 @@ const ChatMessage = ({ message }) => {
   }
 
   return (
-    <div className={`message-container ${isUser ? "message-right" : "message-left"} ${isMultiSelectActive ? 'multi-select-mode' : ''} ${isInActiveSession() ? 'in-session' : ''}`} ref={messageRef}>
-      {/* 不再在这里渲染会话引用栏，改为在ChatArea中渲染 */}
-      
-      <div 
-        className={`message-bubble ${isUser ? "message-user" : "message-other"} ${message.pending ? 'pending' : ''} ${message.error ? 'error' : ''} ${message.type === 'custom' ? 'custom-message' : ''}`} 
+    <div className={`message-container ${isUser ? "message-right" : "message-left"}`} ref={messageRef} onContextMenu={handleContextMenu}>
+      <div
+        className={`message-bubble ${isUser ? "message-user" : "message-other"}`}
         style={{ position: 'relative' }}
-        onContextMenu={handleContextMenu}
       >
-        {/* 仅在优化模式下且消息不是用户发送的时候显示操作按钮 */}
-        {!isUser && (isOptimizationMode || localOptimizationMode) && (
-          <div className="message-controls">
-            <span className="message-control-btn" onClick={() => console.log('返回')}>
-              <ArrowLeftOutlined />
-            </span>
-            <span className="message-control-btn" onClick={() => console.log('前进')}>
-              <ArrowRightOutlined />
-            </span>
-            <span className="message-control-btn" onClick={handleQuoteMessage} title="引用">
-              <MessageOutlined />
-            </span>
-            <span 
-              className={`message-control-btn ${isMultiSelectActive ? 'active' : ''}`} 
-              onClick={() => {
-                setIsMultiSelectActive(!isMultiSelectActive);
-                // 关闭连续选择模式时清除高亮
-                if (isMultiSelectActive) {
-                  clearAllHighlights();
-                }
-              }} 
-              title={isMultiSelectActive ? "关闭连续选择" : "连续选择"}
-            >
-              <UnorderedListOutlined />
-            </span>
-            <span className="message-control-btn primary" onClick={handleAddAnnotation} title="添加观点">
-              <PlusOutlined />
-            </span>
-          </div>
-        )}
         <div
           ref={textRef}
-          onMouseUp={handleMouseUp}
           style={{ userSelect: 'text', cursor: 'text', fontSize: 16 }}
         >
           {renderHighlightedText(message.text, highlightMap[message.id] || [])}
         </div>
-        {message.pending && <span className="message-status">发送中...</span>}
-        {message.error && (
-          <span className="message-status error" title={message.errorMessage || "发送失败"}>
-            发送失败 {message.errorMessage ? `(${message.errorMessage.substring(0, 20)}${message.errorMessage.length > 20 ? '...' : ''})` : ''}
-          </span>
-        )}
       </div>
       
       {/* 右键菜单 */}
@@ -795,39 +525,36 @@ const ChatMessage = ({ message }) => {
           y={contextMenu.y}
           onAction={handleContextMenuAction}
           onClose={() => setContextMenu(null)}
-          isMultiSelectActive={isMultiSelectActive}
         />
       )}
       
       <div className="message-time">{message.timestamp}</div>
 
-      {/* 添加观点模态框 */}
+      {/* 添加观点弹窗 */}
       <AnnotationModal
-        visible={isAnnotationModalVisible}
+        visible={showAnnotationModal}
         onClose={() => {
-          setIsAnnotationModalVisible(false);
-          clearAllHighlights();
+          setShowAnnotationModal(false);
+          clearHighlights();
         }}
         onSave={handleSaveAnnotation}
-        selectedText={initialContentForModal}
-        initialContent={initialContentForModal}
+        selectedText={selectedText}
+        initialContent={selectedText}
         step={localOptimizationStep || 'result'}
       />
       
-      {/* 讨论模态框 */}
-      {discussModalVisible && (
+      {/* 讨论弹窗 */}
+      {showDiscussModal && (
         <div className="discuss-modal">
           <div className="discuss-modal-header">
             <h3>讨论</h3>
             <button onClick={() => {
-              setDiscussModalVisible(false);
-              clearAllHighlights();
+              setShowDiscussModal(false);
+              clearHighlights();
             }}>关闭</button>
           </div>
           <div className="discuss-modal-content">
-            <p>{isMultiSelectActive || isMultiSelectTempMode ? 
-                Array.from(new Set(selectedTexts)).join('\n\n') : 
-                (selectedText || extractPlainTextContent(message.text))}</p>
+            <p>{selectedText}</p>
           </div>
         </div>
       )}

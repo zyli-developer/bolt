@@ -209,12 +209,11 @@ const CardDetailPage = () => {
   const [isTaskStarted, setIsTaskStarted] = useState(false);
   
   // 添加右键菜单和讨论模态框相关状态
-  const [contextMenu, setContextMenu] = useState(null);
   const [selectedText, setSelectedText] = useState('');
-  const [discussModalVisible, setDiscussModalVisible] = useState(false);
-  const [annotationModalVisible, setAnnotationModalVisible] = useState(false);
-  const evaluationTextRef = useRef(null);
-
+  const [contextMenu, setContextMenu] = useState(null); // {x, y}
+  const [showAnnotationModal, setShowAnnotationModal] = useState(false);
+  const [showDiscussModal, setShowDiscussModal] = useState(false);
+  
   // 添加注释展开状态
   const [expandedComment, setExpandedComment] = useState(null);
   
@@ -1201,7 +1200,7 @@ const CardDetailPage = () => {
     setSelectedModalText(textToShow);
     
     // 显示模态框
-    setAnnotationModalVisible(true);
+    setShowAnnotationModal(true);
   };
 
   // 处理右键菜单项点击
@@ -1214,7 +1213,7 @@ const CardDetailPage = () => {
           const combinedText = Array.from(new Set(selectedTexts)).join('\n\n');
           setSelectedText(combinedText);
         }
-        setDiscussModalVisible(true);
+        setShowDiscussModal(true);
         
         // 讨论后关闭连续选择模式
         setIsMultiSelectActive(false);
@@ -1347,39 +1346,9 @@ const CardDetailPage = () => {
 
   // 处理添加注释的逻辑
   const handleSaveAnnotation = (data) => {
-    console.log('handleSaveAnnotation----------data', data);
-    try {
-      // 如果是多选模式，使用合并的文本
-      const textToSave = isMultiSelectActive || isMultiSelectTempMode ? selectedTexts.join('\n\n') : selectedText;
-      
-      if (!textToSave) {
-        message.error('请选择文本');
-        return;
-      }
-
-      const annotationData = {
-        ...data,
-        selectedText: textToSave,
-        id: `comment-${Date.now()}`, // 生成唯一ID
-        time: new Date().toISOString()
-      };
-
-      // 添加到全局上下文中
-      addComment(annotationData);
-      
-      setAnnotationModalVisible(false);
-      setContextMenu(null);
-      
-      // 清除高亮和选择
-      if (isMultiSelectActive || isMultiSelectTempMode) {
-        clearAllHighlights();
-      }
-      
-      message.success('添加成功');
-    } catch (error) {
-      console.error('添加注释失败', error);
-      message.error('添加失败');
-    }
+    addComment(data);
+    setShowAnnotationModal(false);
+    // 可选：message.success('添加成功');
   };
 
   // 添加一个mouseup事件处理函数，用于处理在连续选择状态下无需右键也能自动高亮
@@ -1594,7 +1563,21 @@ const CardDetailPage = () => {
   }
 
   return (
-    <div className={`card-detail-page ${isChatOpen ? "chat-open" : "chat-closed"} ${isMultiSelectActive ? 'multi-select-mode' : ''}`}>
+    <div
+      className={`card-detail-page ${isChatOpen ? "chat-open" : "chat-closed"} ${isMultiSelectActive ? 'multi-select-mode' : ''}`}
+      onContextMenu={e => {
+        if (!isOptimizationMode) return;
+        e.preventDefault();
+        const sel = window.getSelection();
+        const text = sel ? sel.toString().trim() : '';
+        if (text) {
+          setSelectedText(text);
+          setContextMenu({ x: e.clientX, y: e.clientY });
+        } else {
+          setContextMenu(null);
+        }
+      }}
+    >
       {/* 隐藏头部的community/workspace/peison的tab */}
       <div className="hide-tabs-nav" style={{ display: 'none' }}>
         {/* 这里本应显示tab，但现在设置为不显示 */}
@@ -2160,36 +2143,23 @@ const CardDetailPage = () => {
           y={contextMenu.y}
           onAction={handleContextMenuAction}
           onClose={() => setContextMenu(null)}
-          isMultiSelectActive={isMultiSelectActive}
         />
       )}
       
-      {/* 讨论模态框 */}
-      <DiscussModal
-        visible={discussModalVisible}
-        onClose={() => {
-          setDiscussModalVisible(false);
-          // 关闭讨论窗口后，如果是连续选择模式，清除所有高亮
-          if (isMultiSelectActive) {
-            clearAllHighlights();
-          }
-        }}
-        selectedText={(isMultiSelectActive || isMultiSelectTempMode) && selectedTexts.length > 0
-          ? Array.from(new Set(selectedTexts)).join('\n\n') // 使用Set去重
-          : selectedText}
-      />
-
-      {/* 添加观点模态框 */}
+      {/* 添加观点弹窗 */}
       <AnnotationModal
-        visible={annotationModalVisible}
-        onClose={() => {
-          setAnnotationModalVisible(false);
-          clearAllHighlights();
-        }}
+        visible={showAnnotationModal}
+        onClose={() => setShowAnnotationModal(false)}
         onSave={handleSaveAnnotation}
-        selectedText={selectedModalText}
-        initialContent={selectedModalText}
-        step={currentOptimizationStep}
+        selectedText={selectedText}
+        initialContent={selectedText}
+        step={currentOptimizationStep || 'result'}
+      />
+      {/* 讨论弹窗 */}
+      <DiscussModal
+        visible={showDiscussModal}
+        onClose={() => setShowDiscussModal(false)}
+        selectedText={selectedText}
       />
       
       {/* 分享模态框 */}

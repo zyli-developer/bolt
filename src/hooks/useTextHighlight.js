@@ -1,5 +1,24 @@
 import { useState, useCallback } from 'react';
 
+// 合并重叠或相邻的区间
+function mergeIntervals(intervals) {
+  if (!intervals.length) return [];
+  // 按start排序
+  const sorted = [...intervals].sort((a, b) => a.start - b.start);
+  const merged = [Object.assign({}, sorted[0])];
+  for (let i = 1; i < sorted.length; i++) {
+    const prev = merged[merged.length - 1];
+    const curr = sorted[i];
+    if (curr.start <= prev.end) {
+      // 有重叠或相邻，合并
+      prev.end = Math.max(prev.end, curr.end);
+    } else {
+      merged.push(Object.assign({}, curr));
+    }
+  }
+  return merged;
+}
+
 /**
  * 通用受控高亮 Hook
  * 支持单条文本和多条文本（通过 id 区分）
@@ -14,16 +33,18 @@ import { useState, useCallback } from 'react';
 export default function useTextHighlight() {
   const [highlightMap, setHighlightMap] = useState({});
 
-  // 添加高亮区间
+  // 添加高亮区间，自动合并重叠区间
   const addHighlight = useCallback((id, start, end) => {
     if (start === end) return;
     setHighlightMap(prev => {
       const list = prev[id] || [];
-      // 避免重复高亮
-      if (list.some(hl => start >= hl.start && end <= hl.end)) return prev;
+      // 新区间
+      const newInterval = { start: Math.min(start, end), end: Math.max(start, end), id: Date.now() + '-' + Math.random() };
+      // 合并所有区间
+      const merged = mergeIntervals([...list, newInterval]);
       return {
         ...prev,
-        [id]: [...list, { start, end, id: Date.now() + '-' + Math.random() }]
+        [id]: merged
       };
     });
   }, []);
@@ -41,16 +62,17 @@ export default function useTextHighlight() {
     }
   }, []);
 
-  // 渲染高亮文本
+  // 渲染高亮文本，自动合并区间，避免嵌套，key 用 start-end 保证唯一且稳定
   const renderHighlightedText = useCallback((text, highlights) => {
     if (!highlights || !highlights.length) return text;
-    const sorted = [...highlights].sort((a, b) => a.start - b.start);
+    // 合并区间，避免重叠
+    const merged = mergeIntervals(highlights);
     const result = [];
     let lastIndex = 0;
-    sorted.forEach((hl, idx) => {
+    merged.forEach((hl) => {
       if (hl.start > lastIndex) result.push(text.slice(lastIndex, hl.start));
       result.push(
-        <span key={hl.id || idx} className="text-highlight-selection">
+        <span key={`${hl.start}-${hl.end}`} className="text-highlight-selection">
           {text.slice(hl.start, hl.end)}
         </span>
       );

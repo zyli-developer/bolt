@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo, useContext } from "react"
 import { useParams, useNavigate, useLocation } from "react-router-dom"
-import { Typography, Button, Avatar, Tag, Spin, Breadcrumb, Select, Checkbox, Timeline, Table, Collapse, Tooltip, message, Progress, Switch } from "antd"
+import { Typography, Button, Avatar, Tag, Spin, Breadcrumb, Select, Checkbox, Timeline, Table, Collapse, Tooltip, message, Progress, Switch, Card } from "antd"
 import {
   ArrowLeftOutlined,
   StarOutlined,
@@ -18,6 +18,11 @@ import {
   PlusOutlined,
   MinusOutlined,
   CheckOutlined,
+  FileTextOutlined,
+  CloseCircleOutlined,
+  SendOutlined,
+  DownOutlined,
+  UpOutlined,
 } from "@ant-design/icons"
 import {
   LineChart,
@@ -76,15 +81,18 @@ const TaskDetailPage = () => {
   const [evaluationData, setEvaluationData] = useState({})
   const [testProgress, setTestProgress] = useState(0);
   const [isTesting, setIsTesting] = useState(false);
+  const [isDetailsExpanded, setIsDetailsExpanded] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
+  const [isShareModalVisible, setIsShareModalVisible] = useState(false);
+  const [completeTaskData, setCompleteTaskData] = useState(null);
+  const [showAnnotationModal, setShowAnnotationModal] = useState(false);
+  const [showDiscussModal, setShowDiscussModal] = useState(false);
   const { 
     isOptimizationMode, setIsOptimizationMode,
     currentOptimizationStep, setCurrentOptimizationStep,
     currentStepComments, setComments, addComment, comments,
   } = useContext(OptimizationContext);
-  // 添加关注、分享和点赞相关状态
-  const [isFollowing, setIsFollowing] = useState(false);
-  const [isLiked, setIsLiked] = useState(false);
-  const [isShareModalVisible, setIsShareModalVisible] = useState(false);
 
   // 添加QA、场景和模板的内容数据
   const [qaContent] = useState([
@@ -396,192 +404,62 @@ const TaskDetailPage = () => {
   // 计算雷达图的最大值
   const radarMaxValue = calculateRadarMaxValue();
 
+  // useEffect 获取任务详情，初始化所有状态
   useEffect(() => {
     const fetchData = async () => {
       try {
-        setLoading(true)
-        
+        setLoading(true);
         let taskData;
-        // 获取任务详情，直接使用ID
-          taskData = await taskService.getTaskDetail(id);
-          // 如果是任务API返回的数据，从task字段中获取
-          if (taskData && taskData.task) {
-            taskData = taskData.task;
+        // 获取任务详情
+        taskData = await taskService.getTaskDetail(id);
+        if (taskData && taskData.task) {
+          taskData = taskData.task;
         }
-        
-        // 检查taskData类型，确保是对象而不是字符串
+        // 兼容字符串类型
         if (typeof taskData === 'string') {
-          try {
-            // 尝试将字符串解析为JSON对象
-            taskData = JSON.parse(taskData);
-          } catch (parseError) {
-            console.error("无法解析任务数据:", parseError);
-            // 如果无法解析，则创建一个空对象
-            taskData = {};
-          }
+          try { taskData = JSON.parse(taskData); } catch { taskData = {}; }
         }
-        
-        // 确保taskData是对象而不是null或undefined
         taskData = (taskData && typeof taskData === 'object' && !Array.isArray(taskData)) ? taskData : {};
-        
-        // 现在安全地设置属性
+        // 初始化字段
         taskData.tags = Array.isArray(taskData.tags) ? taskData.tags : [];
         taskData.author = taskData.author || { name: '未知用户' };
-        taskData.title = taskData.title || '未命名任务';  // 使用title显示任务名称
-        taskData.prompt = taskData.prompt || ''; // 用于显示在.task-title中
-        taskData.summary = taskData.summary || ''; // 优先使用summary作为描述
-        taskData.description = taskData.description || '暂无描述';  // 备用描述
-        taskData.response_summary = taskData.response_summary || ''; // 用于QA页面显示
+        taskData.title = taskData.title || '未命名任务';
+        taskData.prompt = taskData.prompt || '';
+        taskData.summary = taskData.summary || '';
+        taskData.description = taskData.description || '暂无描述';
+        taskData.response_summary = taskData.response_summary || '';
         taskData.source = taskData.source || '未知来源';
-        taskData.chartData = taskData.chartData || {
-          radar: [
-            { name: "维度1", value: 80 },
-            { name: "维度2", value: 75 },
-            { name: "维度3", value: 85 },
-            { name: "维度4", value: 70 },
-            { name: "维度5", value: 90 },
-            { name: "维度6", value: 85 }
-          ],
-          line: [
-            { month: "08", value: 70 },
-            { month: "09", value: 75 },
-            { month: "10", value: 82 },
-            { month: "11", value: 88 }
-          ]
-        };
-        
-        // 确保templateData正确设置
+        taskData.chartData = taskData.chartData || { radar: [], line: [] };
+        // templateData
         if (!taskData.templateData && taskData.step) {
           if (typeof taskData.step === 'object' && !Array.isArray(taskData.step) && taskData.step.templateData) {
             taskData.templateData = taskData.step.templateData;
           }
         }
-        
-        // 如果数据中有step部分，从中提取评估模型信息
-        if (taskData.step) {
-          // 如果step是数组，遍历并提取agent字段
-          if (Array.isArray(taskData.step)) {
-            const modelData = {};
-            const agentKeys = []; // 保存所有的agent keys用于默认选中
-            
-            taskData.step.forEach((step, index) => {
-              if (step && step.agent) {
-                const modelKey = step.agent.toLowerCase().replace(/\s+/g, '');
-                agentKeys.push(modelKey); // 添加到agent keys列表
-                
-                modelData[modelKey] = {
-                  name: step.agent,
-                  score: step.score || Math.floor(70 + Math.random() * 30),
-                  scoreChange: step.scoreChange || `+${(Math.random() * 5).toFixed(1)}`,
-                  credibility: step.credibility || Math.floor(70 + Math.random() * 30),
-                  credibilityChange: step.credibilityChange || `+${(Math.random() * 5).toFixed(1)}`,
-                  tags: step.tags || ['智能模型'],
-                  reason: step.reason || '暂无评估原因',
-                  description: step.description || '暂无描述',
-                  updatedAt: step.updatedAt || '2023-12-25 14:30',
-                  updatedBy: step.updatedBy || '系统'
-                };
-              }
-            });
-            
-            // 如果从step中提取到了模型数据，与默认评估数据合并
-            if (Object.keys(modelData).length > 0) {
-              // 保存到evaluationData中
-              setEvaluationData(prevData => ({
-                ...prevData,
-                ...modelData
-              }));
-              
-              // 设置默认选中的模型为所有从step中提取的agent
-              if (agentKeys.length > 0) {
-                setSelectedModels(agentKeys);
-                // 同时更新selectedChartModels状态
-                const chartModels = {};
-                agentKeys.forEach(key => {
-                  chartModels[key] = true;
-                });
-                setSelectedChartModels(prevChartModels => ({
-                  ...prevChartModels,
-                  ...chartModels
-                }));
-              }
-            }
-          }
+        // 初始化模型
+        let evaluationData = await taskService.getAllModelEvaluations();
+        const availableModels = Object.keys(evaluationData);
+        if (availableModels.length > 0) {
+          setSelectedModels(availableModels.slice(0, 3));
+          setSelectedModel(availableModels[0]);
         }
-        
-        // 获取评估数据
-        const evaluationData = await taskService.getAllModelEvaluations();
-        
-        console.log("获取到的任务数据:", taskData);
-        setTask(taskData)
-
-        // 设置注释数据，直接使用task中的annotation对象
-        // annotation属性是一个对象，包含各类注释，如{result:[], qa:[], scene:[], template:[]}
-        if (taskData && taskData.annotation) {
-          // 直接使用原始annotation对象
-          setAnnotationData(taskData.annotation);
-        } else if (taskData && taskData.annotations) {
-          // 兼容旧数据结构
-          if (Array.isArray(taskData.annotations)) {
-            // 如果是数组，转换为对象结构
-            setAnnotationData({
-              result: taskData.annotations,
-              qa: [],
-              scene: [],
-              template: []
-            });
-          } else {
-            // 如果已经是对象，直接使用
-          setAnnotationData(taskData.annotations);
-          }
-        } else if (taskAnnotationData && taskAnnotationData.data) {
-          // 使用默认注释数据作为后备
-          setAnnotationData(taskAnnotationData.data);
-        } else {
-          // 确保始终设置为有效对象
-          setAnnotationData({
-            result: [],
-            qa: [],
-            scene: [],
-            template: []
-          });
+        // 注释初始化
+        if (!taskData.annotation) {
+          taskData.annotation = { result: [], qa: [], scene: [], template: [] };
         }
-
-        // 如果没有评估数据，提供默认数据
-        if (!evaluationData || Object.keys(evaluationData).length === 0) {
-          
-        } else {
-          setEvaluationData(evaluationData);
-        }
-
-        setError(null)
+        setTask(taskData);
+        // 优化模式默认关闭
+        setIsOptimizationMode(false);
+        setCurrentOptimizationStep('result');
+        setError(null);
       } catch (err) {
-        console.error(`获取数据失败 (ID: ${id}):`, err)
-        setError("获取数据失败，请重试")
-        
-        // 设置一些默认数据，防止界面崩溃
-        setTask({
-          title: '加载失败的任务',
-          prompt: '加载失败的任务',
-          author: { name: '未知用户' },
-          source: '未知来源',
-          tags: ['加载失败'],
-          description: '无法加载任务数据，请刷新页面重试',
-          response_summary: '无法加载回答数据',
-          chartData: {
-            radar: [],
-            line: []
-          }
-        });
+        setError('获取数据失败，请重试');
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
-
-    if (id) {
-      fetchData()
-    }
-  }, [id])
+    };
+    if (id) fetchData();
+  }, [id]);
 
   // 添加测试进度的定时器
   useEffect(() => {
@@ -1289,8 +1167,7 @@ const TaskDetailPage = () => {
                   clearAllHighlights();
                   setSelectedTexts([]);
                   setSelectionRanges([]);
-                  lastHighlightedTextRef.current = '';
-                  lastHighlightedRangeRef.current = null;
+              
                 }
               }}
               size="small"
@@ -1420,8 +1297,7 @@ const TaskDetailPage = () => {
       clearAllHighlights();
       setSelectedTexts([]);
       setSelectionRanges([]);
-      lastHighlightedTextRef.current = '';
-      lastHighlightedRangeRef.current = null;
+
     }
   };
 
@@ -1431,12 +1307,12 @@ const TaskDetailPage = () => {
   const [isMultiSelectActive, setIsMultiSelectActive] = useState(false);
   const [discussModalVisible, setDiscussModalVisible] = useState(false);
   const [annotationModalVisible, setAnnotationModalVisible] = useState(false);
-  const [selectedModalText, setSelectedModalText] = useState('');
   // 添加连续选择相关状态
   const [isMultiSelectTempMode, setIsMultiSelectTempMode] = useState(false);
   const [selectedTexts, setSelectedTexts] = useState([]);
   const [selectedText, setSelectedText] = useState('');
   const [selectionRanges, setSelectionRanges] = useState([]);
+  const [selectedModalText, setSelectedModalText] = useState('');
 
   // 新增ref
   const sceneSectionRef = useRef();
@@ -1998,8 +1874,7 @@ const TaskDetailPage = () => {
     // 重置选择状态
     setSelectedTexts([]);
     setSelectionRanges([]);
-    lastHighlightedTextRef.current = '';
-    lastHighlightedRangeRef.current = null;
+
   };
 
   // useEffect(() => {
