@@ -295,70 +295,67 @@ const TaskDetailPage = () => {
   }
   
   // Prepare enhanced chart data with multiple model series
-  const getEnhancedChartData = (chartData) => {
+  const getEnhancedChartData = () => {
     // 如果已经有缓存的数据，直接返回
     if (chartDataRef.current.radar.length > 0 || chartDataRef.current.line.length > 0) {
       return chartDataRef.current;
     }
-    
-    if (!chartData) {
-      // 如果没有图表数据，提供默认数据
-      const defaultChartData = {
-        radar: [
-          { name: "准确性", value: 85 },
-          { name: "流畅性", value: 90 },
-          { name: "创新性", value: 70 },
-          { name: "可靠性", value: 80 },
-          { name: "安全性", value: 95 }
-        ],
-        line: [
-          { month: "1月", value: 65 },
-          { month: "2月", value: 70 },
-          { month: "3月", value: 75 },
-          { month: "4月", value: 80 },
-          { month: "5月", value: 85 },
-          { month: "6月", value: 90 }
-        ]
-      };
-      chartData = defaultChartData;
-    }
 
-    // 获取可用的模型键
-    const modelKeys = Object.keys(evaluationData || {});
+    // 1. 获取所有模型key和step
+    const steps = Array.isArray(task?.step) ? task.step : (task?.step ? [task.step] : []);
+    const modelKeys = steps.map(step => step.agent?.toLowerCase().replace(/\s+/g, '')).filter(Boolean);
 
-    // 增强雷达图数据，使用固定偏移量而非随机值
-    const enhancedRadar = (chartData.radar || []).map((item, index) => {
-      const radarPoint = {
-        name: item.name,
-        value: Math.round(item.value), // 确保值为整数，去掉小数点
-      };
-      
-      // 为每个模型添加对应的数据点，使用固定偏移量
-      modelKeys.forEach((modelKey, modelIndex) => {
-        const offset = 0.8 + (modelIndex * 0.05);
-        radarPoint[modelKey] = Math.round(Math.min(100, item.value * offset));
+    // 2. 收集所有维度名（latitude）
+    const dimensionMap = {};
+    steps.forEach((step) => {
+      if (!Array.isArray(step.score)) return;
+      // 取最新一条score（最后一条）
+      const lastScore = step.score[step.score.length - 1];
+      if (!lastScore || !Array.isArray(lastScore.dimension)) return;
+      lastScore.dimension.forEach(dim => {
+        if (!dim.latitude) return;
+        if (!dimensionMap[dim.latitude]) {
+          // 记录权重和初始得分
+          dimensionMap[dim.latitude] = { name: dim.latitude, weight: dim.weight };
+        }
       });
-      
-      return radarPoint;
     });
 
-    // 增强折线图数据，使用固定偏移量而非随机值
-    const enhancedLine = (chartData.line || []).map((item, index) => {
+    // 3. 填充每个模型在每个维度下的得分
+    Object.keys(dimensionMap).forEach(latitude => {
+      steps.forEach((step) => {
+        const modelKey = step.agent?.toLowerCase().replace(/\s+/g, '');
+        if (!modelKey) return;
+        if (!Array.isArray(step.score)) return;
+        const lastScore = step.score[step.score.length - 1];
+        if (!lastScore || !Array.isArray(lastScore.dimension)) return;
+        const dim = lastScore.dimension.find(d => d.latitude === latitude);
+        if (dim && typeof dim.score === 'number') {
+          dimensionMap[latitude][modelKey] = dim.score;
+        } else if (dim && typeof dim.score === 'string') {
+          dimensionMap[latitude][modelKey] = parseFloat(dim.score);
+        } else {
+          dimensionMap[latitude][modelKey] = 0;
+        }
+      });
+    });
+
+    // 4. 转为数组
+    const enhancedRadar = Object.values(dimensionMap);
+
+    // 折线图数据保持原逻辑
+    const enhancedLine = (task?.chartData?.line || []).map((item, index) => {
       const linePoint = {
         month: item.month,
-        value: Math.round(item.value), // 确保值为整数，去掉小数点
+        value: Math.round(item.value),
       };
-      
-      // 为每个模型添加对应的数据点，使用固定偏移量
       modelKeys.forEach((modelKey, modelIndex) => {
         const offset = 0.8 + (modelIndex * 0.05);
         linePoint[modelKey] = Math.round(Math.min(100, item.value * offset));
       });
-      
       return linePoint;
     });
 
-    // 缓存计算结果
     chartDataRef.current = { radar: enhancedRadar, line: enhancedLine };
     return chartDataRef.current;
   };
@@ -1429,7 +1426,7 @@ const TaskDetailPage = () => {
                 toggleModelPanel={toggleModelPanel}
                 getModelColor={getModelColor}
                 onAddAnnotation={addComment}
-                isOptimizeMode={isOptimizationMode}
+                isOptimizationMode={isOptimizationMode}
               />;
             case 'qa':
               return <QASection 
@@ -1711,131 +1708,178 @@ const TaskDetailPage = () => {
   }, [task]);
 
   // 统一的handleStartTest
-  const handleStartTest = () => {
-    setIsTesting(true);
-    setTestProgress(0);
+const handleStartTest = () => {
+  setIsTesting(true);
+  setTestProgress(0);
 
-    // 检查task是否存在
-    if (!task) return;
+  // 检查task是否存在
+  if (!task) return;
 
-    // 获取当前task的id
-    const currentTaskId = task.id;
+  // 获取当前task的id
+  const currentTaskId = task.id;
 
-
-    // 获取当前task中所有不同的version数量
-    const versions = new Set();
-    task.step.forEach(stepItem => {
-      if (stepItem.score && Array.isArray(stepItem.score)) {
-        stepItem.score.forEach(score => {
-          if (score.version) {
-            versions.add(score.version);
-          }
-        });
-      }
-    });
-    const versionCount = versions.size;
-
-    // 根据version数量判断使用哪个数据源
-    if (versionCount === 0) {
-      // 从testFirstEvautionData中查找匹配的数据
-      const matchedData = testFirstEvautionData.find(item => item.id === currentTaskId);
-      if (matchedData) {
-        // 如果当前step为空，直接使用matchedData的step
-        if (!task.step || task.step.length === 0) {
-          setTask(prev => ({ ...prev, step: matchedData.step }));
-          return;
+  // 获取当前task中所有不同的version数量
+  const versions = new Set();
+  task.step.forEach(stepItem => {
+    if (stepItem.score && Array.isArray(stepItem.score)) {
+      stepItem.score.forEach(score => {
+        if (score.version) {
+          versions.add(score.version);
         }
-        // 如果step不为空，则按agent合并score
-        const mergedSteps = task.step.map(stepItem => {
-          const matchedStep = matchedData.step.find(s => s.agent === stepItem.agent);
-          if (matchedStep) {
-            return {
-              ...stepItem,
-              score: [...(stepItem.score || []), ...(matchedStep.score || [])]
-            };
-          }
-          return stepItem;
-        });
-        setTask(prev => ({ ...prev, step: mergedSteps }));
-
-        return;
-      }
-    } else if (versionCount === 1) {
-      // 从testSecondEvautionData中查找匹配的数据
-      const matchedData = testSecondEvautionData.find(item => item.id === currentTaskId);
-      if (matchedData) {
-        // 如果当前step为空，直接使用matchedData的step
-        if (!task.step || task.step.length === 0) {
-          setTask(prev => ({ ...prev, step: matchedData.step }));
-          return;
-        }
-        // 如果step不为空，则按agent合并score
-        const mergedSteps = task.step.map(stepItem => {
-          const matchedStep = matchedData.step.find(s => s.agent === stepItem.agent);
-          if (matchedStep) {
-            return {
-              ...stepItem,
-              score: [...(stepItem.score || []), ...(matchedStep.score || [])]
-            };
-          }
-          return stepItem;
-        });
-        setTask(prev => ({ ...prev, step: mergedSteps }));
-        return;
-      }
-    }
-
-    // 如果找不到匹配数据或version数量 >= 2，执行原有逻辑
-    if (!task.step || task.step.length === 0) {
-      const filledStep = defaultStepData.map((item, idx) => {
-        if (item.agent === 'TrafficLLM') return item;
-        return {
-          ...item,
-          reason: defaultReasons[idx] || item.reason
-        };
       });
-      setTask(prev => ({ ...prev, step: filledStep }));
+    }
+  });
+  const versionCount = versions.size;
+
+  // 根据version数量判断使用哪个数据源
+  if (versionCount === 0) {
+    // 从testFirstEvautionData中查找匹配的数据
+    const matchedData = testFirstEvautionData.find(item => item.id === currentTaskId);
+    if (matchedData) {
+      // 如果当前step为空，直接使用matchedData的step
+      if (!task.step || task.step.length === 0) {
+        setTask(prev => ({ 
+          ...prev, 
+          step: matchedData.step,
+          scoreChange: matchedData.scoreChange || 0,
+          credibilityChange: matchedData.credibilityChange || 0
+        }));
+        return;
+      }
+      // 如果step不为空，则按agent合并score
+      const mergedSteps = task.step.map(stepItem => {
+        const matchedStep = matchedData.step.find(s => s.agent === stepItem.agent);
+        if (matchedStep) {
+          return {
+            ...stepItem,
+            score: [...(stepItem.score || []), ...(matchedStep.score || [])]
+          };
+        }
+        return stepItem;
+      });
+      setTask(prev => ({ 
+        ...prev, 
+        step: mergedSteps,
+        scoreChange: matchedData.scoreChange || 0,
+        credibilityChange: matchedData.credibilityChange || 0
+      }));
       return;
     }
-
-    // step 不为空，执行原有增长逻辑
-    let reasonIdx = 0;
-    const newStepArr = task.step.map((stepItem) => {
-      if (stepItem.agent === 'TrafficLLM') return stepItem;
-      const lastScore = Array.isArray(stepItem.score) && stepItem.score.length > 0 ? stepItem.score[stepItem.score.length - 1] : null;
-      const lastScoreValue = lastScore ? parseFloat(lastScore.score) : 0.7;
-      
-      const minIncrease = 0.05;
-      const maxIncrease = 0.10;
-      const increase = minIncrease + Math.random() * (maxIncrease - minIncrease);
-      const newScoreValue = Math.min(1, (lastScoreValue * (1 + increase)).toFixed(2));
-      
-      let newVersion = '1.0';
-      if (lastScore && lastScore.version) {
-        const lastVer = parseFloat(lastScore.version);
-        newVersion = (lastVer + 1).toFixed(1);
+  } else if (versionCount === 1) {
+    // 从testSecondEvautionData中查找匹配的数据
+    const matchedData = testSecondEvautionData.find(item => item.id === currentTaskId);
+    if (matchedData) {
+      // 如果当前step为空，直接使用matchedData的step
+      if (!task.step || task.step.length === 0) {
+        setTask(prev => ({ 
+          ...prev, 
+          step: matchedData.step,
+          scoreChange: matchedData.scoreChange || 0,
+          credibilityChange: matchedData.credibilityChange || 0
+        }));
+        return;
       }
-      
-      const newScoreObj = {
-        version: newVersion,
-        score: newScoreValue,
-        description: '优化后得分上升',
-        confidence: '0.95',
-        consumed_points: 60,
-        dimension: lastScore?.dimension || []
-      };
-      
-      const newReason = defaultReasons[reasonIdx] || stepItem.reason;
-      reasonIdx++;
-      
+      // 如果step不为空，则按agent合并score
+      const mergedSteps = task.step.map(stepItem => {
+        const matchedStep = matchedData.step.find(s => s.agent === stepItem.agent);
+        if (matchedStep) {
+          return {
+            ...stepItem,
+            score: [...(stepItem.score || []), ...(matchedStep.score || [])]
+          };
+        }
+        return stepItem;
+      });
+      setTask(prev => ({ 
+        ...prev, 
+        step: mergedSteps,
+        scoreChange: matchedData.scoreChange || 0,
+        credibilityChange: matchedData.credibilityChange || 0
+      }));
+      return;
+    }
+  }
+
+  // 如果找不到匹配数据或version数量 >= 2，执行原有逻辑
+  if (!task.step || task.step.length === 0) {
+    const filledStep = defaultStepData.map((item, idx) => {
+      if (item.agent === 'TrafficLLM') return item;
       return {
-        ...stepItem,
-        score: [...(stepItem.score || []), newScoreObj],
-        reason: newReason
+        ...item,
+        reason: defaultReasons[idx] || item.reason
       };
     });
-    setTask(prev => ({ ...prev, step: newStepArr }));
-  };
+    // 计算平均分数变化和可信度变化
+    const avgScoreChange = 0.08; // 默认8%的提升
+    const avgCredibilityChange = 0.05; // 默认5%的可信度提升
+    setTask(prev => ({ 
+      ...prev, 
+      step: filledStep,
+      scoreChange: avgScoreChange,
+      credibilityChange: avgCredibilityChange
+    }));
+    return;
+  }
+
+  // step 不为空，执行原有增长逻辑
+  let reasonIdx = 0;
+  let totalScoreChange = 0;
+  let totalCredibilityChange = 0;
+  const newStepArr = task.step.map((stepItem) => {
+    if (stepItem.agent === 'TrafficLLM') return stepItem;
+    const lastScore = Array.isArray(stepItem.score) && stepItem.score.length > 0 ? stepItem.score[stepItem.score.length - 1] : null;
+    const lastScoreValue = lastScore ? parseFloat(lastScore.score) : 0.7;
+    const lastConfidence = lastScore ? parseFloat(lastScore.confidence) : 0.8;
+    
+    const minIncrease = 0.05;
+    const maxIncrease = 0.10;
+    const increase = minIncrease + Math.random() * (maxIncrease - minIncrease);
+    const newScoreValue = Math.min(1, (lastScoreValue * (1 + increase)).toFixed(2));
+    
+    // 计算可信度变化
+    const confidenceIncrease = Math.random() * 0.05; // 0-5%的可信度提升
+    const newConfidence = Math.min(1, (lastConfidence * (1 + confidenceIncrease)).toFixed(2));
+    
+    // 累计变化量
+    totalScoreChange += (newScoreValue - lastScoreValue);
+    totalCredibilityChange += (newConfidence - lastConfidence);
+    
+    let newVersion = '1.0';
+    if (lastScore && lastScore.version) {
+      const lastVer = parseFloat(lastScore.version);
+      newVersion = (lastVer + 1).toFixed(1);
+    }
+    
+    const newScoreObj = {
+      version: newVersion,
+      score: newScoreValue,
+      description: '优化后得分上升',
+      confidence: newConfidence,
+      consumed_points: 60,
+      dimension: lastScore?.dimension || []
+    };
+    
+    const newReason = defaultReasons[reasonIdx] || stepItem.reason;
+    reasonIdx++;
+    
+    return {
+      ...stepItem,
+      score: [...(stepItem.score || []), newScoreObj],
+      reason: newReason
+    };
+  });
+
+  // 计算平均变化量
+  const avgScoreChange = totalScoreChange / newStepArr.length;
+  const avgCredibilityChange = totalCredibilityChange / newStepArr.length;
+
+  setTask(prev => ({ 
+    ...prev, 
+    step: newStepArr,
+    scoreChange: avgScoreChange,
+    credibilityChange: avgCredibilityChange
+  }));
+};
 
   // 应用高亮样式到选中文本（与ChatMessage.js一致）
   const applyHighlightToSelection = (range, text) => {

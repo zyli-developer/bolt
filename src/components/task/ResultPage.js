@@ -1,12 +1,9 @@
 import React, { useState, useContext, useMemo } from 'react';
 import { 
-  Typography, 
   Avatar, 
-  Tag, 
   Select,
   Checkbox,
   Spin,
-  Button,
   message
 } from 'antd';
 import {
@@ -16,20 +13,8 @@ import {
 import AnnotationModal from '../../components/annotations/AnnotationModal';
 import { OptimizationContext } from '../../contexts/OptimizationContext';
 import CommentsList from '../common/CommentsList';
-import {
-  Area,
-  AreaChart,
-  ResponsiveContainer,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip as RechartsTooltip,
-  Radar,
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-} from 'recharts';
+import LineChartSection from '../card/LineChartSection';
+import RadarChartSection from '../card/RadarChartSection';
 
 const { Option } = Select;
 
@@ -37,16 +22,16 @@ const ResultPage = ({
   task, 
   enhancedChartData, 
   evaluationData, 
-  selectedModels, 
+  selectedModels: propSelectedModels, 
   selectedModel,
   expandedModel,
   radarMaxValue,
-  handleModelChange,
-  handleSelectAll,
+  handleModelChange: propHandleModelChange,
+  handleSelectAll: propHandleSelectAll,
   toggleModelPanel,
   getModelColor,
   onAddAnnotation,
-  isOptimizeMode = false,
+  isOptimizationMode = false,
   comments = []
 }) => {
   const [annotationModalVisible, setAnnotationModalVisible] = useState(false);
@@ -88,7 +73,6 @@ const ResultPage = ({
   };
   
   const { 
-    isOptimizationMode,
     currentOptimizationStep, 
     currentStepComments,
     addComment,
@@ -111,12 +95,31 @@ const ResultPage = ({
 
   const modelOptions = useMemo(() => {
     if (stepsData && stepsData.length > 0) {
-      return stepsData.map(step => {
-        return step.agent.toLowerCase().replace(/\s+/g, '');
-      });
+      return stepsData.map(step => step.agent.toLowerCase().replace(/\s+/g, ''));
     }
     return Object.keys(evaluationData || {});
   }, [stepsData, evaluationData]);
+
+  const [selectedModels, setSelectedModels] = useState(modelOptions);
+  React.useEffect(() => {
+    setSelectedModels(modelOptions);
+  }, [JSON.stringify(modelOptions)]);
+
+  const handleModelChange = (values) => {
+    setSelectedModels(values);
+  };
+
+  const handleSelectAll = (checked) => {
+    setSelectedModels(checked ? modelOptions : []);
+  };
+
+  const getModelReason = (step) => {
+    if (!step || !Array.isArray(step.score) || step.score.length === 0) return '暂无描述';
+    const matchedScore = step.score.find(s => s.version === task.version);
+    if (matchedScore && matchedScore.reason) return matchedScore.reason;
+    if (step.score[0] && step.score[0].reason) return step.score[0].reason;
+    return '暂无描述';
+  };
 
   const currentEvaluation = useMemo(() => {
     if (stepsData && stepsData.length > 0 && selectedModel) {
@@ -141,7 +144,7 @@ const ResultPage = ({
           }
         }
         
-        let confidenceValue = 0;
+        let confidenceValue = 75;
         if (selectedStep.score && Array.isArray(selectedStep.score) && selectedStep.score.length > 0) {
           const scoreObj = selectedStep.score[0];
           if (scoreObj && typeof scoreObj === 'object' && 
@@ -156,7 +159,7 @@ const ResultPage = ({
           credibility: confidenceValue,
           scoreChange: '+0.0',
           credibilityChange: '+0.0',
-          reason: selectedStep.reason || '暂无描述',
+          reason: getModelReason(selectedStep),
           tags: selectedStep.tags || []
         };
       }
@@ -170,14 +173,14 @@ const ResultPage = ({
     
     return {
       name: '未知模型',
-      score: 0,
-      credibility: 0,
+      score: 70,
+      credibility: 75,
       scoreChange: '+0.0',
       credibilityChange: '+0.0',
       reason: '暂无数据',
       tags: []
     };
-  }, [stepsData, selectedModel, evaluationData]);
+  }, [stepsData, selectedModel, evaluationData, task]);
 
   const lineChartData = useMemo(() => {
     if (!stepsData || stepsData.length === 0) {
@@ -224,6 +227,47 @@ const ResultPage = ({
     return Math.ceil(maxValue / 10) * 10 + 10;
   }, [enhancedChartData]);
 
+  const enhancedRadar = useMemo(() => {
+    if (!Array.isArray(stepsData) || stepsData.length === 0) {
+      // 如果没有step数据，回退到使用chartData.radar
+      const radarData = task?.chartData?.radar || [];
+      return radarData.map(item => ({
+        name: item.name || '未知维度',
+        value: Math.round(item.value || 0),
+      }));
+    }
+
+    // 收集所有维度
+    const dimensionMap = {};
+    
+    stepsData.forEach((step) => {
+      if (!step || !Array.isArray(step.score)) return;
+      
+      // 取最新一条score（最后一条）
+      const lastScore = step.score[step.score.length - 1];
+      if (!lastScore || !Array.isArray(lastScore.dimension)) return;
+      
+      const modelKey = step.agent.toLowerCase().replace(/\s+/g, '');
+      
+      lastScore.dimension.forEach(dim => {
+        if (!dim.latitude) return;
+        
+        if (!dimensionMap[dim.latitude]) {
+          dimensionMap[dim.latitude] = {
+            name: dim.latitude,
+            value: 0 // 默认值
+          };
+        }
+        
+        // 将score转换为数字并存储到对应模型的key下
+        const score = typeof dim.score === 'number' ? dim.score : parseFloat(dim.score) || 0;
+        dimensionMap[dim.latitude][modelKey] = Math.round(score);
+      });
+    });
+    
+    return Object.values(dimensionMap);
+  }, [task, stepsData]);
+
   if (!task || !enhancedChartData || !currentEvaluation) {
     return (
       <div style={{ textAlign: 'center', padding: '40px 0' }}>
@@ -245,12 +289,17 @@ const ResultPage = ({
     return 70;
   };
 
+  // 计算是否有注释列表
+  const hasComments = Array.isArray(comments) && comments.length > 0;
+
   return (
-    <div className="evaluation-charts-wrapper" style={{ display: "flex", gap: "8px" }}>
+    <div
+      className="evaluation-charts-wrapper flex flex-nowrap gap-2 w-full"
+    >
       {/* 左侧评估区域 */}
-      <div className="evaluation-left-section" style={{ 
-        flex: isOptimizeMode && task?.annotation?.result && Array.isArray(task.annotation.result) && task.annotation.result.length > 0 ? 1 : 1.5
-      }}>
+      <div
+        className={`evaluation-left-section ${hasComments ? 'w-1/3' : 'w-1/2'} flex-shrink-0`}
+      >
         <div className="evaluation-section" style={{ padding: "8px" }}>
           <div className="evaluation-header" style={{ marginBottom: "8px" }}>
             <div className="evaluation-title" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -270,7 +319,6 @@ const ResultPage = ({
                 className="model-selector"
                 maxTagCount={2}
                 maxTagTextLength={10}
-                style={{ minWidth: "270px", flex: 1 }}
                 dropdownRender={(menu) => (
                   <>
                     <div className="select-all-option" onClick={() => handleSelectAll(selectedModels?.length < modelOptions?.length)} style={{ padding: "4px 8px" }}>
@@ -301,7 +349,7 @@ const ResultPage = ({
               const modelData = step ? {
                 name: step.agent,
                 tags: step.tags || [],
-                reason: step.reason || '暂无描述'
+                reason: getModelReason(step)
               } : evaluationData[modelKey];
               
               if (!modelData) return null;
@@ -316,7 +364,19 @@ const ResultPage = ({
                       <div className="model-info">
                         <div className="model-name" style={{ fontSize: "14px" }}>
                             {modelData.name || 'Unknown Model'}
-                          <span className="model-usage" style={{ fontSize: "12px", marginLeft: "4px" }}>128k</span>
+                          <span className="model-tags" style={{ gap: "4px", marginLeft: "4px" }}>
+                            <span className="model-tag" style={{ padding: "0 4px", fontSize: "11px" }}>
+                              {
+                                (() => {
+                                  const step = stepsData.find(s => s.agent && s.agent.toLowerCase().replace(/\s+/g, '') === modelKey);
+                                  const consumed = step && Array.isArray(step.score) && step.score[0]
+                                    ? step.score[0].consumed_points
+                                    : undefined;
+                                  return consumed !== undefined ? `${consumed} tokens` : '未知消耗';
+                                })()
+                              }
+                            </span>
+                          </span>
                         </div>
                         <div className="model-tags" style={{ gap: "4px" }}>
                             {Array.isArray(modelData.tags) && modelData.tags.map((tag, index) => (
@@ -349,10 +409,9 @@ const ResultPage = ({
       </div>
 
       {/* 右侧图表区域 */}
-      <div className="evaluation-right-section" style={{ 
-        gap: "4px", 
-        flex: isOptimizeMode && task?.annotation?.result && Array.isArray(task.annotation.result) && task.annotation.result.length > 0 ? 1 : 1.5
-      }}>
+      <div
+        className={`evaluation-right-section flex flex-col gap-1 ${hasComments ? 'w-1/3' : 'w-1/2'} flex-shrink-0`}
+      >
         <div className="line-chart-section" style={{ padding: "8px" }}>
           <div className="chart-legend" style={{ marginBottom: "8px", gap: "8px" }}>
             {Array.isArray(selectedModels) && selectedModels.map(modelKey => {
@@ -369,65 +428,15 @@ const ResultPage = ({
           </div>
 
           <div className="line-chart-container" style={{ height: "150px", marginTop: "4px" }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart
-                data={lineChartData.length > 0 ? lineChartData : enhancedChartData?.line || []}
-                margin={{ top: 2, right: 5, left: 0, bottom: 2 }}
-              >
-                <defs>
-                  {modelOptions.map(modelKey => (
-                    <linearGradient key={modelKey} id={`color${modelKey}`} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={getModelColor(modelKey)} stopOpacity={0.2} />
-                      <stop offset="95%" stopColor={getModelColor(modelKey)} stopOpacity={0} />
-                    </linearGradient>
-                  ))}
-                </defs>
-                <CartesianGrid
-                  vertical={false}
-                  horizontal={true}
-                  stroke="var(--color-border-secondary)"
-                />
-                <XAxis
-                  dataKey={lineChartData.length > 0 ? "version" : "month"}
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fontSize: 10, fill: 'var(--color-text-tertiary)' }}
-                />
-                <YAxis
-                  hide={true}
-                  domain={[0, 'dataMax + 20']}
-                  tickFormatter={(value) => `${Math.round(value)}%`}
-                />
-                <RechartsTooltip
-                  cursor={false}
-                  formatter={(value, name) => {
-                    const step = stepsData.find(s => s.agent.toLowerCase().replace(/\s+/g, '') === name);
-                    const displayName = step ? step.agent : (evaluationData[name]?.name || name);
-                    return [`${Math.round(value)}%`, displayName];
-                  }}
-                  labelFormatter={(label) => `版本: ${label}`}
-                  contentStyle={{
-                    background: 'var(--color-bg-container)',
-                    border: 'none',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                    borderRadius: '4px',
-                    padding: '4px 8px'
-                  }}
-                />
-                {Array.isArray(selectedModels) && selectedModels.map(modelKey => (
-                  <Area
-                    key={modelKey}
-                    type="monotone"
-                    dataKey={modelKey}
-                    name={modelKey}
-                    stroke={getModelColor(modelKey)}
-                    strokeWidth={1.5}
-                    fill={`url(#color${modelKey})`}
-                    dot={false}
-                  />
-                ))}
-              </AreaChart>
-            </ResponsiveContainer>
+            <LineChartSection 
+              card={{
+                ...task,
+                step: task.step,
+                chartData: { line: lineChartData }
+              }} 
+              showLinearGradient={true}
+              selectedModels={selectedModels}
+            />
           </div>
         </div>
 
@@ -436,94 +445,36 @@ const ResultPage = ({
             <div className="metric-item" style={{ padding: "8px" }}>
               <div className="metric-label" style={{ fontSize: "12px", marginBottom: "4px" }}>综合得分</div>
               <div className="metric-value" style={{ fontSize: "20px" }}>
-                {typeof currentEvaluation?.credibility === 'number' ? 
-                  `${Math.round(currentEvaluation?.credibility)}%` : `75%`}
+                 { Math.round(task?.score)}
               </div>
               <div className={`metric-change ${typeof currentEvaluation?.credibilityChange === 'string' && currentEvaluation?.credibilityChange?.startsWith("+") ? "positive" : "negative"}`} style={{ fontSize: "12px" }}>
-                {typeof currentEvaluation?.credibilityChange === 'string' ? currentEvaluation?.credibilityChange : '0'}
+                {typeof currentEvaluation?.scoreChange === 'string' ? currentEvaluation?.scoreChange : '0'}
               </div>
             </div>
 
             <div className="metric-item" style={{ padding: "8px" }}>
-              <div className="metric-label" style={{ fontSize: "12px", marginBottom: "4px" }}>各维度得分</div>
-              <div className="metric-value" style={{ fontSize: "20px" }}>{formatScore(currentEvaluation?.score)}</div>
+              <div className="metric-label" style={{ fontSize: "12px", marginBottom: "4px" }}>可信度得分</div>
+              <div className="metric-value" style={{ fontSize: "20px" }}>{formatScore(task?.credibility)}%</div>
               <div className={`metric-change ${typeof currentEvaluation?.scoreChange === 'string' && currentEvaluation?.scoreChange?.startsWith("+") ? "positive" : "negative"}`} style={{ fontSize: "12px" }}>
-                {typeof currentEvaluation?.scoreChange === 'string' ? currentEvaluation?.scoreChange : '0'}
+                {typeof currentEvaluation?.credibilityChange === 'string' ? currentEvaluation?.credibilityChange : '0'}
               </div>
             </div>
           </div>
 
           <div className="radar-chart-content" style={{ height: "220px" }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <RadarChart data={enhancedChartData?.radar || []}>
-                <PolarGrid stroke="var(--color-border-secondary)" />
-                <PolarAngleAxis dataKey="name" tick={{ fontSize: 10, fill: "var(--color-text-tertiary)" }} />
-                <PolarRadiusAxis 
-                  domain={[0, calculatedRadarMaxValue]} 
-                  tick={{ fontSize: 9, fill: "var(--color-text-tertiary)" }} 
-                  axisLine={false} 
-                />
-                <RechartsTooltip 
-                  formatter={(value, name) => {
-                    const step = stepsData.find(s => s.agent.toLowerCase().replace(/\s+/g, '') === name);
-                    const displayName = step ? step.agent : (evaluationData[name]?.name || name);
-                    return [`${Math.round(value)}%`, displayName];
-                  }}
-                  labelFormatter={(label) => `维度: ${label}`}
-                  contentStyle={{
-                    background: '#fff',
-                    border: 'none',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                    borderRadius: '4px',
-                    padding: '4px 8px'
-                  }}
-                />
-                {Array.isArray(selectedModels) && selectedModels.map(modelKey => (
-                  <Radar
-                    key={modelKey}
-                    name={modelKey}
-                    dataKey={modelKey}
-                    stroke={getModelColor(modelKey)}
-                    fill={getModelColor(modelKey)}
-                    fillOpacity={0.2}
-                  />
-                ))}
-              </RadarChart>
-            </ResponsiveContainer>
+            <RadarChartSection 
+              radarData={enhancedRadar}
+              modelKeys={selectedModels}
+              maxValue={calculatedRadarMaxValue}
+              height={220}
+            />
           </div>
         </div>
       </div>
 
-      {/* 右侧注释列表 - 仅在优化模式下显示且有注释数据时显示 */}
-      {isOptimizeMode && comments && comments.length > 0 && (
-        <div className="comments-section" style={{ 
-          flex: 1, 
-          backgroundColor: 'var(--color-bg-container)',
-          borderRadius: '8px',
-          maxHeight: 'calc(100vh - 320px)',
-          overflow: 'hidden'
-        }}>
-            <CommentsList 
-            comments={comments} 
-              title="注释列表"
-              expandedId={expandedComment}
-              onToggleExpand={handleCommentToggle}
-              customStyles={{
-                container: { height: '100%' }
-              }}
-            />
-            </div>
-          )}
-
-      {/* 非优化模式下显示传递的评论 */}
-      {!isOptimizeMode && comments && comments.length > 0 && (
-        <div className="comments-section" style={{ 
-          flex: 1, 
-          backgroundColor: 'var(--color-bg-container)',
-          borderRadius: '8px',
-          maxHeight: 'calc(100vh - 320px)',
-          overflow: 'auto'
-        }}>
+      {/* 右侧注释列表 - 有注释数据时显示 */}
+      {hasComments && (
+        <div className="comments-section w-1/3 flex-shrink-0 bg-[var(--color-bg-container)] rounded-lg max-h-[calc(100vh-320px)] overflow-hidden">
           <CommentsList 
             comments={comments} 
             title="注释列表"
@@ -548,4 +499,4 @@ const ResultPage = ({
   );
 };
 
-export default ResultPage; 
+export default ResultPage;

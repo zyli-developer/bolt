@@ -91,7 +91,7 @@ const LineChartSection = ({ card, showLinearGradient = false, height = 150, sele
       const row = { version };
       agents.forEach((agent, idx) => {
         const found = chartData.find(d => d.version === version && d.agent === agent);
-        row[agent] = found ? found.confidence : null;
+        row[agent] = found ? found.confidence  : null;
       });
       return row;
     });
@@ -145,8 +145,12 @@ const LineChartSection = ({ card, showLinearGradient = false, height = 150, sele
               label={{ value: 'confidence', angle: -90, position: 'left', fontSize: 10, fill: '#8f9098' }}
               domain={[0, yMax]}
               tick={{ fontSize: 10, fill: '#8f9098' }}
+              tickFormatter={(value) => `${value}%`}
             />
-            <RechartsTooltip />
+            <RechartsTooltip 
+              formatter={(value, name) => [`${value}%`, name]}
+              labelFormatter={(label) => `版本: ${label}`}
+            />
             {agents.map((agent, idx) => (
               <Line
                 key={agent}
