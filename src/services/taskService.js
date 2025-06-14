@@ -11,8 +11,7 @@ import { taskCardsData, modelEvaluationData } from "../mocks/data"
 import { filterCardsByConditions } from "../mocks/filterData"
 
 // 判断是否使用本地模拟数据
-const USE_MOCK_DATA = (process.env.USE_MOCK_DATA === 'true');
-
+const REACT_APP_USE_MOCK_DATA = (process.env.REACT_APP_USE_MOCK_DATA === 'true');
 // 辅助函数：将API操作符转换为UI操作符
 function convertApiOperatorToUi(apiOp) {
   switch(apiOp) {
@@ -40,7 +39,9 @@ const taskService = {
       console.log("获取任务列表，参数:", params);
       
       // 如果使用本地模拟数据
-      if (USE_MOCK_DATA) {
+      console.log("REACT_APP_USE_MOCK_DATA", process.env.REACT_APP_USE_MOCK_DATA,REACT_APP_USE_MOCK_DATA);
+
+      if (REACT_APP_USE_MOCK_DATA) {
         console.log("使用本地模拟数据...");
         // 获取分页参数
         const page = params.pagination?.page || 1;
@@ -235,7 +236,7 @@ const taskService = {
   getTaskDetail: async (id) => {
     try {
       // 如果使用本地模拟数据
-      if (USE_MOCK_DATA) {
+      if (REACT_APP_USE_MOCK_DATA) {
         console.log(`使用本地模拟数据获取任务详情, ID: ${id}`);
         
         // 从taskCardsData中查找对应ID的任务，同时支持字符串和数字格式的ID比较

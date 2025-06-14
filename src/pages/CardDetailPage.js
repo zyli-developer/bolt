@@ -408,29 +408,19 @@ const CardDetailPage = () => {
         
         // 检查ID格式，确定使用哪个API获取数据
         // 如果ID是数字格式（如"1001"），则使用getExplorationDetail
-        // 否则使用getCardDetail
-        if (/^\d+$/.test(id)) {
-          // 获取探索详情
-          console.log(`正在获取ID为 ${id} 的探索详情...`);
-          const response = await cardService.getExplorationDetail(id);
-          
-          // 确保我们使用正确的数据结构 - 从response.exploration中获取数据
-          cardData = response.exploration || response;
-          
-          // 从response中获取模型评估数据
-          evaluationData = response.evaluationData || {};
-          
-          console.log(`获取到的探索详情数据:`, cardData);
-          console.log(`获取到的模型评估数据:`, evaluationData);
-        } else {
-          // 获取普通卡片详情
-          console.log(`正在获取ID为 ${id} 的普通卡片详情...`);
-          cardData = await cardService.getCardDetail(id);
-          console.log(`获取到的普通卡片详情数据:`, cardData);
         
-        // 获取模型评估数据
-          evaluationData = [];
-        }
+        // 获取探索详情
+        console.log(`正在获取ID为 ${id} 的探索详情...`);
+        const response = await cardService.getExplorationDetail(id);
+        
+        // 确保我们使用正确的数据结构 - 从response.exploration中获取数据
+        cardData = response.exploration || response;
+        
+        // 从response中获取模型评估数据
+        evaluationData = response.evaluationData || {};
+        
+        console.log(`获取到的探索详情数据:`, cardData);
+        console.log(`获取到的模型评估数据:`, evaluationData);
         
         // 确保templateData正确设置
         if (!cardData.templateData && cardData.step) {

@@ -45,7 +45,7 @@ const colors = [
  */
 const LineChartSection = ({ card, showLinearGradient = false, height = 150, selectedModels }) => {
   const styles = useStyles();
-  console.log("------LineChartSection---------",card)
+ 
   // 1. 转换数据为平面数组
   const chartData = useMemo(() => {
     if (!card || !card.step) return [];

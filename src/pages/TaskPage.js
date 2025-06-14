@@ -485,7 +485,7 @@ const TaskPage = () => {
         />
       </div>
 
-      <div className="tasks-container" style={{width: isChatOpen ? "" : "832px"}}>
+      <div className="tasks-container" style={{width: isChatOpen ? "100%" : "832px"}}>
         {tasks.length > 0 ? (
           <div className="tasks-grid">
             {tasks.map((task, idx) => (

@@ -11,7 +11,7 @@ import { explorationCardsData, taskCardsData } from "../mocks/data"
 import { filterCardsByConditions } from "../mocks/filterData"
 
 // 判断是否使用本地模拟数据
-const USE_MOCK_DATA = (process.env.USE_MOCK_DATA === 'true');
+const REACT_APP_USE_MOCK_DATA = (process.env.REACT_APP_USE_MOCK_DATA === 'true');
 
 const cardService = {
   /**
@@ -59,7 +59,8 @@ const cardService = {
   getExplorations: async (params = {}) => {
     try {
       // 如果使用本地模拟数据
-      if (USE_MOCK_DATA) {
+      console.log("REACT_APP_USE_MOCK_DATA", REACT_APP_USE_MOCK_DATA);
+      if (REACT_APP_USE_MOCK_DATA) {
         console.log("使用本地模拟数据...");
         // 获取分页参数
         const page = params.pagination?.page || 1;
@@ -220,7 +221,7 @@ const cardService = {
   getExplorationDetail: async (id) => {
     try {
       // 如果使用本地模拟数据
-      if (USE_MOCK_DATA) {
+      if (REACT_APP_USE_MOCK_DATA) {
         console.log(`使用本地模拟数据获取探索详情, ID: ${id}`);
         
         // 从explorationCardsData中获取对应ID的卡片数据
@@ -342,7 +343,7 @@ const cardService = {
   getTasks: async (params = {}) => {
     try {
       // 如果使用本地模拟数据
-      if (USE_MOCK_DATA) {
+      if (REACT_APP_USE_MOCK_DATA) {
         console.log("使用本地模拟数据...");
         // 获取分页参数
         const page = params.pagination?.page || 1;
