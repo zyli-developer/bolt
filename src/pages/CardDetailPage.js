@@ -50,6 +50,10 @@ import DiscussModal from "../components/modals/DiscussModal"
 import ShareModal from "../components/modals/ShareModal"
 import { OptimizationContext } from "../contexts/OptimizationContext"
 
+// 导入通用评论列表组件
+import CommentsList from "../components/common/CommentsList";
+import useTextHighlight from '../hooks/useTextHighlight';
+
 const { Option } = Select
 
 
@@ -187,11 +191,10 @@ const CardDetailPage = () => {
   const [isTaskStarted, setIsTaskStarted] = useState(false);
   
   // 添加右键菜单和讨论模态框相关状态
-  const [contextMenu, setContextMenu] = useState(null);
   const [selectedText, setSelectedText] = useState('');
-  const [discussModalVisible, setDiscussModalVisible] = useState(false);
-  const [annotationModalVisible, setAnnotationModalVisible] = useState(false);
-  const evaluationTextRef = useRef(null);
+  const [contextMenu, setContextMenu] = useState(null); // {x, y}
+  const [showAnnotationModal, setShowAnnotationModal] = useState(false);
+  const [showDiscussModal, setShowDiscussModal] = useState(false);
 
   // 添加注释展开状态
   const [expandedComment, setExpandedComment] = useState(null);
@@ -387,14 +390,14 @@ const CardDetailPage = () => {
         return;
     }
     
-    saveCurrentData(); // 先保存当前步骤数据
-    
-    // 关闭连续选择模式并清除高亮
-    if (isMultiSelectActive) {
-      setIsMultiSelectActive(false);
-      clearAllHighlights();
-    }
-    
+      saveCurrentData(); // 先保存当前步骤数据
+      
+      // 关闭连续选择模式并清除高亮
+      if (isMultiSelectActive) {
+        setIsMultiSelectActive(false);
+        clearAllHighlights();
+      }
+      
     setCurrentOptimizationStep(prevStep);
   };
 
@@ -937,12 +940,15 @@ const CardDetailPage = () => {
     }
     setIsTesting(true);
     setTestProgress(0);
-
+    
     // 1. 发起API调用，模拟生成新version
     try {
       let newStepArr = Array.isArray(card?.step) ? [...card.step] : [];
       // 针对每个agent都新增一个version
       newStepArr = newStepArr.map(stepItem => {
+
+        const isTrafficLLM =  stepItem.agent  === 'TrafficLLM'
+        
         const lastScore = Array.isArray(stepItem.score) && stepItem.score.length > 0 ? stepItem.score[stepItem.score.length - 1] : null;
         const lastScoreValue = lastScore ? parseFloat(lastScore.score) : 0.7;
         // 新score为上升趋势
@@ -961,6 +967,10 @@ const CardDetailPage = () => {
           consumed_points: 60,
           dimension: lastScore?.dimension || []
         };
+        if(isTrafficLLM){
+          newScoreObj.reason = "根据专家提示，回答不需要特定的法律条款引用，只做出技术性判断，不存在合规风险。"
+        }
+          
         return {
           ...stepItem,
           score: [...(stepItem.score || []), newScoreObj]
@@ -990,7 +1000,7 @@ const CardDetailPage = () => {
         }
         return next;
       });
-    }, 100);
+    }, 50);
   };
   
   // 处理提交测试结果
@@ -1180,7 +1190,7 @@ const CardDetailPage = () => {
     setSelectedModalText(textToShow);
     
     // 显示模态框
-    setAnnotationModalVisible(true);
+    setShowAnnotationModal(true);
   };
 
   // 处理右键菜单项点击
@@ -1193,7 +1203,7 @@ const CardDetailPage = () => {
           const combinedText = Array.from(new Set(selectedTexts)).join('\n\n');
           setSelectedText(combinedText);
         }
-        setDiscussModalVisible(true);
+        setShowDiscussModal(true);
         
         // 讨论后关闭连续选择模式
         setIsMultiSelectActive(false);
@@ -1326,39 +1336,9 @@ const CardDetailPage = () => {
 
   // 处理添加注释的逻辑
   const handleSaveAnnotation = (data) => {
-    console.log('handleSaveAnnotation----------data', data);
-    try {
-      // 如果是多选模式，使用合并的文本
-      const textToSave = isMultiSelectActive || isMultiSelectTempMode ? selectedTexts.join('\n\n') : selectedText;
-      
-      if (!textToSave) {
-        message.error('请选择文本');
-        return;
-      }
-
-      const annotationData = {
-        ...data,
-        selectedText: textToSave,
-        id: `comment-${Date.now()}`, // 生成唯一ID
-        time: new Date().toISOString()
-      };
-
-      // 添加到全局上下文中
-      addComment(annotationData);
-      
-      setAnnotationModalVisible(false);
-      setContextMenu(null);
-      
-      // 清除高亮和选择
-      if (isMultiSelectActive || isMultiSelectTempMode) {
-        clearAllHighlights();
-      }
-      
-      message.success('添加成功');
-    } catch (error) {
-      console.error('添加注释失败', error);
-      message.error('添加失败');
-    }
+    addComment(data);
+    setShowAnnotationModal(false);
+    // 可选：message.success('添加成功');
   };
 
   // 添加一个mouseup事件处理函数，用于处理在连续选择状态下无需右键也能自动高亮
@@ -1523,6 +1503,34 @@ const CardDetailPage = () => {
     }
   };
 
+  // 假设 messages 是 [{id, text}] 或类似结构
+  const messages = Array.isArray(card?.step)
+    ? card.step.map((s, i) => ({
+        id: s.id || i,
+        text: s.text || s.prompt || s.description || ''
+      }))
+    : [];
+
+  // 受控高亮 hook
+  const { highlightMap, addHighlight, clearHighlights, renderHighlightedText } = useTextHighlight();
+
+  // 鼠标松开时添加高亮
+  const handleMouseUp = (msgId, text) => {
+    const selection = window.getSelection();
+    if (!selection || selection.isCollapsed) return;
+    const anchorNode = selection.anchorNode;
+    if (!anchorNode || anchorNode.nodeType !== Node.TEXT_NODE) return;
+    const start = selection.anchorOffset;
+    const end = selection.focusOffset;
+    if (start === end) return;
+    const s = Math.min(start, end);
+    const e = Math.max(start, end);
+    const msgHighlights = highlightMap[msgId] || [];
+    if (msgHighlights.some(hl => s >= hl.start && e <= hl.end)) return;
+    addHighlight(msgId, s, e);
+    selection.removeAllRanges();
+  };
+
   if (loading) {
     return (
       <div className={`card-detail-page ${isChatOpen ? "chat-open" : "chat-closed"}`}>
@@ -1545,7 +1553,21 @@ const CardDetailPage = () => {
   }
 
   return (
-    <div className={`card-detail-page ${isChatOpen ? "chat-open" : "chat-closed"} ${isMultiSelectActive ? 'multi-select-mode' : ''}`}>
+    <div
+      className={`card-detail-page ${isChatOpen ? "chat-open" : "chat-closed"} ${isMultiSelectActive ? 'multi-select-mode' : ''}`}
+      onContextMenu={e => {
+        if (!isOptimizationMode) return;
+        e.preventDefault();
+        const sel = window.getSelection();
+        const text = sel ? sel.toString().trim() : '';
+        if (text) {
+          setSelectedText(text);
+          setContextMenu({ x: e.clientX, y: e.clientY });
+        } else {
+          setContextMenu(null);
+        }
+      }}
+    >
       {/* 隐藏头部的community/workspace/peison的tab */}
       <div className="hide-tabs-nav" style={{ display: 'none' }}>
         {/* 这里本应显示tab，但现在设置为不显示 */}
@@ -1748,7 +1770,7 @@ const CardDetailPage = () => {
                       comments={currentStepComments}
                     />
                   </div>
-        
+                  
                 </>
               ) : currentOptimizationStep === 'qa' ? (
                 // QA优化界面
@@ -2111,36 +2133,23 @@ const CardDetailPage = () => {
           y={contextMenu.y}
           onAction={handleContextMenuAction}
           onClose={() => setContextMenu(null)}
-          isMultiSelectActive={isMultiSelectActive}
         />
       )}
-      
-      {/* 讨论模态框 */}
-      <DiscussModal
-        visible={discussModalVisible}
-        onClose={() => {
-          setDiscussModalVisible(false);
-          // 关闭讨论窗口后，如果是连续选择模式，清除所有高亮
-          if (isMultiSelectActive) {
-            clearAllHighlights();
-          }
-        }}
-        selectedText={(isMultiSelectActive || isMultiSelectTempMode) && selectedTexts.length > 0
-          ? Array.from(new Set(selectedTexts)).join('\n\n') // 使用Set去重
-          : selectedText}
-      />
 
-      {/* 添加观点模态框 */}
+      {/* 添加观点弹窗 */}
       <AnnotationModal
-        visible={annotationModalVisible}
-        onClose={() => {
-          setAnnotationModalVisible(false);
-          clearAllHighlights();
-        }}
+        visible={showAnnotationModal}
+        onClose={() => setShowAnnotationModal(false)}
         onSave={handleSaveAnnotation}
-        selectedText={selectedModalText}
-        initialContent={selectedModalText}
-        step={currentOptimizationStep}
+        selectedText={selectedText}
+        initialContent={selectedText}
+        step={currentOptimizationStep || 'result'}
+      />
+      {/* 讨论弹窗 */}
+      <DiscussModal
+        visible={showDiscussModal}
+        onClose={() => setShowDiscussModal(false)}
+        selectedText={selectedText}
       />
       
       {/* 分享模态框 */}

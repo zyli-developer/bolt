@@ -123,6 +123,10 @@ const TemplateSection = ({ isEditable = false, taskId, steps, comments = [], onA
         fetchAnnotations().finally(() => {
           setLoading(false);
         });
+          // 否则从服务获取注释
+          fetchAnnotations().finally(() => {
+            setLoading(false);
+          });
         }
       } else if (Array.isArray(steps) && steps.length > 0) {
         // 将steps数组数据转换为React Flow所需的格式
@@ -173,9 +177,9 @@ const TemplateSection = ({ isEditable = false, taskId, steps, comments = [], onA
           setLoading(false);
         } else {
           // 否则从服务获取注释
-        fetchAnnotations().finally(() => {
-          setLoading(false);
-        });
+          fetchAnnotations().finally(() => {
+            setLoading(false);
+          });
         }
       } else {
         // 如果steps为空或无效格式，则从服务获取数据
@@ -399,10 +403,12 @@ const TemplateSection = ({ isEditable = false, taskId, steps, comments = [], onA
 
   // 合并props.comments和card.annotation.template，去重
   const taskAnnotations = Array.isArray(card?.annotation?.template) ? card.annotation.template : [];
-
+  const filteredComments = Array.isArray(comments)
+    ? comments.filter(item => item.step === 'template')
+    : [];
   const mergedComments = [
     ...taskAnnotations,
-    ...comments.filter(c => !taskAnnotations.some(t => t.id === c.id))
+    ...filteredComments.filter(c => !taskAnnotations.some(t => t.id === c.id))
   ];
 
   if (loading) {
@@ -421,18 +427,18 @@ const TemplateSection = ({ isEditable = false, taskId, steps, comments = [], onA
           <Title level={5} className={styles.headerTitle}>模板详情</Title>
           {isEditable ? (
             <Button 
-                type="text" 
-                icon={<PlusOutlined />} 
-                className={styles.actionButton}
-                onClick={() => {
-                  // 点击添加观点按钮时，清空已选节点，直接打开模态框
-                  setSelectedNode(null);
-                  setSelectedText('');
-                  setModalVisible(true);
-                }}
-              >
-                添加观点
-              </Button>
+              type="text" 
+              icon={<PlusOutlined />} 
+              className={styles.actionButton}
+              onClick={() => {
+                // 点击添加观点按钮时，清空已选节点，直接打开模态框
+                setSelectedNode(null);
+                setSelectedText('');
+                setModalVisible(true);
+              }}
+            >
+              添加观点
+            </Button>
           ) : null}
         </div>
         
@@ -466,24 +472,24 @@ const TemplateSection = ({ isEditable = false, taskId, steps, comments = [], onA
 
       {/* 右侧注释列表 - 只有当有注释数据时才显示 */}
       {mergedComments && mergedComments.length > 0 && (
-      <div className="template-sidebar-container" style={{ 
-        width: '320px', 
-        flexShrink: 0,
-        overflowY: 'auto',
-        backgroundColor: '#fff',
-        borderRadius: '8px' 
-      }}>
-        <CommentsList 
+        <div className="template-sidebar-container" style={{ 
+          width: '320px', 
+          flexShrink: 0,
+          overflowY: 'auto',
+          backgroundColor: '#fff',
+          borderRadius: '8px' 
+        }}>
+          <CommentsList 
             comments={mergedComments}
-          isEditable={isEditable}
-          expandedId={expandedAnnotation}
-          onToggleExpand={setExpandedAnnotation}
-          onMouseEnter={handleMouseEnter}
-          onDelete={handleDeleteAnnotation}
-          contextType="template"
+            isEditable={isEditable}
+            expandedId={expandedAnnotation}
+            onToggleExpand={setExpandedAnnotation}
+            onMouseEnter={handleMouseEnter}
+            onDelete={handleDeleteAnnotation}
+            contextType="template"
             title="模板观点"
-        />
-      </div>
+          />
+        </div>
       )}
 
       {/* 右键菜单 */}

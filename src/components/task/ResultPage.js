@@ -15,6 +15,8 @@ import { OptimizationContext } from '../../contexts/OptimizationContext';
 import CommentsList from '../common/CommentsList';
 import LineChartSection from '../card/LineChartSection';
 import RadarChartSection from '../card/RadarChartSection';
+import LineChartSection from '../card/LineChartSection';
+import RadarChartSection from '../card/RadarChartSection';
 
 const { Option } = Select;
 
@@ -23,15 +25,18 @@ const ResultPage = ({
   enhancedChartData, 
   evaluationData, 
   selectedModels: propSelectedModels, 
+  selectedModels: propSelectedModels, 
   selectedModel,
   expandedModel,
   radarMaxValue,
   handleModelChange: propHandleModelChange,
   handleSelectAll: propHandleSelectAll,
+  handleModelChange: propHandleModelChange,
+  handleSelectAll: propHandleSelectAll,
   toggleModelPanel,
   getModelColor,
   onAddAnnotation,
-  isOptimizeMode = false,
+  isOptimizationMode = false,
   comments = []
 }) => {
   const [annotationModalVisible, setAnnotationModalVisible] = useState(false);
@@ -73,7 +78,6 @@ const ResultPage = ({
   };
   
   const { 
-    isOptimizationMode,
     currentOptimizationStep, 
     currentStepComments,
     addComment,
@@ -97,9 +101,31 @@ const ResultPage = ({
   const modelOptions = useMemo(() => {
     if (stepsData && stepsData.length > 0) {
       return stepsData.map(step => step.agent.toLowerCase().replace(/\s+/g, ''));
+      return stepsData.map(step => step.agent.toLowerCase().replace(/\s+/g, ''));
     }
     return Object.keys(evaluationData || {});
   }, [stepsData, evaluationData]);
+
+  const [selectedModels, setSelectedModels] = useState(modelOptions);
+  React.useEffect(() => {
+    setSelectedModels(modelOptions);
+  }, [JSON.stringify(modelOptions)]);
+
+  const handleModelChange = (values) => {
+    setSelectedModels(values);
+  };
+
+  const handleSelectAll = (checked) => {
+    setSelectedModels(checked ? modelOptions : []);
+  };
+
+  const getModelReason = (step) => {
+    if (!step || !Array.isArray(step.score) || step.score.length === 0) return '暂无描述';
+    const matchedScore = step.score.find(s => s.version === task.version);
+    if (matchedScore && matchedScore.reason) return matchedScore.reason;
+    if (step.score[0] && step.score[0].reason) return step.score[0].reason;
+    return '暂无描述';
+  };
 
   const [selectedModels, setSelectedModels] = useState(modelOptions);
   React.useEffect(() => {
@@ -161,6 +187,7 @@ const ResultPage = ({
           scoreChange: '+0.0',
           credibilityChange: '+0.0',
           reason: getModelReason(selectedStep),
+          reason: getModelReason(selectedStep),
           tags: selectedStep.tags || []
         };
       }
@@ -181,6 +208,7 @@ const ResultPage = ({
       reason: '暂无数据',
       tags: []
     };
+  }, [stepsData, selectedModel, evaluationData, task]);
   }, [stepsData, selectedModel, evaluationData, task]);
 
   const lineChartData = useMemo(() => {
@@ -229,23 +257,44 @@ const ResultPage = ({
   }, [enhancedChartData]);
 
   const enhancedRadar = useMemo(() => {
-    const radarData = task?.chartData?.radar || [];
-    return radarData.map(item => {
-      const radarPoint = {
+    if (!Array.isArray(stepsData) || stepsData.length === 0) {
+      // 如果没有step数据，回退到使用chartData.radar
+      const radarData = task?.chartData?.radar || [];
+      return radarData.map(item => ({
         name: item.name || '未知维度',
         value: Math.round(item.value || 0),
-      };
-      if (Array.isArray(stepsData)) {
-        stepsData.forEach((step, modelIndex) => {
-          if (step && step.agent) {
-            const modelKey = step.agent.toLowerCase().replace(/\s+/g, '');
-            const offset = 0.8 + (modelIndex * 0.05);
-            radarPoint[modelKey] = Math.round(Math.min(100, (item.value || 0) * offset));
-          }
-        });
-      }
-      return radarPoint;
+      }));
+    }
+
+    // 收集所有维度
+    const dimensionMap = {};
+    
+    stepsData.forEach((step) => {
+      if (!step || !Array.isArray(step.score)) return;
+      
+      // 取最新一条score（最后一条）
+      const lastScore = step.score[step.score.length - 1];
+      if (!lastScore || !Array.isArray(lastScore.dimension)) return;
+      
+      const modelKey = step.agent.toLowerCase().replace(/\s+/g, '');
+      
+      lastScore.dimension.forEach(dim => {
+        if (!dim.latitude) return;
+        
+        if (!dimensionMap[dim.latitude]) {
+          dimensionMap[dim.latitude] = {
+            name: dim.latitude,
+            value: 0 // 默认值
+          };
+        }
+        
+        // 将score转换为数字并存储到对应模型的key下
+        const score = typeof dim.score === 'number' ? dim.score : parseFloat(dim.score) || 0;
+        dimensionMap[dim.latitude][modelKey] = Math.round(score);
+      });
     });
+    
+    return Object.values(dimensionMap);
   }, [task, stepsData]);
 
   if (!task || !enhancedChartData || !currentEvaluation) {
@@ -272,11 +321,17 @@ const ResultPage = ({
   // 计算是否有注释列表
   const hasComments = Array.isArray(comments) && comments.length > 0;
 
+  // 计算是否有注释列表
+  const hasComments = Array.isArray(comments) && comments.length > 0;
+
   return (
     <div
       className={`evaluation-charts-wrapper flex gap-2 w-full ${hasComments ? 'justify-between' : ''}`}
     >
       {/* 左侧评估区域 */}
+      <div
+        className={`evaluation-left-section ${hasComments ? 'w-1/3' : 'w-1/2'} flex-shrink-0`}
+      >
       <div
         className={`evaluation-left-section ${hasComments ? 'w-1/3' : 'w-1/2'} flex-shrink-0`}
       >
@@ -330,6 +385,7 @@ const ResultPage = ({
                 name: step.agent,
                 tags: step.tags || [],
                 reason: getModelReason(step)
+                reason: getModelReason(step)
               } : evaluationData[modelKey];
               
               if (!modelData) return null;
@@ -344,6 +400,19 @@ const ResultPage = ({
                       <div className="model-info">
                         <div className="model-name" style={{ fontSize: "14px" }}>
                             {modelData.name || 'Unknown Model'}
+                          <span className="model-tags" style={{ gap: "4px", marginLeft: "4px" }}>
+                            <span className="model-tag" style={{ padding: "0 4px", fontSize: "11px" }}>
+                              {
+                                (() => {
+                                  const step = stepsData.find(s => s.agent && s.agent.toLowerCase().replace(/\s+/g, '') === modelKey);
+                                  const consumed = step && Array.isArray(step.score) && step.score[0]
+                                    ? step.score[0].consumed_points
+                                    : undefined;
+                                  return consumed !== undefined ? `${consumed} tokens` : '未知消耗';
+                                })()
+                              }
+                            </span>
+                          </span>
                           <span className="model-tags" style={{ gap: "4px", marginLeft: "4px" }}>
                             <span className="model-tag" style={{ padding: "0 4px", fontSize: "11px" }}>
                               {
@@ -392,6 +461,9 @@ const ResultPage = ({
       <div
         className={`evaluation-right-section flex flex-col gap-1 ${hasComments ? 'w-1/3' : 'w-1/2'} flex-shrink-0`}
       >
+      <div
+        className={`evaluation-right-section flex flex-col gap-1 ${hasComments ? 'w-1/3' : 'w-1/2'} flex-shrink-0`}
+      >
         <div className="line-chart-section" style={{ padding: "8px" }}>
           <div className="chart-legend" style={{ marginBottom: "8px", gap: "8px" }}>
             {Array.isArray(selectedModels) && selectedModels.map(modelKey => {
@@ -417,6 +489,15 @@ const ResultPage = ({
               showLinearGradient={true}
               selectedModels={selectedModels}
             />
+            <LineChartSection 
+              card={{
+                ...task,
+                step: task.step,
+                chartData: { line: lineChartData }
+              }} 
+              showLinearGradient={true}
+              selectedModels={selectedModels}
+            />
           </div>
         </div>
 
@@ -425,19 +506,18 @@ const ResultPage = ({
             <div className="metric-item" style={{ padding: "8px" }}>
               <div className="metric-label" style={{ fontSize: "12px", marginBottom: "4px" }}>综合得分</div>
               <div className="metric-value" style={{ fontSize: "20px" }}>
-                {typeof currentEvaluation?.credibility === 'number' ? 
-                  `${Math.round(currentEvaluation?.credibility)}%` : `75%`}
+                 { Math.round(task?.score)}
               </div>
               <div className={`metric-change ${typeof currentEvaluation?.credibilityChange === 'string' && currentEvaluation?.credibilityChange?.startsWith("+") ? "positive" : "negative"}`} style={{ fontSize: "12px" }}>
-                {typeof currentEvaluation?.credibilityChange === 'string' ? currentEvaluation?.credibilityChange : '0'}
+                {typeof currentEvaluation?.scoreChange === 'string' ? currentEvaluation?.scoreChange : '0'}
               </div>
             </div>
 
             <div className="metric-item" style={{ padding: "8px" }}>
-              <div className="metric-label" style={{ fontSize: "12px", marginBottom: "4px" }}>各维度得分</div>
-              <div className="metric-value" style={{ fontSize: "20px" }}>{formatScore(currentEvaluation?.score)}</div>
+              <div className="metric-label" style={{ fontSize: "12px", marginBottom: "4px" }}>可信度得分</div>
+              <div className="metric-value" style={{ fontSize: "20px" }}>{formatScore(task?.credibility)}%</div>
               <div className={`metric-change ${typeof currentEvaluation?.scoreChange === 'string' && currentEvaluation?.scoreChange?.startsWith("+") ? "positive" : "negative"}`} style={{ fontSize: "12px" }}>
-                {typeof currentEvaluation?.scoreChange === 'string' ? currentEvaluation?.scoreChange : '0'}
+                {typeof currentEvaluation?.credibilityChange === 'string' ? currentEvaluation?.credibilityChange : '0'}
               </div>
             </div>
           </div>
@@ -495,4 +575,4 @@ const ResultPage = ({
   );
 };
 
-export default ResultPage; 
+export default ResultPage;

@@ -249,7 +249,7 @@ console.log("scenarioData",scenarioData)
       } else {
         addComment(annotationData);
         message.success('注释已添加');
-    }
+      }
       setModalVisible(false);
       setContextMenu(null);
     } catch (error) {
@@ -424,15 +424,14 @@ console.log("scenarioData",scenarioData)
   };
 
   // 合并props.comments和card.annotation.scene，去重
-  console.log("card",card)
-  console.log("comments",comments)
   const taskAnnotations = Array.isArray(card?.annotation?.scene) ? card.annotation.scene : [];
-
+  const filteredComments = Array.isArray(comments)
+    ? comments.filter(item => item.step === 'scene')
+    : [];
   const mergedComments = [
     ...taskAnnotations,
-    ...comments.filter(c => !taskAnnotations.some(t => t.id === c.id))
+    ...filteredComments.filter(c => !taskAnnotations.some(t => t.id === c.id))
   ];
-  console.log("mergedComments",mergedComments)
 
   if (loading) {
     return (
@@ -496,24 +495,24 @@ console.log("scenarioData",scenarioData)
 
       {/* 右侧注释列表 - 只有当有注释数据时才显示 */}
       {mergedComments && mergedComments.length > 0 && (
-      <div className="scene-sidebar-container" style={{ 
-        width: '320px', 
-        flexShrink: 0,
-        overflowY: 'auto',
-        backgroundColor: '#fff',
-        borderRadius: '8px'
-      }}>
-        <CommentsList 
-          comments={mergedComments} 
-          isEditable={isEditable}
-          expandedId={expandedAnnotation}
-          onToggleExpand={setExpandedAnnotation}
-          onMouseEnter={handleMouseEnter}
-          onDelete={handleDeleteAnnotation}
-          contextType="node"
+        <div className="scene-sidebar-container" style={{ 
+          width: '320px', 
+          flexShrink: 0,
+          overflowY: 'auto',
+          backgroundColor: '#fff',
+          borderRadius: '8px'
+        }}>
+          <CommentsList 
+            comments={mergedComments} 
+            isEditable={isEditable}
+            expandedId={expandedAnnotation}
+            onToggleExpand={setExpandedAnnotation}
+            onMouseEnter={handleMouseEnter}
+            onDelete={handleDeleteAnnotation}
+            contextType="node"
             title="场景观点"
-        />
-      </div>
+          />
+        </div>
       )}
 
       {/* 右键菜单 */}
