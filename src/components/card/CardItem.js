@@ -53,7 +53,7 @@ const CardItem = ({ card }) => {
     return {
       id: card.id || '',
       title: card.prompt || '',
-      summary: card.summary || card.response_summary || '',
+      summary: card.summary || card.response || '',
       author: {
         name: card.author?.name || card.created_by || '',
         avatar: card.author?.avatar || null,
@@ -98,7 +98,7 @@ const CardItem = ({ card }) => {
   const [completeCardData, setCompleteCardData] = useState({
     ...safeCard,
     questionDescription: safeCard.prompt || "基于卡片创建的问题描述。\n\n请在此处描述您想要测试或评估的内容。",
-    answerDescription: safeCard.response_summary || safeCard.summary || "基于卡片创建的答案描述。\n\n请在此处描述预期的测试结果或评估标准。"
+    answerDescription: safeCard.response || safeCard.summary || "基于卡片创建的答案描述。\n\n请在此处描述预期的测试结果或评估标准。"
   })
 
   const toggleRadarChart = () => {
@@ -110,11 +110,11 @@ const CardItem = ({ card }) => {
 
   const handleBranchClimbClick = () => {
     // 在点击"分支为新任务"按钮时，构建一个包含完整数据的对象
-    // 正确映射字段名：问题描述(questionDescription)对应prompt，回答描述(answerDescription)对应response_summary
+    // 正确映射字段名：问题描述(questionDescription)对应prompt，回答描述(answerDescription)对应response
     const newCompleteCardData = {
       ...safeCard,
       questionDescription: safeCard.prompt || "基于卡片创建的问题描述。\n\n请在此处描述您想要测试或评估的内容。",
-      answerDescription: safeCard.response_summary || safeCard.summary || "基于卡片创建的答案描述。\n\n请在此处描述预期的测试结果或评估标准。"
+      answerDescription: safeCard.response || safeCard.summary || "基于卡片创建的答案描述。\n\n请在此处描述预期的测试结果或评估标准。"
     };
     // 更新状态
     setCompleteCardData(newCompleteCardData)
@@ -257,7 +257,7 @@ const CardItem = ({ card }) => {
 
             {/* Dimension score link */}
             <div className="dimension-link" onClick={toggleRadarChart}>
-              <span>{showRadarChart ? "收起" : "各维度得分"}</span>
+              <span>{showRadarChart ? "收起" : "可信度得分"}</span>
               <span className="dimension-arrow">{showRadarChart ? "←" : "→"}</span>
             </div>
           </div>
@@ -266,7 +266,7 @@ const CardItem = ({ card }) => {
         {showRadarChart && ( <div className="card-right-section">
          
             <div className="radar-chart-container">
-              <div className="radar-chart-title">各维度得分</div>
+              <div className="radar-chart-title">可信度得分</div>
               <div className="radar-chart">
                 <RadarChartSection radarData={generateUniqueRadarData} maxValue={radarMaxValue} />
               </div>

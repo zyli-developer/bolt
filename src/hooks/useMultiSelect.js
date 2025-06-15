@@ -459,7 +459,7 @@ const useMultiSelect = (containerRef) => {
   const handleAutoSelection = useCallback(() => {
     const current = getCurrentSelection();
     if (!current) return;
-
+    
     if (isMultiSelectActive || isMultiSelectTempMode) {
       if (!selectedTexts.includes(current.text)) {
         setSelectedTexts(prev => [...prev, current.text]);

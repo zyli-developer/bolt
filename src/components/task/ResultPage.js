@@ -15,8 +15,6 @@ import { OptimizationContext } from '../../contexts/OptimizationContext';
 import CommentsList from '../common/CommentsList';
 import LineChartSection from '../card/LineChartSection';
 import RadarChartSection from '../card/RadarChartSection';
-import LineChartSection from '../card/LineChartSection';
-import RadarChartSection from '../card/RadarChartSection';
 
 const { Option } = Select;
 
@@ -25,12 +23,9 @@ const ResultPage = ({
   enhancedChartData, 
   evaluationData, 
   selectedModels: propSelectedModels, 
-  selectedModels: propSelectedModels, 
   selectedModel,
   expandedModel,
   radarMaxValue,
-  handleModelChange: propHandleModelChange,
-  handleSelectAll: propHandleSelectAll,
   handleModelChange: propHandleModelChange,
   handleSelectAll: propHandleSelectAll,
   toggleModelPanel,
@@ -106,40 +101,6 @@ const ResultPage = ({
     return Object.keys(evaluationData || {});
   }, [stepsData, evaluationData]);
 
-  const [selectedModels, setSelectedModels] = useState(modelOptions);
-  React.useEffect(() => {
-    setSelectedModels(modelOptions);
-  }, [JSON.stringify(modelOptions)]);
-
-  const handleModelChange = (values) => {
-    setSelectedModels(values);
-  };
-
-  const handleSelectAll = (checked) => {
-    setSelectedModels(checked ? modelOptions : []);
-  };
-
-  const getModelReason = (step) => {
-    if (!step || !Array.isArray(step.score) || step.score.length === 0) return '暂无描述';
-    const matchedScore = step.score.find(s => s.version === task.version);
-    if (matchedScore && matchedScore.reason) return matchedScore.reason;
-    if (step.score[0] && step.score[0].reason) return step.score[0].reason;
-    return '暂无描述';
-  };
-
-  const [selectedModels, setSelectedModels] = useState(modelOptions);
-  React.useEffect(() => {
-    setSelectedModels(modelOptions);
-  }, [JSON.stringify(modelOptions)]);
-
-  const handleModelChange = (values) => {
-    setSelectedModels(values);
-  };
-
-  const handleSelectAll = (checked) => {
-    setSelectedModels(checked ? modelOptions : []);
-  };
-
   const getModelReason = (step) => {
     if (!step || !Array.isArray(step.score) || step.score.length === 0) return '暂无描述';
     const matchedScore = step.score.find(s => s.version === task.version);
@@ -208,7 +169,6 @@ const ResultPage = ({
       reason: '暂无数据',
       tags: []
     };
-  }, [stepsData, selectedModel, evaluationData, task]);
   }, [stepsData, selectedModel, evaluationData, task]);
 
   const lineChartData = useMemo(() => {
@@ -321,17 +281,11 @@ const ResultPage = ({
   // 计算是否有注释列表
   const hasComments = Array.isArray(comments) && comments.length > 0;
 
-  // 计算是否有注释列表
-  const hasComments = Array.isArray(comments) && comments.length > 0;
-
   return (
     <div
       className={`evaluation-charts-wrapper flex gap-2 w-full ${hasComments ? 'justify-between' : ''}`}
     >
       {/* 左侧评估区域 */}
-      <div
-        className={`evaluation-left-section ${hasComments ? 'w-1/3' : 'w-1/2'} flex-shrink-0`}
-      >
       <div
         className={`evaluation-left-section ${hasComments ? 'w-1/3' : 'w-1/2'} flex-shrink-0`}
       >
@@ -349,15 +303,15 @@ const ResultPage = ({
               }}>评估结果</span>
               <Select
                 mode="multiple"
-                value={selectedModels || []}
-                onChange={handleModelChange}
+                value={propSelectedModels || []}
+                onChange={propHandleModelChange}
                 className="model-selector"
                 maxTagCount={2}
                 maxTagTextLength={10}
                 dropdownRender={(menu) => (
                   <>
-                    <div className="select-all-option" onClick={() => handleSelectAll(selectedModels?.length < modelOptions?.length)} style={{ padding: "4px 8px" }}>
-                      <Checkbox checked={selectedModels?.length === modelOptions?.length}>
+                    <div className="select-all-option" onClick={() => propHandleSelectAll(propSelectedModels?.length < modelOptions?.length)} style={{ padding: "4px 8px" }}>
+                      <Checkbox checked={propSelectedModels?.length === modelOptions?.length}>
                         全选
                       </Checkbox>
                     </div>
@@ -378,13 +332,12 @@ const ResultPage = ({
           </div>
 
           <div className="evaluation-model-info" style={{ gap: "4px" }}>
-            {Array.isArray(selectedModels) && selectedModels.map(modelKey => {
+            {Array.isArray(propSelectedModels) && propSelectedModels.map(modelKey => {
               const step = stepsData.find(s => s.agent.toLowerCase().replace(/\s+/g, '') === modelKey);
               
               const modelData = step ? {
                 name: step.agent,
                 tags: step.tags || [],
-                reason: getModelReason(step)
                 reason: getModelReason(step)
               } : evaluationData[modelKey];
               
@@ -400,19 +353,6 @@ const ResultPage = ({
                       <div className="model-info">
                         <div className="model-name" style={{ fontSize: "14px" }}>
                             {modelData.name || 'Unknown Model'}
-                          <span className="model-tags" style={{ gap: "4px", marginLeft: "4px" }}>
-                            <span className="model-tag" style={{ padding: "0 4px", fontSize: "11px" }}>
-                              {
-                                (() => {
-                                  const step = stepsData.find(s => s.agent && s.agent.toLowerCase().replace(/\s+/g, '') === modelKey);
-                                  const consumed = step && Array.isArray(step.score) && step.score[0]
-                                    ? step.score[0].consumed_points
-                                    : undefined;
-                                  return consumed !== undefined ? `${consumed} tokens` : '未知消耗';
-                                })()
-                              }
-                            </span>
-                          </span>
                           <span className="model-tags" style={{ gap: "4px", marginLeft: "4px" }}>
                             <span className="model-tag" style={{ padding: "0 4px", fontSize: "11px" }}>
                               {
@@ -461,12 +401,9 @@ const ResultPage = ({
       <div
         className={`evaluation-right-section flex flex-col gap-1 ${hasComments ? 'w-1/3' : 'w-1/2'} flex-shrink-0`}
       >
-      <div
-        className={`evaluation-right-section flex flex-col gap-1 ${hasComments ? 'w-1/3' : 'w-1/2'} flex-shrink-0`}
-      >
         <div className="line-chart-section" style={{ padding: "8px" }}>
           <div className="chart-legend" style={{ marginBottom: "8px", gap: "8px" }}>
-            {Array.isArray(selectedModels) && selectedModels.map(modelKey => {
+            {Array.isArray(propSelectedModels) && propSelectedModels.map(modelKey => {
               const step = stepsData.find(s => s.agent.toLowerCase().replace(/\s+/g, '') === modelKey);
               const displayName = step ? step.agent : (evaluationData[modelKey]?.name || modelKey);
               
@@ -487,17 +424,8 @@ const ResultPage = ({
                 chartData: { line: lineChartData }
               }} 
               showLinearGradient={true}
-              selectedModels={selectedModels}
-            />
-            <LineChartSection 
-              card={{
-                ...task,
-                step: task.step,
-                chartData: { line: lineChartData }
-              }} 
-              showLinearGradient={true}
-              selectedModels={selectedModels}
-            />
+              selectedModels={propSelectedModels}
+                  />
           </div>
         </div>
 
@@ -525,7 +453,7 @@ const ResultPage = ({
           <div className="radar-chart-content" style={{ height: "220px" }}>
             <RadarChartSection 
               radarData={enhancedRadar}
-              modelKeys={selectedModels}
+              modelKeys={propSelectedModels}
               maxValue={calculatedRadarMaxValue}
               height={220}
                   />
@@ -534,7 +462,7 @@ const ResultPage = ({
       </div>
 
       {/* 右侧注释列表 - 仅在优化模式下显示且有注释数据时显示 */}
-      {isOptimizeMode && hasComments && (
+      {isOptimizationMode && hasComments && (
         <div className="comments-section w-1/3 flex-shrink-0 bg-[var(--color-bg-container)] rounded-lg max-h-[calc(100vh-320px)] overflow-hidden">
             <CommentsList 
             comments={comments} 
@@ -549,7 +477,7 @@ const ResultPage = ({
           )}
 
       {/* 非优化模式下显示传递的评论 */}
-      {!isOptimizeMode && hasComments && (
+      {!isOptimizationMode && hasComments && (
         <div className="comments-section w-1/3 flex-shrink-0 bg-[var(--color-bg-container)] rounded-lg max-h-[calc(100vh-320px)] overflow-auto">
           <CommentsList 
             comments={comments} 
@@ -575,4 +503,4 @@ const ResultPage = ({
   );
 };
 
-export default ResultPage;
+export default ResultPage; 

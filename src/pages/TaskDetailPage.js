@@ -96,16 +96,16 @@ const TaskDetailPage = () => {
   const STEP_TYPE_TO_INDEX = {
     'result': 0,
     'qa': 1,
-    'scene': 2,
-    'template': 3,
+    'scenario': 2,
+    'flow': 3,
     'retest': 4,
     'submit': 5
   };
   const INDEX_TO_STEP_TYPE = {
     0: 'result',
     1: 'qa',
-    2: 'scene',
-    3: 'template',
+    2: 'scenario',
+    3: 'flow',
     4: 'retest',
     5: 'submit'
   };
@@ -247,17 +247,19 @@ const TaskDetailPage = () => {
   // 添加注释到任务中的方法
   const addAnnotationToTask = (newAnnotation, stepType) => {
     if (!task || !newAnnotation) return;
-    // 兼容step参数
-    const category = stepType || newAnnotation.step || 'result';
+    // 只允许四个分类，强制映射
+    let category = stepType || newAnnotation.step || 'result';
+    if (category === 'scenario') category = 'scenario';
+    if (category === 'flow' || category === 'flow_config') category = 'flow';
+    if (![ 'result', 'qa', 'scenario', 'flow' ].includes(category)) category = 'result';
     const updatedAnnotation = task.annotation ? { ...task.annotation } : {
       result: [], qa: [], scenario: [], flow: []
     };
     if (!updatedAnnotation[category]) updatedAnnotation[category] = [];
-    updatedAnnotation[category].push(newAnnotation);
+    updatedAnnotation[category].push({ ...newAnnotation, step: category });
     const updatedTask = { ...task, annotation: updatedAnnotation };
     setTask(updatedTask);
     setAnnotationData(updatedAnnotation);
-    // 可选：调用API更新服务器上的任务数据
     try { taskService.updateTask(id, updatedTask); } catch {}
   };
 
@@ -700,24 +702,24 @@ const TaskDetailPage = () => {
               taskId={task?.id}
               prompt={task?.prompt} 
               response={task?.response}
-              comments={task?.annotation?.qa || []}
+              comments={currentStepComments}
               onAddAnnotation={addAnnotationToTask}
             />
           </div>
         );
-      case 'scene':
+      case 'scenario':
         return (
           <div className="scene-section">
             <SceneSection 
               isEditable={false} 
               taskId={task?.id}
               scenario={task?.scenario}
-              comments={task?.annotation?.scenario || []}
+              comments={currentStepComments}
               onAddAnnotation={addAnnotationToTask}
             />
           </div>
         );
-      case 'template':
+      case 'flow':
         return (
           <div className="template-section">
             <TemplateSection 
@@ -725,7 +727,7 @@ const TaskDetailPage = () => {
               taskId={task?.id}
               card={task}
               steps={task?.templateData ? { templateData: task.templateData, ...task?.step } : task?.step}
-              comments={task?.annotation?.flow || []}
+              comments={currentStepComments}
               onAddAnnotation={addAnnotationToTask}
             />
           </div>
@@ -775,10 +777,10 @@ const TaskDetailPage = () => {
       // 根据步骤切换页面
       switch (nextStep) {
         case 2:
-          setActiveSection('scene');
+          setActiveSection('scenario');
           break;
         case 3:
-          setActiveSection('template');
+          setActiveSection('flow');
           break;
         case 4:
           setActiveSection('confirm');
@@ -970,10 +972,10 @@ const TaskDetailPage = () => {
           setActiveSection('qa');
           break;
         case 2:
-          setActiveSection('scene');
+          setActiveSection('scenario');
           break;
         case 3:
-          setActiveSection('template');
+          setActiveSection('flow');
           break;
         case 4:
           setActiveSection('confirm');
@@ -1262,7 +1264,7 @@ const TaskDetailPage = () => {
             size="large"
             onClick={() => {
               setCurrentStep(3);
-              setActiveSection('template');
+              setActiveSection('flow');
             }}
             className={styles.flexButton}
           >
@@ -1297,10 +1299,10 @@ const TaskDetailPage = () => {
                   setActiveSection('qa');
                   break;
                 case 2:
-                  setActiveSection('scene');
+                  setActiveSection('scenario');
                   break;
                 case 3:
-                  setActiveSection('template');
+                  setActiveSection('flow');
                   break;
                 default:
                   break;
@@ -1432,14 +1434,25 @@ const TaskDetailPage = () => {
 
   // 添加观点modal保存
   const handleSaveAnnotation = (data) => {
+    // 统一注释数据结构，直接用 currentOptimizationStep 作为注释分类
     const annotationData = {
       ...data,
-      selectedText: selectedModalText,
-      id: `comment-${Date.now()}`,
-      time: new Date().toISOString(),
-      step: currentOptimizationStep
+      id: data.id || `comment-${Date.now()}`,
+      text: data.text || data.content || '', // 兼容content字段
+      summary: data.summary || (data.text ? (data.text.length > 20 ? data.text.substring(0, 20) + '...' : data.text) : ''),
+      selectedText: data.selectedText || selectedModalText || '',
+      step: currentOptimizationStep, // 直接用，无需映射
+      author: {
+        name: '当前用户',
+        avatar: 'U'
+      },
+      time: data.time || new Date().toLocaleString(),
+      attachments: data.attachments || [],
     };
+
     addComment(annotationData);
+    addAnnotationToTask(annotationData, annotationData.step);
+
     setAnnotationModalVisible(false);
     setSelectedModalText('');
     message.success('添加成功');
@@ -1532,8 +1545,8 @@ const TaskDetailPage = () => {
   const renderOptimizeContent = () => {
     const step = currentOptimizationStep;
     let contextTypeForStep = 'text';
-    if (step === 'scene') contextTypeForStep = 'scene';
-    if (step === 'template') contextTypeForStep = 'template';
+    if (step === 'scenario') contextTypeForStep = 'scenario';
+    if (step === 'flow') contextTypeForStep = 'flow';
     return (
       <div
         style={{ width: '100%', height: '100%' }}
@@ -1572,26 +1585,26 @@ const TaskDetailPage = () => {
                 taskId={task?.id}
                 prompt={task?.prompt}
                 response={task?.response}
-                comments={task?.annotation?.qa || []}
+                comments={currentStepComments}
                 onAddAnnotation={addAnnotationToTask}
               />;
-            case 'scene':
+            case 'scenario':
               return <SceneSection 
                 ref={sceneSectionRef}
                 isEditable={true}
                 taskId={task?.id}
                 scenario={task?.scenario}
-                comments={task?.annotation?.scenario || []}
+                comments={currentStepComments}
                 onAddAnnotation={addAnnotationToTask}
               />;
-            case 'template':
+            case 'flow':
               return <TemplateSection 
                 ref={templateSectionRef}
                 isEditable={true}
                 taskId={task?.id}
                 card={task}
                 steps={task?.templateData ? { templateData: task.templateData, ...task?.step } : task?.step}
-                comments={task?.annotation?.flow || []}
+                comments={currentStepComments}
                 onAddAnnotation={addAnnotationToTask}
               />;
             case 'retest':
@@ -1608,14 +1621,14 @@ const TaskDetailPage = () => {
                 SceneSection={SceneSection}
                 TemplateSection={TemplateSection}
                 annotationColumns={taskAnnotationData.columns}
-                annotationData={comments}
-                isOptimizationMode={isOptimizationMode}
                 annotationData={task?.annotation || {
                   result: [],
                   qa: [],
                   scenario: [],
                   flow: []
                 }}
+                isOptimizationMode={isOptimizationMode}
+           
               />;
             case 'submit':
               return <SubmitResultSection task={task} />;
@@ -1649,8 +1662,8 @@ const TaskDetailPage = () => {
           initialContent={selectedModalText}
           step={(() => {
             if (step === 'qa') return 'qa';
-            if (step === 'scene') return 'scene';
-            if (step === 'template') return 'template';
+            if (step === 'scenario') return 'scenario';
+            if (step === 'flow') return 'flow';
             return 'result';
           })()}
           nodeId={null}
@@ -1703,7 +1716,7 @@ const TaskDetailPage = () => {
 
   // 优化模式下：上一步
   const handlePrevStep = () => {
-    const stepOrder = ['result', 'qa', 'scene', 'template', 'retest', 'submit'];
+    const stepOrder = ['result', 'qa', 'scenario', 'flow', 'retest', 'submit'];
     const idx = stepOrder.indexOf(currentOptimizationStep);
     if (idx > 0) {
       setCurrentOptimizationStep(stepOrder[idx - 1]);
@@ -1722,7 +1735,7 @@ const TaskDetailPage = () => {
   // 优化模式下：保存并进入下一步
   const saveAndNext = () => {
     saveCurrentData();
-    const stepOrder = ['result', 'qa', 'scene', 'template', 'retest', 'submit'];
+    const stepOrder = ['result', 'qa', 'scenario', 'flow', 'retest', 'submit'];
     const idx = stepOrder.indexOf(currentOptimizationStep);
     if (idx < stepOrder.length - 1) {
       setCurrentOptimizationStep(stepOrder[idx + 1]);
@@ -2352,8 +2365,8 @@ const handleStartTest = () => {
                 {[
                   { key: 'overview', label: '概览' },
                   { key: 'qa', label: 'QA' },
-                  { key: 'scene', label: '场景' },
-                  { key: 'template', label: '模板' },
+                  { key: 'scenario', label: '场景' },
+                  { key: 'flow', label: '模板' },
                   // 当任务状态为completed时才显示结果选项
                   ...(task.status === 'running' || task.status === 'completed' ? [{ key: 'result', label: '结果' }] : [])
                 ].map((item) => (

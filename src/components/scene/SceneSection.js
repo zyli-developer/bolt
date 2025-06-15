@@ -47,7 +47,7 @@ const SceneSection = ({ isEditable = false, taskId, result, scenario, comments =
 
   // 优先使用 card?.scenario 作为 scenario 数据源
   const scenarioData = card?.scenario || scenario;
-console.log("scenarioData",scenarioData)
+
   useEffect(() => {
     // 如果提供了 scenarioData 参数，则使用它，否则从服务获取数据
     if (scenarioData) {
@@ -134,7 +134,7 @@ console.log("scenarioData",scenarioData)
       setLoading(false);
     } 
     // 如果没有props传入comments但有来自上下文的数据，且当前为场景优化步骤，则使用上下文数据
-    else if (currentOptimizationStep === 'scene' && currentStepComments && currentStepComments.length > 0) {
+    else if (currentOptimizationStep === 'scenario' && currentStepComments && currentStepComments.length > 0) {
       setLoading(false);
     }
   }, [comments, currentOptimizationStep, currentStepComments]);
@@ -169,10 +169,10 @@ console.log("scenarioData",scenarioData)
   const fetchAnnotations = async () => {
     try {
       const data = await annotationService.getAnnotations();
-      
+      console.log('[SceneSection] fetchAnnotations', data);
       // 将获取到的注释也同步到全局状态
-      if (currentOptimizationStep === 'scene') {
-        setStepComments('scene', data);
+      if (currentOptimizationStep === 'scenario') {
+        setStepComments('scenario', data);
       }
     } catch (error) {
       message.error('获取注释失败');
@@ -236,12 +236,12 @@ console.log("scenarioData",scenarioData)
     }
   };
 
-  const handleSaveAnnotation = async (data, annotationType = 'scene') => {
+  const handleSaveAnnotation = async (data, annotationType = 'scenario') => {
     try {
       let annotationData = {
         ...data,
         nodeId: selectedNode?.id,
-        step: 'scene',
+        step: 'scenario',
         id: `scene-annotation-${Date.now()}`
       };
       if (onAddAnnotation) {
@@ -262,8 +262,8 @@ console.log("scenarioData",scenarioData)
     try {
       await annotationService.deleteAnnotation(id);
       // 只操作全局
-      if (currentOptimizationStep === 'scene') {
-        setStepComments('scene', comments.filter(item => item.id !== id));
+      if (currentOptimizationStep === 'scenario') {
+        setStepComments('scenario', comments.filter(item => item.id !== id));
       }
       message.success('删除注释成功');
     } catch (error) {
@@ -422,12 +422,13 @@ console.log("scenarioData",scenarioData)
       </div>
     );
   };
-
-  // 合并props.comments和card.annotation.scene，去重
-  const taskAnnotations = Array.isArray(card?.annotation?.scene) ? card.annotation.scene : [];
+  console.log('[SceneSection] card', card);
+  const taskAnnotations = Array.isArray(card?.annotation?.scenario) ? card.annotation.scenario : [];
   const filteredComments = Array.isArray(comments)
-    ? comments.filter(item => item.step === 'scene')
+    ? comments.filter(item => item.step === 'scenario')
     : [];
+  console.log('[SceneSection] filteredComments', filteredComments);
+  console.log('[SceneSection] taskAnnotations', taskAnnotations);
   const mergedComments = [
     ...taskAnnotations,
     ...filteredComments.filter(c => !taskAnnotations.some(t => t.id === c.id))
@@ -522,7 +523,7 @@ console.log("scenarioData",scenarioData)
           y={contextMenu.y}
           onAction={handleContextMenuAction}
           onClose={() => setContextMenu(null)}
-          contextType="scene"
+          contextType="scenario"
         />
       )}
 
@@ -536,7 +537,7 @@ console.log("scenarioData",scenarioData)
         onSave={handleSaveAnnotation}
         selectedText={selectedNode?.data.label || selectedText || ''}
         initialContent={selectedNode?.data.label || selectedText || ''}
-        step="scene"
+        step="scenario"
         nodeId={selectedNode?.id} // 传递选中节点的ID
       />
 

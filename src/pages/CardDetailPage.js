@@ -71,8 +71,8 @@ const STEP_TITLES = [
 const STEP_TYPE_TO_INDEX = {
   'result': 0,
   'qa': 1,
-  'scene': 2,
-  'template': 3,
+  'scenario': 2,
+  'flow': 3,
   'retest': 4,
   'submit': 5
 };
@@ -104,51 +104,53 @@ const OptimizationSteps = ({ currentStep, onStepChange }) => {
 };
 
 // QA优化界面组件
-const QAOptimizationSection = ({ card }) => {
-  return (
-    <div className="qa-optimization-content" style={{ width: "100%" }}>
-      <QASection 
-        isEditable={true} 
-        taskId={card?.id}
-        card={card}
-        prompt={card?.prompt} 
-        response={card?.response } 
-        comments={card?.annotations?.qa || []}
-      />
-    </div>
-  );
-};
+// const QAOptimizationSection = ({ card, comments }) => {
+//   return (
+//     <div className="qa-optimization-content" style={{ width: "100%" }}>
+//       <QASection 
+//         isEditable={true} 
+//         taskId={card?.id}
+//         card={card}
+//         prompt={card?.prompt} 
+//         response={card?.response } 
+//         comments={comments} // 传递 currentStepComments
+//       />
+//     </div>
+//   );
+// };
 
 // 场景优化界面组件
-const SceneOptimizationSection = ({ card }) => {
-  return (
-    <div className="scene-optimization-content" style={{ width: "100%" }}>
-      <SceneSection 
-        isEditable={true} 
-        taskId={card?.id}
-        scenario={card?.scenario} 
-        comments={card?.annotations?.scenario || []}
-        card={card}
-      />
-    </div>
-  );
-};
+// const SceneOptimizationSection = ({ card }) => {
+//   console.log('SceneOptimizationSection', card);
+//   return (
+//     <div className="scene-optimization-content" style={{ width: "100%" }}>
+//       <SceneSection 
+//         isEditable={true} 
+//         taskId={card?.id}
+//         scenario={card?.scenario} 
+//         comments={card?.annotation?.scenario || []} // 统一用 annotation
+//         card={card}
+//         onAddAnnotation={addAnnotationToTask} // 修复：传递注释添加方法
+//       />
+//     </div>
+//   );
+// };
 
 // 模板优化界面组件
-const TemplateOptimizationSection = ({ card }) => {
-  console.log('TemplateOptimizationSection', card);
-  return (
-    <div className="template-optimization-content" style={{ width: "100%" }}>
-      <TemplateSection 
-        isEditable={true} 
-        taskId={card?.id}
-        steps={card?.flow_config ? { templateData: card.flow_config, ...card?.step } : card?.step} 
-        comments={card?.annotations?.flow || []}
-        card={card}
-      />
-    </div>
-  );
-};
+// const TemplateOptimizationSection = ({ card }) => {
+//   console.log('TemplateOptimizationSection', card);
+//   return (
+//     <div className="template-optimization-content" style={{ width: "100%" }}>
+//       <TemplateSection 
+//         isEditable={true} 
+//         taskId={card?.id}
+//         steps={card?.flow_config ? { flow: card.flow_config, ...card?.step } : card?.step} 
+//         comments={card?.annotation?.flow || []} // 统一用 annotation
+//         card={card}
+//       />
+//     </div>
+//   );
+// };
 
 
 
@@ -285,12 +287,12 @@ const CardDetailPage = () => {
         nextStep = 'qa';
         break;
       case 'qa':
-        nextStep = 'scene';
+        nextStep = 'scenario';
         break;
-      case 'scene':
-        nextStep = 'template';
+      case 'scenario':
+        nextStep = 'flow';
         break;
-      case 'template':
+      case 'flow':
         nextStep = 'retest';
         break;
       case 'retest':
@@ -316,10 +318,10 @@ const CardDetailPage = () => {
         stepType = 'qa';
         break;
       case 2:
-        stepType = 'scene';
+        stepType = 'scenario';
         break;
       case 3:
-        stepType = 'template';
+        stepType = 'flow';
         break;
       case 4:
         stepType = 'retest';
@@ -372,14 +374,14 @@ const CardDetailPage = () => {
       case 'qa':
         prevStep = 'result';
         break;
-      case 'scene':
+      case 'scenario':
         prevStep = 'qa';
         break;
-      case 'template':
-        prevStep = 'scene';
+      case 'flow':
+        prevStep = 'scenario';
         break;
       case 'retest':
-        prevStep = 'template';
+        prevStep = 'flow';
         break;
       case 'submit':
         prevStep = 'retest';
@@ -412,18 +414,18 @@ const CardDetailPage = () => {
         // 检查ID格式，确定使用哪个API获取数据
         // 如果ID是数字格式（如"1001"），则使用getExplorationDetail
         
-        // 获取探索详情
-        console.log(`正在获取ID为 ${id} 的探索详情...`);
-        const response = await cardService.getExplorationDetail(id);
-        
-        // 确保我们使用正确的数据结构 - 从response.exploration中获取数据
-        cardData = response.exploration || response;
-        
-        // 从response中获取模型评估数据
-        evaluationData = response.evaluationData || {};
-        
-        console.log(`获取到的探索详情数据:`, cardData);
-        console.log(`获取到的模型评估数据:`, evaluationData);
+          // 获取探索详情
+          console.log(`正在获取ID为 ${id} 的探索详情...`);
+          const response = await cardService.getExplorationDetail(id);
+          
+          // 确保我们使用正确的数据结构 - 从response.exploration中获取数据
+          cardData = response.exploration || response;
+          
+          // 从response中获取模型评估数据
+          evaluationData = response.evaluationData || {};
+          
+          console.log(`获取到的探索详情数据:`, cardData);
+          console.log(`获取到的模型评估数据:`, evaluationData);
         
         // 确保templateData正确设置
         if (!cardData.templateData && cardData.step) {
@@ -480,9 +482,9 @@ const CardDetailPage = () => {
         
         // 设置注释数据，确保正确使用task.annotations中的对应字段
         if (isFromExplore || id) {
-          // 确保annotations对象存在，如果不存在则创建一个空的
-          if (!cardData.annotations) {
-            cardData.annotations = {
+          // 确保 annotation 对象存在，如果不存在则创建一个空的
+          if (!cardData.annotation) {
+            cardData.annotation = {
               result: [],
               qa: [],
               scenario: [],
@@ -490,18 +492,18 @@ const CardDetailPage = () => {
             };
           }
           
-          // 使用步骤字符串确保直接映射到task.annotations对应字段
+          // 使用步骤字符串确保直接映射到 annotation 对应字段
           if (currentOptimizationStep === 'result' || currentOptimizationStep === 0) {
-            setComments(Array.isArray(cardData.annotations.result) ? cardData.annotations.result : []);
+            setComments(Array.isArray(cardData.annotation.result) ? cardData.annotation.result : []);
           // QA优化 - 对应 qa 注释  
           } else if (currentOptimizationStep === 'qa' || currentOptimizationStep === 1) {
-            setComments(Array.isArray(cardData.annotations.qa) ? cardData.annotations.qa : []);
+            setComments(Array.isArray(cardData.annotation.qa) ? cardData.annotation.qa : []);
           // 场景优化 - 对应 scenario 注释
-          } else if (currentOptimizationStep === 'scene' || currentOptimizationStep === 2) {
-            setComments(Array.isArray(cardData.annotations.scenario) ? cardData.annotations.scenario : []);
+          } else if (currentOptimizationStep === 'scenario' || currentOptimizationStep === 2) {
+            setComments(Array.isArray(cardData.annotation.scenario) ? cardData.annotation.scenario : []);
           // 模板优化 - 对应 flow 注释
-          } else if (currentOptimizationStep === 'template' || currentOptimizationStep === 3) {
-            setComments(Array.isArray(cardData.annotations.flow) ? cardData.annotations.flow : []);
+          } else if (currentOptimizationStep === 'flow' || currentOptimizationStep === 3) {
+            setComments(Array.isArray(cardData.annotation.flow) ? cardData.annotation.flow : []);
           }
         }
         
@@ -691,12 +693,12 @@ const CardDetailPage = () => {
   // 处理分支为新任务按钮点击
   const handleForkTask = () => {
     // 确保传递完整的卡片数据，包含问题描述和答案描述
-    // 正确映射字段名：问题描述(questionDescription)对应prompt，回答描述(answerDescription)对应response_summary
+    // 正确映射字段名：问题描述(questionDescription)对应prompt，回答描述(answerDescription)对应response
     const newCompleteCardData = {
       ...card,
-      // 正确映射字段：使用prompt作为问题描述，response_summary作为答案描述
+      // 正确映射字段：使用prompt作为问题描述，response作为答案描述
       questionDescription: card.prompt || card.qa?.question || "基于卡片创建的问题描述。\n\n请在此处描述您想要测试或评估的内容。",
-      answerDescription: card.response_summary || card.summary || card.qa?.answer || "基于卡片创建的答案描述。\n\n请在此处描述预期的测试结果或评估标准。"
+      answerDescription: card.response || card.summary || card.qa?.answer || "基于卡片创建的答案描述。\n\n请在此处描述预期的测试结果或评估标准。"
     }
     // 保存到状态中
     setCompleteCardData(newCompleteCardData)
@@ -877,33 +879,29 @@ const CardDetailPage = () => {
   // 使用card中的annotation数据构建任务注释数据对象
   const getAllAnnotations = (card) => {
     if (!card?.annotation) return [];
-    
-    // 合并所有类型的注释数据
     const allAnnotations = [];
-    
-    // 遍历annotation对象的所有属性（result、qa、scene、template等）
-    Object.keys(card?.annotation || {}).forEach(key => {
+    ['result', 'qa', 'scenario', 'flow'].forEach(key => {
       const categoryAnnotations = card.annotation[key];
-      // 确保是数组再添加
       if (Array.isArray(categoryAnnotations)) {
         allAnnotations.push(...categoryAnnotations);
       }
     });
-    
     return allAnnotations;
   };
   
-  // 获取原始annotation对象
+  // 获取原始annotation对象（只用 result、qa、scenario、flow 四类）
   const getAnnotationObject = (card) => {
     if (!card?.annotation || typeof card.annotation !== 'object') {
       return {
+        result: [],
         qa: [],
         scenario: [],
-        flow: [],
-        result: []
+        flow: []
       };
     }
-    return card.annotation;
+    // 只保留四个字段
+    const { result = [], qa = [], scenario = [], flow = [] } = card.annotation;
+    return { result, qa, scenario, flow };
   };
   
   const taskAnnotationData = {
@@ -1024,7 +1022,7 @@ const CardDetailPage = () => {
       selectedModels: selectedModels ? [...selectedModels] : [], // 深拷贝选中的模型
       // 添加卡片的原始数据
       description: card?.description || card?.summary || "",
-      response_summary: card?.response_summary || "",
+      response: card?.response || "",
       prompt: card?.prompt || "",
       scenario: card?.scenario ? JSON.parse(JSON.stringify(card.scenario)) : {},
       templateData: card?.templateData ? JSON.parse(JSON.stringify(card.templateData)) : {},
@@ -1055,7 +1053,7 @@ const CardDetailPage = () => {
       optimizationData: optimizationData,
       // 确保所有必要的字段都被正确映射
       questionDescription: card.prompt || "",
-      answerDescription: card.response_summary || card.summary || "",
+      answerDescription: card.response || card.summary || "",
       // 确保所有字段都被深拷贝
       scenario: card?.scenario ? JSON.parse(JSON.stringify(card.scenario)) : {},
       templateData: card?.templateData ? JSON.parse(JSON.stringify(card.templateData)) : {},
@@ -1336,9 +1334,35 @@ const CardDetailPage = () => {
 
   // 处理添加注释的逻辑
   const handleSaveAnnotation = (data) => {
-    addComment(data);
+    console.log('handleSaveAnnotation', data);
+    // 只允许新四类，直接用 currentOptimizationStep
+    let step = currentOptimizationStep;
+    if (step === 'scene') step = 'scenario'; // 兼容旧值，强制为新值
+      const annotationData = {
+        ...data,
+      id: data.id || `comment-${Date.now()}`,
+      text: data.text || data.content || '',
+      summary: data.summary || (data.text ? (data.text.length > 20 ? data.text.substring(0, 20) + '...' : data.text) : ''),
+      selectedText: data.selectedText || selectedModalText || '',
+      step,
+      author: {
+        name: '当前用户',
+        avatar: 'U'
+      },
+      time: data.time || new Date().toLocaleString(),
+      attachments: data.attachments || [],
+    };
+      addComment(annotationData);
+    addAnnotationToTask(annotationData, step); // 这里 step 只会是 result/qa/scenario/flow
+    // 立即同步当前分类注释到 currentStepComments
+    if (card && card.annotation && card.annotation[step]) {
+      setComments([...card.annotation[step], annotationData]);
+    } else {
+      setComments([annotationData]);
+    }
     setShowAnnotationModal(false);
-    // 可选：message.success('添加成功');
+    setSelectedModalText('');
+      message.success('添加成功');
   };
 
   // 添加一个mouseup事件处理函数，用于处理在连续选择状态下无需右键也能自动高亮
@@ -1431,7 +1455,7 @@ const CardDetailPage = () => {
         id: reportId,
         title: `${card.title} 报告`,
         prompt: card.prompt,
-        response_summary: card.response_summary || card.summary,
+        response: card.response || card.summary,
         type: 'report',
         source: card.source,
         author: card.author,
@@ -1531,6 +1555,24 @@ const CardDetailPage = () => {
     selection.removeAllRanges();
   };
 
+  // 添加注释到卡片中的方法
+  const addAnnotationToTask = (newAnnotation, stepType) => {
+    console.log('addAnnotationToTask', newAnnotation, stepType);
+    if (!card || !newAnnotation) return;
+    // 只允许四个分类
+    let category = stepType || newAnnotation.step || 'result';
+    if (![ 'result', 'qa', 'scenario', 'flow' ].includes(category)) category = 'result';
+    const updatedAnnotation = card.annotation ? { ...card.annotation } : {
+      result: [], qa: [], scenario: [], flow: []
+    };
+    if (!updatedAnnotation[category]) updatedAnnotation[category] = [];
+    updatedAnnotation[category].push({ ...newAnnotation, step: category });
+    const updatedCard = { ...card, annotation: updatedAnnotation };
+    setCard(updatedCard);
+    // 立即同步当前分类注释到 currentStepComments
+    setComments(updatedAnnotation[category]);
+  };
+
   if (loading) {
     return (
       <div className={`card-detail-page ${isChatOpen ? "chat-open" : "chat-closed"}`}>
@@ -1618,7 +1660,7 @@ const CardDetailPage = () => {
             <div>
               {(card.keyword || []).map((tag, idx) => (
                 <Tag className="task-dimension-tag" key={idx}>{tag}</Tag>
-              ))}
+            ))}
             </div>
           </div>
           <div className="task-actions-top">
@@ -1774,13 +1816,41 @@ const CardDetailPage = () => {
                 </>
               ) : currentOptimizationStep === 'qa' ? (
                 // QA优化界面
-                <QAOptimizationSection card={card} />
-              ) : currentOptimizationStep === 'scene' ? (
+                // <QAOptimizationSection card={card} comments={currentStepComments} />
+                <div className="qa-optimization-content" style={{ width: "100%" }}>
+                <QASection 
+                  isEditable={true} 
+                  taskId={card?.id}
+                  card={card}
+                  prompt={card?.prompt} 
+                  response={card?.response } 
+                  comments={currentStepComments} // 传递 currentStepComments
+                />
+              </div>
+              ) : currentOptimizationStep === 'scenario' ? (
                 // 场景优化界面
-                <SceneOptimizationSection card={card} />
-              ) : currentOptimizationStep === 'template' ? (
+                <div className="scene-optimization-content" style={{ width: "100%" }}>
+                  <SceneSection 
+                    isEditable={true} 
+                    taskId={card?.id}
+                    scenario={card?.scenario} 
+                    comments={currentStepComments} // 统一用 context
+                    card={card}
+                    onAddAnnotation={addAnnotationToTask} // 修复：传递注释添加方法
+                  />
+                </div>
+              ) : currentOptimizationStep === 'flow' ? (
                 // 模板优化界面
-                <TemplateOptimizationSection card={card} />
+                <div className="template-optimization-content" style={{ width: "100%" }}>
+                  <TemplateSection 
+                    isEditable={true} 
+                    taskId={card?.id}
+                    steps={card?.flow_config ? { flow: card.flow_config, ...card?.step } : card?.step} 
+                    comments={currentStepComments} // 统一用 context
+                    card={card}
+                    onAddAnnotation={addAnnotationToTask} // 修复：传递注释添加方法
+                  />
+                </div>
               ) : currentOptimizationStep === 'retest' ? (
                 // 再次测试界面
                 <div style={{ width: "100%", display: "flex", flex: 1 }}>

@@ -16,8 +16,6 @@ import {
 } from '@ant-design/icons';
 import LineChartSection from '../card/LineChartSection';
 import RadarChartSection from '../card/RadarChartSection';
-import LineChartSection from '../card/LineChartSection';
-import RadarChartSection from '../card/RadarChartSection';
 
 const { Option } = Select;
 
@@ -56,17 +54,6 @@ const SubmitResultSection = ({ task }) => {
               matchedReason = scoreData.reason;
             }
           }
-          let scoreData = {};
-          let matchedReason = '暂无评估原因';
-          if (Array.isArray(step.score) && step.score.length > 0) {
-            // 优先查找与task.version匹配的score
-            scoreData = step.score.find(s => s.version === task.version) || step.score[0];
-            if (scoreData && scoreData.version === task.version && scoreData.reason) {
-              matchedReason = scoreData.reason;
-            } else if (scoreData && scoreData.reason) {
-              matchedReason = scoreData.reason;
-            }
-          }
           
           modelData[modelKey] = {
             name: step.agent,
@@ -79,8 +66,6 @@ const SubmitResultSection = ({ task }) => {
             description: matchedReason,
             updatedAt: scoreData.updated_at ? new Date(scoreData.updated_at.seconds * 1000).toLocaleDateString() : '未知时间',
             updatedBy: '系统',
-            history: '',
-            reason: matchedReason
             history: '',
             reason: matchedReason
           };
@@ -311,17 +296,6 @@ const SubmitResultSection = ({ task }) => {
                                 return consumed !== undefined ? `${consumed} tokens` : '未知消耗';
                               })()
                             }
-                            {
-                              (() => {
-                                const step = Array.isArray(task.step)
-                                  ? task.step.find(s => s.agent && s.agent.toLowerCase().replace(/\s+/g, '') === modelKey)
-                                  : null;
-                                const consumed = step && Array.isArray(step.score) && step.score[0]
-                                  ? step.score[0].consumed_points
-                                  : undefined;
-                                return consumed !== undefined ? `${consumed} tokens` : '未知消耗';
-                              })()
-                            }
                             </span>
                         </div>
                       </div>
@@ -334,17 +308,6 @@ const SubmitResultSection = ({ task }) => {
                   {expandedModel === modelKey && (
                     <div className="model-panel-content" style={{ padding: "0 8px 8px" }}>
                       <div className="evaluation-content" style={{ padding: "8px" }}>
-                        <p className="evaluation-text" style={{ fontSize: "12px", margin: 0, lineHeight: "1.4" }}>
-                          {
-                            evaluationData[modelKey]?.reason ||
-                            (() => {
-                              const step = Array.isArray(task.step)
-                                ? task.step.find(s => s.agent && s.agent.toLowerCase().replace(/\s+/g, '') === modelKey)
-                                : null;
-                              return step?.reason || '暂无描述';
-                            })()
-                          }
-                        </p>
                         <p className="evaluation-text" style={{ fontSize: "12px", margin: 0, lineHeight: "1.4" }}>
                           {
                             evaluationData[modelKey]?.reason ||
@@ -389,16 +352,7 @@ const SubmitResultSection = ({ task }) => {
                 height={150}
                 selectedModels={selectedModels}
               />
-              <LineChartSection 
-                card={{
-                  ...task,
-                  step: task.step,
-                  chartData: { line: enhancedChartData.line }
-                }}
-                showLinearGradient={true}
-                height={150}
-                selectedModels={selectedModels}
-              />
+
             </div>
           </div>
 
@@ -430,12 +384,7 @@ const SubmitResultSection = ({ task }) => {
                 maxValue={enhancedChartData.maxValue || 100}
                 height={220}
                     />
-              <RadarChartSection 
-                radarData={enhancedChartData.radar}
-                modelKeys={selectedModels}
-                maxValue={100}
-                height={220}
-                    />
+      
             </div>
           </div>
 

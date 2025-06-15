@@ -10,7 +10,7 @@ import styles from '../../styles/components/context/TextContextMenu.module.css';
  * @param {function} props.onAction 菜单动作回调，接收action参数
  * @param {function} props.onClose 关闭菜单回调
  * @param {boolean} props.isMultiSelectActive 是否处于连续选择模式
- * @param {string} props.contextType 当前上下文类型，可能的值有：text, scene, template
+ * @param {string} props.contextType 当前上下文类型，可能的值有：text, scenario, flow
  */
 const TextContextMenu = ({ 
   x, 
@@ -46,7 +46,7 @@ const TextContextMenu = ({
   };
 
   // 检查是否为场景或模板上下文
-  const isSceneOrTemplate = contextType === 'scene' || contextType === 'template';
+  const isSceneOrTemplate = contextType === 'scenario' || contextType === 'flow';
 
   return (
     <div 

@@ -32,9 +32,9 @@ const AssetList = ({
 }) => {
   const { styles } = useAssetStyles()
   const [expandedSections, setExpandedSections] = useState({
-    scene: true,
+    scenario: true,
     qa: true,
-    template: true,
+    flow: true,
     report: true
   })
   
@@ -50,9 +50,9 @@ const AssetList = ({
   // 按类型分组资产
   const groupAssetsByType = (assets) => {
     const groups = {
-      scene: [],
+      scenario: [],
       qa: [],
-      template: [],
+      flow: [],
       report: [...localReports] // 添加本地报告数据
     }
     
@@ -61,12 +61,12 @@ const AssetList = ({
     console.log('本地报告数据:', localReports);
     
     assets.forEach(asset => {
-      const type = asset.type || 'template'
+      const type = asset.type || 'flow'
       // 添加调试日志
       // console.log('处理资产:', asset.id, '类型:', type);
       
-      if (type === 'scene') {
-        groups.scene.push(asset)
+      if (type === 'scenario') {
+        groups.scenario.push(asset)
       } else if (type === 'qa') {
         groups.qa.push(asset)
       } else if (type === 'report') {
@@ -76,15 +76,15 @@ const AssetList = ({
           groups.report.push(asset)
         }
       } else {
-        groups.template.push(asset)
+        groups.flow.push(asset)
       }
     })
     
     // 完成分组后记录结果
     console.log('资产分组结果:', {
-      scene: groups.scene.length,
+      scenario: groups.scenario.length,
       qa: groups.qa.length,
-      template: groups.template.length,
+      flow: groups.flow.length,
       report: groups.report.length
     });
     
@@ -423,9 +423,9 @@ const AssetList = ({
     return (
       <div className={styles.assetSections}>
         {renderSection('报告', 'report', groupedAssets.report)}
-        {renderSection('场景', 'scene', groupedAssets.scene)}
+        {renderSection('场景', 'scenario', groupedAssets.scenario)}
         {renderSection('问答', 'qa', groupedAssets.qa)}
-        {renderSection('模板', 'template', groupedAssets.template)}
+        {renderSection('模板', 'flow', groupedAssets.flow)}
      
       </div>
     )

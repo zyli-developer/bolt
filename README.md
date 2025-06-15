@@ -101,7 +101,7 @@ npm run build || yarn build
 | 模型选择 | 模型面板 | • 支持多模型展示<br>• 可展开/收起模型详细信息<br>• 展示模型标签和使用情况 |
 | | 模型选择 | • 多选功能<br>• 全选/取消全选<br>• 可选择不同模型进行对比 |
 | 数据可视化 | 折线图 | • 多模型数据对比展示<br>• 时间轴显示<br>• 响应式设计<br>• 渐变色填充效果<br>• 数据提示(Tooltip) |
-| | 雷达图 | • 多维度数据展示<br>• 多模型数据对比<br>• 综合得分和各维度得分展示<br>• 响应式设计 |
+| | 雷达图 | • 多维度数据展示<br>• 多模型数据对比<br>• 综合得分和可信度得分展示<br>• 响应式设计 |
 | 历史记录 | 更新历史 | • 显示更新时间<br>• 更新者信息<br>• 历史内容展示 |
 | 注释功能 | 注释列表 | • 列出所有注释<br>• 显示注释者头像和名称<br>• 注释时间和内容展示 |
 | 优化模式 | 模式切换 | • 普通模式/优化模式切换<br>• 步骤化优化流程<br>• 优化进度展示 |
@@ -120,7 +120,7 @@ npm run build || yarn build
 |---------|----------|----------|
 | ModelPanel | components/card/ModelPanel.js | • 显示模型基本信息<br>• 支持展开/收起<br>• 展示模型详细信息和评估内容 |
 | LineChartSection | components/card/LineChartSection.js | • 显示置信度曲线<br>• 支持多模型数据对比<br>• 自定义图表样式和交互 |
-| RadarChartSection | components/card/RadarChartSection.js | • 显示多维度评分雷达图<br>• 支持多模型数据对比<br>• 展示综合得分和各维度得分 |
+| RadarChartSection | components/card/RadarChartSection.js | • 显示多维度评分雷达图<br>• 支持多模型数据对比<br>• 展示综合得分和可信度得分 |
 | CardHeader | components/card/CardHeader.js | • 显示卡片标题和导航信息<br>• 提供返回、收藏、分享功能<br>• 显示标签和作者信息 |
 | FooterActions | components/card/FooterActions.js | • 提供底部操作按钮组<br>• 支持模式切换<br>• 根据不同状态显示不同按钮 |
 | HistorySection | components/card/HistorySection.js | • 显示更新历史记录<br>• 展示更新时间和更新者<br>• 展示历史内容 |

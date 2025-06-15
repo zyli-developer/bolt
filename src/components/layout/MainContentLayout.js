@@ -25,8 +25,8 @@ const MainContentLayout = ({
             {[
               { key: 'overview', label: '概览' },
               { key: 'qa', label: 'QA' },
-              { key: 'scene', label: '场景' },
-              { key: 'template', label: '模板' }
+              { key: 'scenario', label: '场景' },
+              { key: 'flow', label: '模板' }
             ].map((item) => (
               <Timeline.Item
                 key={item.key}

@@ -113,7 +113,7 @@ const TestConfirmation = ({
           return task.annotations.qa || [];
         case 'scene':
           return task.annotations.scenario || [];
-        case 'template':
+        case 'flow':
           return task.annotations.flow || [];
         case 'result':
           return task.annotations.result || [];
@@ -157,7 +157,7 @@ console.log("getCommentsFromTask",getCommentsFromTask)
             />
           </div>
         ) 
-      case 'template':
+      case 'flow':
         return (
           <div className={styles.section}>
             <TemplateSection 
@@ -193,7 +193,7 @@ console.log("getCommentsFromTask",getCommentsFromTask)
                 { key: 'overview', label: '概览' },
                 { key: 'qa', label: 'QA' },
                 { key: 'scene', label: '场景' },
-                { key: 'template', label: '模板' }
+                { key: 'flow', label: '模板' }
               ].map((item) => (
                 <Timeline.Item
                   key={item.key}

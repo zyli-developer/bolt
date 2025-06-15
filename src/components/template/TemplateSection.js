@@ -208,7 +208,7 @@ const TemplateSection = ({ isEditable = false, taskId, steps, comments = [], onA
       setLoading(false);
     } 
     // 如果没有props传入comments但有来自上下文的数据，且当前为模板优化步骤，则使用上下文数据
-    else if (currentOptimizationStep === 'template' && currentStepComments && currentStepComments.length > 0) {
+    else if (currentOptimizationStep === 'flow' && currentStepComments && currentStepComments.length > 0) {
       setLoading(false);
     }
   }, [comments, currentOptimizationStep, currentStepComments]);
@@ -245,8 +245,8 @@ const TemplateSection = ({ isEditable = false, taskId, steps, comments = [], onA
       const data = await annotationService.getAnnotations();
       
       // 将获取到的注释也同步到全局状态
-      if (currentOptimizationStep === 'template') {
-        setStepComments('template', data);
+      if (currentOptimizationStep === 'flow') {
+        setStepComments('flow', data);
       }
     } catch (error) {
       message.error('获取注释失败');
@@ -304,8 +304,8 @@ const TemplateSection = ({ isEditable = false, taskId, steps, comments = [], onA
       let annotationData = {
         ...data,
         nodeId: selectedNode?.id,
-        step: 'template',
-        id: `template-annotation-${Date.now()}`
+        step: 'flow',
+        id: `flow-annotation-${Date.now()}`
       };
       if (onAddAnnotation) {
         onAddAnnotation(annotationData);
@@ -325,8 +325,8 @@ const TemplateSection = ({ isEditable = false, taskId, steps, comments = [], onA
     try {
       await annotationService.deleteAnnotation(id);
       // 只操作全局
-      if (currentOptimizationStep === 'template') {
-        setStepComments('template', comments.filter(item => item.id !== id));
+      if (currentOptimizationStep === 'flow') {
+        setStepComments('flow', comments.filter(item => item.id !== id));
       }
       message.success('删除观点成功');
     } catch (error) {
@@ -401,10 +401,10 @@ const TemplateSection = ({ isEditable = false, taskId, steps, comments = [], onA
     message.success('添加成功');
   };
 
-  // 合并props.comments和card.annotation.template，去重
-  const taskAnnotations = Array.isArray(card?.annotation?.template) ? card.annotation.template : [];
+  // 合并props.comments和card.annotation.flow，去重
+  const taskAnnotations = Array.isArray(card?.annotation?.flow) ? card.annotation.flow : [];
   const filteredComments = Array.isArray(comments)
-    ? comments.filter(item => item.step === 'template')
+    ? comments.filter(item => item.step === 'flow')
     : [];
   const mergedComments = [
     ...taskAnnotations,
@@ -486,7 +486,7 @@ const TemplateSection = ({ isEditable = false, taskId, steps, comments = [], onA
             onToggleExpand={setExpandedAnnotation}
             onMouseEnter={handleMouseEnter}
             onDelete={handleDeleteAnnotation}
-            contextType="template"
+            contextType="flow"
             title="模板观点"
           />
         </div>
@@ -499,7 +499,7 @@ const TemplateSection = ({ isEditable = false, taskId, steps, comments = [], onA
           y={contextMenu.y}
           onAction={handleContextMenuAction}
           onClose={() => setContextMenu(null)}
-          contextType="template"
+          contextType="flow"
         />
       )}
 
@@ -513,7 +513,7 @@ const TemplateSection = ({ isEditable = false, taskId, steps, comments = [], onA
         onSave={handleSaveAnnotation}
         selectedText={selectedNode?.data.label || selectedText || ''}
         initialContent={selectedNode?.data.label || selectedText || ''}
-        step="template"
+        step="flow"
         nodeId={selectedNode?.id} // 传递选中节点的ID
       />
 

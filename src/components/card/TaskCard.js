@@ -33,7 +33,7 @@ const TaskCard = ({ task, onTaskUpdate }) => {
   // 组装来源
   const source = task.created_from || task.source || '';
   // 组装描述
-  const description = task.response_summary || task.description || '';
+  const description = task.response || task.description || '';
   // 组装标题
   const title = task.prompt || task.name || task.title || '';
 
@@ -311,7 +311,7 @@ const TaskCard = ({ task, onTaskUpdate }) => {
 
         {showRadarChart && (
           <div className="task-radar-chart-container bg-white">
-            <div className="task-chart-title">各维度得分</div>
+            <div className="task-chart-title">可信度得分</div>
             <div className="task-radar-chart">
               <RadarChartSection radarData={radar} maxValue={radarMaxValue}  />
             </div>
@@ -345,7 +345,7 @@ const TaskCard = ({ task, onTaskUpdate }) => {
         footer={null}
         width={800}
       >
-        <QASection taskId={task.id} prompt={task.prompt} response={task.response_summary} />
+        <QASection taskId={task.id} prompt={task.prompt} response={task.response} />
       </Modal>
 
       {/* 模板 Modal */}
@@ -355,7 +355,7 @@ const TaskCard = ({ task, onTaskUpdate }) => {
         footer={null}
         width={800}
       >
-        <TemplateSection taskId={task.id} steps={task.templateData ? { templateData: task.templateData, ...task.step } : task.step} />
+        <TemplateSection taskId={task.id} steps={task.flow ? { flow: task.flow_config, ...task.step } : task.step} />
       </Modal>
 
       {/* Create Task Modal */}

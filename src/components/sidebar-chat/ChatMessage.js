@@ -197,7 +197,7 @@ const ChatMessage = ({ message }) => {
 
   // 右键菜单操作
   const handleContextMenuAction = (action) => {
-    setContextMenu(null);
+        setContextMenu(null);
     if (action === 'select') {
       if (!isMultiSelectActive) {
         // 开启连续选时，保留当前已选文本高亮
@@ -261,25 +261,25 @@ const ChatMessage = ({ message }) => {
   const handleSaveAnnotation = async (data) => {
     console.log('[ChatMessage] handleSaveAnnotation', data);
     try {
-      // 使用localOptimizationStep确保使用最新的步骤值
-      const stepValue = localOptimizationStep || 'result';
+      // 步骤归一化
+      let stepValue = localOptimizationStep || 'result';
+      if (stepValue === 'scene') stepValue = 'scenario';
+      if (stepValue === 'template') stepValue = 'flow';
       // 创建新的注释对象
       const newAnnotation = {
         ...data,
-        step: stepValue, // 使用当前本地步骤
+        step: stepValue, // 使用归一化后的步骤
         messageId: message.id,
         timestamp: new Date().toISOString()
       };
-      console.log('[ChatMessage] newAnnotation', newAnnotation);
-      // 先调用后端服务持久化
       const savedAnnotation = await annotationService.addAnnotation(newAnnotation);
-      // 使用addComment函数添加注释，确保注释立即显示在列表中
+      
+      
       addComment({
         ...savedAnnotation
       });
       messageApi.success('观点已添加');
       setShowAnnotationModal(false);
-      // 清除高亮
       clearHighlights();
     } catch (error) {
       console.error('保存观点失败:', error);
