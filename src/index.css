@@ -1014,10 +1014,6 @@ code {
   font-weight: 500;
 }
 
-/* Agent checkboxes */
-.card-agents {
-  margin-top: 2px; /* 减小上边距 */
-}
 
 .agents-list {
   display: flex;
@@ -1245,7 +1241,7 @@ code {
 }
 
 .model-selector {
-  min-width: 120px;
+  flex: 1
 }
 
 .evaluation-model-info {

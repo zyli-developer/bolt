@@ -55,13 +55,14 @@ const AnnotationModal = ({ visible, onClose, onSave, selectedText, initialConten
       })),
       selectedText,
       nodeId, // 保存节点ID，如果有的话
-      step // 确保设置正确的step字段(qa/scene/template/result)
+      step: step === 'scenario' ? 'scenario' : step === 'flow' ? 'flow' : step,
     };
 
     // 将注释保存到当前task中
     try {
       // 直接调用onSave回调函数，将数据传递给父组件
       // 使用注释中的step字段或传入的step参数指定保存位置
+      console.log('annotationData', annotationData);
       onSave(annotationData, annotationData.step || step);
     } catch (error) {
       console.error('保存观点失败:', error);
@@ -124,8 +125,8 @@ const AnnotationModal = ({ visible, onClose, onSave, selectedText, initialConten
       <div style={{ marginBottom: 16 }}>
         <div style={{ marginBottom: 8, color: '#666' }}>当前步骤：
           {step === 'qa' ? 'QA' : 
-           step === 'scene' ? '场景' : 
-           step === 'template' ? '模板' : 
+           step === 'scenario' ? '场景' : 
+           step === 'flow' ? '模板' : 
            step === 'result' ? '结果' : 
            step || '未指定'}
         </div>

@@ -457,95 +457,23 @@ const useMultiSelect = (containerRef) => {
   
   // 自动选择：将用户的选择添加到集合中
   const handleAutoSelection = useCallback(() => {
-    // 获取当前选择
     const current = getCurrentSelection();
     if (!current) return;
     
-    // 只有在连续选择模式或临时多选模式下才允许选择
-    // 注意：这里移除了对Ctrl键的依赖检查，只要是连续选择模式就可以
-    if (!isMultiSelectActive && !isMultiSelectTempMode) {
-      return;
-    }
-    
-    // 检查是否选择了已高亮的文本
-    let isOverlappingWithExisting = false;
-    const container = containerRef?.current;
-    
-    if (container) {
-      const highlights = container.querySelectorAll('.text-highlight-selection');
-      if (highlights.length > 0) {
-        // 检查当前选择是否与已存在的高亮有重叠
-        for (const highlight of highlights) {
-          const highlightRange = document.createRange();
-          try {
-            highlightRange.selectNodeContents(highlight);
-            // 检查范围是否重叠
-            if (current.range.intersectsNode(highlight)) {
-              isOverlappingWithExisting = true;
-              break;
-            }
-          } catch (err) {
-            console.error('检查高亮重叠失败', err);
-          }
-        }
-      }
-    }
-    
-    // 仅应用高亮效果，但不显示菜单
-    const highlighted = applyHighlightToSelection(current.range, current.text);
-    if (!highlighted) return;
-    
-    // 特殊处理已存在高亮的情况
-    if (isOverlappingWithExisting && highlighted.parentHighlight) {
-      // 如果是在现有高亮内的新选择，合并高亮信息
-      const existingHighlightIndex = selectionRanges.findIndex(
-        range => range.element === highlighted.parentHighlight
-      );
-      
-      if (existingHighlightIndex >= 0) {
-        // 更新已存在的高亮信息
-        const updatedRanges = [...selectionRanges];
-        updatedRanges[existingHighlightIndex] = {
-          ...updatedRanges[existingHighlightIndex],
-          text: highlighted.element.getAttribute('data-text') || highlighted.text
-        };
-        setSelectionRanges(updatedRanges);
-        
-        // 合并文本
-        const updatedTexts = [...selectedTexts];
-        if (!updatedTexts[existingHighlightIndex].includes(current.text)) {
-          updatedTexts[existingHighlightIndex] = highlighted.element.getAttribute('data-text') || 
-            `${updatedTexts[existingHighlightIndex]} ${current.text}`;
-        }
-        setSelectedTexts(updatedTexts);
-      } else {
-        // 正常添加
+    if (isMultiSelectActive || isMultiSelectTempMode) {
+      if (!selectedTexts.includes(current.text)) {
         setSelectedTexts(prev => [...prev, current.text]);
-        setSelectionRanges(prev => [...prev, highlighted]);
+        setSelectionRanges(prev => [...prev, current.range]);
+        applyHighlightToSelection(current.range, current.text);
       }
+      // 不清除高亮
     } else {
-      // 正常添加新的高亮
-      setSelectedTexts(prev => [...prev, current.text]);
-      setSelectionRanges(prev => [...prev, highlighted]);
+      clearAllHighlights();
+      setSelectedTexts([current.text]);
+      setSelectionRanges([current.range]);
+      applyHighlightToSelection(current.range, current.text);
     }
-    console.log('setSelectedTexts', selectedTexts);
-    // 清除选择
-    window.getSelection().removeAllRanges();
-    
-    // 确保所有高亮元素都有正确的样式
-    setTimeout(() => {
-      syncHighlightsToDOM();
-    }, 50);
-  }, [
-    isMultiSelectActive,
-    isMultiSelectTempMode,
-    getCurrentSelection,
-    applyHighlightToSelection,
-    containerRef,
-    selectionRanges,
-    selectedTexts,
-    syncHighlightsToDOM
-  ]);
+  }, [isMultiSelectActive, isMultiSelectTempMode, selectedTexts, setSelectedTexts, setSelectionRanges, applyHighlightToSelection, clearAllHighlights]);
   
   // 处理Ctrl键切换临时多选模式
   useEffect(() => {
@@ -753,6 +681,15 @@ const useMultiSelect = (containerRef) => {
     };
   }, [isMultiSelectActive, syncHighlightsToDOM]);
   
+  const endMultiSelectAndGetText = useCallback(() => {
+    setIsMultiSelectActive(false);
+    document.body.classList.remove('multi-select-mode');
+    document.body.classList.remove('multi-select-temp');
+    const text = selectedTexts.join('\n\n');
+    clearAllHighlights();
+    return text;
+  }, [selectedTexts, clearAllHighlights]);
+  
   return {
     isMultiSelectActive,
     setIsMultiSelectActive,
@@ -769,7 +706,8 @@ const useMultiSelect = (containerRef) => {
     clearAllHighlights,
     getCombinedText,
     syncHighlightsToDOM,
-    resetAllState
+    resetAllState,
+    endMultiSelectAndGetText
   };
 };
 

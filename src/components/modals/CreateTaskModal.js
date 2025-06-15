@@ -186,28 +186,15 @@ const CreateTaskModal = ({ visible, onCancel, cardData }) => {
         
         // 注释数据 - 强制确保四个分类的数据完整复制
         annotation: (() => {
-          // 如果baseCardData存在且有annotation数据
           if (baseCardData && baseCardData.annotation) {
-            // 确保所有分类都存在，即使为空也要有数组
-            const annotationData = {
-              result: Array.isArray(baseCardData.annotation.result) ? 
-                JSON.parse(JSON.stringify(baseCardData.annotation.result)) : [],
-              qa: Array.isArray(baseCardData.annotation.qa) ? 
-                JSON.parse(JSON.stringify(baseCardData.annotation.qa)) : [],
-              scene: Array.isArray(baseCardData.annotation.scene) ? 
-                JSON.parse(JSON.stringify(baseCardData.annotation.scene)) : [],
-              template: Array.isArray(baseCardData.annotation.template) ? 
-                JSON.parse(JSON.stringify(baseCardData.annotation.template)) : []
+            return {
+              result: Array.isArray(baseCardData.annotation.result) ? JSON.parse(JSON.stringify(baseCardData.annotation.result)) : [],
+              qa: Array.isArray(baseCardData.annotation.qa) ? JSON.parse(JSON.stringify(baseCardData.annotation.qa)) : [],
+              scenario: Array.isArray(baseCardData.annotation.scenario) ? JSON.parse(JSON.stringify(baseCardData.annotation.scenario)) : [],
+              flow: Array.isArray(baseCardData.annotation.flow) ? JSON.parse(JSON.stringify(baseCardData.annotation.flow)) : []
             };
-            return annotationData;
           }
-          // 如果没有数据，返回一个默认结构的空对象
-          return {
-            result: [],
-            qa: [],
-            scene: [],
-            template: []
-          };
+          return { result: [], qa: [], scenario: [], flow: [] };
         })(),
         
         // 场景数据 - 强制确保node和edge数组完整复制
@@ -395,10 +382,10 @@ const CreateTaskModal = ({ visible, onCancel, cardData }) => {
                     JSON.parse(JSON.stringify(sourceData.annotation.result)) : [],
                   qa: Array.isArray(sourceData.annotation.qa) ? 
                     JSON.parse(JSON.stringify(sourceData.annotation.qa)) : [],
-                  scene: Array.isArray(sourceData.annotation.scene) ? 
-                    JSON.parse(JSON.stringify(sourceData.annotation.scene)) : [],
-                  template: Array.isArray(sourceData.annotation.template) ? 
-                    JSON.parse(JSON.stringify(sourceData.annotation.template)) : []
+                  scenario: Array.isArray(sourceData.annotation.scenario) ? 
+                    JSON.parse(JSON.stringify(sourceData.annotation.scenario)) : [],
+                  flow: Array.isArray(sourceData.annotation.flow) ? 
+                    JSON.parse(JSON.stringify(sourceData.annotation.flow)) : []
                 };
                 return annotationData;
               }
@@ -406,8 +393,8 @@ const CreateTaskModal = ({ visible, onCancel, cardData }) => {
               return {
                 result: [],
                 qa: [],
-                scene: [],
-                template: []
+                scenario: [],
+                flow: []
               };
             })(),
             

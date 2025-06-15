@@ -106,6 +106,20 @@ const TestConfirmation = ({
         return task.annotation[section];
       }
       return [];
+      if (!task || !task.annotations) return [];
+      // 根据不同的区域返回对应的注释
+      switch(section) {
+        case 'qa':
+          return task.annotations.qa || [];
+        case 'scene':
+          return task.annotations.scenario || [];
+        case 'flow':
+          return task.annotations.flow || [];
+        case 'result':
+          return task.annotations.result || [];
+        default:
+          return [];
+      }
     };
 console.log("getCommentsFromTask",getCommentsFromTask)
     switch (activeSection) {
@@ -127,7 +141,7 @@ console.log("getCommentsFromTask",getCommentsFromTask)
               isEditable={false} 
               taskId={task?.id}
               prompt={task?.prompt} 
-              response={task?.response_summary}
+              response={task?.response}
               comments={getCommentsFromTask('qa')} // 从task数据中获取QA注释
             />
           </div>
@@ -139,18 +153,19 @@ console.log("getCommentsFromTask",getCommentsFromTask)
               isEditable={false} 
               taskId={task?.id}
               scenario={task?.scenario}
-              comments={getCommentsFromTask('scene')}
+              comments={getCommentsFromTask('scenario')} // 从task数据中获取场景注释
             />
           </div>
         ) 
-      case 'template':
+      case 'flow':
         return (
           <div className={styles.section}>
             <TemplateSection 
               isEditable={false} 
               taskId={task?.id}
-              steps={task?.templateData ? { templateData: task.templateData, ...task?.step } : task?.step}
-              comments={getCommentsFromTask('template')}
+              card={task}
+              
+              comments={getCommentsFromTask('flow')} // 从task数据中获取模板注释
             />
           </div>
         ) 
@@ -178,7 +193,7 @@ console.log("getCommentsFromTask",getCommentsFromTask)
                 { key: 'overview', label: '概览' },
                 { key: 'qa', label: 'QA' },
                 { key: 'scene', label: '场景' },
-                { key: 'template', label: '模板' }
+                { key: 'flow', label: '模板' }
               ].map((item) => (
                 <Timeline.Item
                   key={item.key}

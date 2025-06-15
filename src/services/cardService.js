@@ -11,7 +11,7 @@ import { explorationCardsData, taskCardsData } from "../mocks/data"
 import { filterCardsByConditions } from "../mocks/filterData"
 
 // 判断是否使用本地模拟数据
-const USE_MOCK_DATA = true;
+const REACT_APP_USE_MOCK_DATA = (process.env.REACT_APP_USE_MOCK_DATA === 'true');
 
 const cardService = {
   /**
@@ -59,7 +59,8 @@ const cardService = {
   getExplorations: async (params = {}) => {
     try {
       // 如果使用本地模拟数据
-      if (USE_MOCK_DATA) {
+      console.log("REACT_APP_USE_MOCK_DATA", REACT_APP_USE_MOCK_DATA);
+      if (REACT_APP_USE_MOCK_DATA) {
         console.log("使用本地模拟数据...");
         // 获取分页参数
         const page = params.pagination?.page || 1;
@@ -143,7 +144,7 @@ const cardService = {
         
         // 构建响应结构
         return {
-          card: paginatedData,
+          cards: paginatedData,
           pagination: {
             total: data.length,
             page: page,
@@ -183,25 +184,26 @@ const cardService = {
           'ExplorationSearchRequest',
           'ExplorationSearchResponse'
         );
-        
         // 处理响应数据
         return processExplorationsResponse(response);
       }
       
       // 调用列表接口
-      const response = await api.get(
+      const response = await api.post(
         endpoints.explorations.list, 
-        { params: requestParams },
+        requestParams,
+        'GetExplorationsRequest',
         'GetExplorationsPageResponse'
       );
-      
+      console.log("response",response);
+
       // 处理响应数据
       return processExplorationsResponse(response);
     } catch (error) {
       console.error("获取探索列表失败:", error);
       // 返回一个空的响应结构，避免前端报错
       return {
-        card: [],
+        cards: [],
         pagination: {
           total: 0,
           page: 1,
@@ -219,7 +221,7 @@ const cardService = {
   getExplorationDetail: async (id) => {
     try {
       // 如果使用本地模拟数据
-      if (USE_MOCK_DATA) {
+      if (REACT_APP_USE_MOCK_DATA) {
         console.log(`使用本地模拟数据获取探索详情, ID: ${id}`);
         
         // 从explorationCardsData中获取对应ID的卡片数据
@@ -341,7 +343,7 @@ const cardService = {
   getTasks: async (params = {}) => {
     try {
       // 如果使用本地模拟数据
-      if (USE_MOCK_DATA) {
+      if (REACT_APP_USE_MOCK_DATA) {
         console.log("使用本地模拟数据...");
         // 获取分页参数
         const page = params.pagination?.page || 1;
@@ -425,7 +427,7 @@ const cardService = {
         
         // 构建响应结构
         return {
-          card: paginatedData,
+          cards: paginatedData,
           pagination: {
             total: data.length,
             page: page,
@@ -481,7 +483,7 @@ const cardService = {
       console.error("获取任务列表失败:", error);
       // 返回一个空的响应结构，避免前端报错
       return {
-        card: [],
+        cards: [],
         pagination: {
           total: 0,
           page: 1,

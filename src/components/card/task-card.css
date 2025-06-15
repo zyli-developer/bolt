@@ -8,7 +8,7 @@
   border: 1px solid #e8e9f1;
   margin-bottom: 30px;
   height: 304px;
-  max-width: 100%;
+  max-width: 85%;
   box-sizing: border-box;
   margin-left: auto;
   margin-right: auto;
@@ -56,15 +56,13 @@
 }
 
 .task-assigned-text,
-.task-from-text,
-.task-by-text {
+.task-from-text {
   color: #8f9098;
   font-size: 12px;
 }
 
 .task-author-name,
-.task-source-name,
-.task-updater-name {
+.task-source-name{
   font-weight: 500;
   font-size: 12px;
   color: #000;
@@ -263,12 +261,7 @@
   min-height: 0;
 }
 
-.task-chart-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 2px;
-}
+
 
 .task-chart-link {
   text-align: center;
@@ -282,44 +275,10 @@
   display: inline-block;
 }
 
-.task-chart-info {
-  font-size: 9px;
-  color: #8f9098;
-  text-align: center;
-  width: 100%;
-  margin-top: 3px;
-}
 
-.task-chart-time-author {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  justify-content: center;
-}
 
-.task-chart-time {
-  color: #8f9098;
-}
 
-.task-updater-avatar {
-  background-color: #f0f0f0;
-}
 
-/* 雷达图代理选择 */
-.task-agents {
-  margin-top: 2px;
-}
-
-.task-agents-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  justify-content: center;
-}
-
-.task-agent-item .ant-checkbox-wrapper {
-  font-size: 9px;
-}
 
 /* 任务页面样式 */
 .task-page {

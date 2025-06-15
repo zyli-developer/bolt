@@ -25,6 +25,7 @@ const ExplorePage = () => {
   const [filterParams, setFilterParams] = useState(null)
   const [sortParams, setSortParams] = useState(null)
   const location = useLocation()
+  const [keyword, setKeyword] = useState("")
 
   // 应用保存的视图或清空筛选条件
   useEffect(() => {
@@ -115,55 +116,60 @@ const ExplorePage = () => {
     }
   }, [location.state]);
 
+  // 关键词搜索回调
+  const handleKeywordSearch = (value) => {
+    setKeyword(value);
+    // 合并关键词到 filterParams
+    let newFilter = filterParams && filterParams.exprs ? [...filterParams.exprs] : [];
+    // 移除旧的 keyword 条件
+    newFilter = newFilter.filter(expr => expr.field !== "keyword");
+    if (value && value.trim()) {
+      newFilter.push({ field: "keyword", op: "LIKE", values: [value.trim()] });
+    }
+    setFilterParams(newFilter.length > 0 ? { exprs: newFilter } : null);
+    setPage(1);
+    setCards([]);
+    setLoading(true);
+  };
+
   // 处理筛选条件变化
   const handleFilterChange = (filterConfig) => {
-    console.log("筛选条件变化:", filterConfig);
-    // 如果filterConfig为null或undefined，则清空筛选参数
+    let exprs = [];
     if (!filterConfig) {
-      setFilterParams(null);
-      setPage(1); // 重置页码
-      setCards([]); // 清空现有数据
+      // 只保留关键词
+      if (keyword && keyword.trim()) {
+        exprs.push({ field: "keyword", op: "LIKE", values: [keyword.trim()] });
+      }
+      setFilterParams(exprs.length > 0 ? { exprs } : null);
+      setPage(1);
+      setCards([]);
       setLoading(true);
       return;
     }
-    
-    // 如果filterConfig已经是API格式，直接使用
     if (filterConfig.exprs) {
-      console.log("应用API格式的筛选条件:", filterConfig);
-      setFilterParams(filterConfig);
-    } 
-    // 如果filterConfig有conditions属性（UI格式），转换为API格式
-    else if (filterConfig.conditions) {
-      // 打印UI格式的筛选条件
-      console.log("转换UI格式的筛选条件:", filterConfig.conditions);
-      
+      exprs = [...filterConfig.exprs];
+    } else if (filterConfig.conditions) {
       const apiFilter = [];
-      
-      // 处理每个筛选条件
       filterConfig.conditions.forEach(condition => {
-        // 确保values是有效的数组
         const conditionValues = condition.values || [];
-        if (conditionValues.length === 0) return; // 跳过没有值的条件
-        
-        // 创建API筛选表达式
+        if (conditionValues.length === 0) return;
         const expr = {
           field: condition.field,
           op: condition.operator.toUpperCase(),
           values: conditionValues
         };
-        
-        // 添加到筛选列表
-        apiFilter.push({
-          exprs: [expr]
-        });
+        apiFilter.push(expr);
       });
-      
-      console.log("转换后的API筛选条件:", apiFilter);
-      setFilterParams(apiFilter.length > 0 ? apiFilter : null);
+      exprs = apiFilter;
     }
-    
-    setPage(1); // 重置页码
-    setCards([]); // 清空现有数据
+    // 合并关键词
+    if (keyword && keyword.trim()) {
+      exprs = exprs.filter(expr => expr.field !== "keyword");
+      exprs.push({ field: "keyword", op: "LIKE", values: [keyword.trim()] });
+    }
+    setFilterParams(exprs.length > 0 ? { exprs } : null);
+    setPage(1);
+    setCards([]);
     setLoading(true);
   };
 
@@ -237,18 +243,18 @@ const ExplorePage = () => {
         params.sort = sortParams;
       }
       const response = await cardService.getExplorations(params);
-      console.log("loadCards 获取到数据:", response.card, "当前页:", page);
+      console.log("loadCards 获取到数据:", response.cards, "当前页:", page);
       setCards((prevCards) => {
         if (page === 1 || prevNav !== selectedNav) {
-          console.log("setCards: 覆盖卡片数据", response.card);
-          return response.card;
+          console.log("setCards: 覆盖卡片数据", response.cards);
+          return response.cards;
         }
-        console.log("setCards: 追加卡片数据", [...prevCards, ...response.card]);
-        return [...prevCards, ...response.card];
+        console.log("setCards: 追加卡片数据", [...prevCards, ...response.cards]);
+        return [...prevCards, ...response.cards];
       });
       setTotalItems(response.pagination.total);
-      setHasMore(response.card.length > 0 && response.pagination.page * response.pagination.per_page < response.pagination.total);
-      console.log("setHasMore:", response.card.length > 0 && response.pagination.page * response.pagination.per_page < response.pagination.total);
+      setHasMore(response.cards.length > 0 && response.pagination.page * response.pagination.per_page < response.pagination.total);
+      console.log("setHasMore:", response.cards.length > 0 && response.pagination.page * response.pagination.per_page < response.pagination.total);
       setPrevNav(selectedNav);
       console.log("setPrevNav:", selectedNav);
       setError(null);
@@ -311,8 +317,8 @@ const ExplorePage = () => {
           <div className="no-data">暂无数据</div>
         ) : null}
 
-        {/* 统一底部提示组件 */}
-        <ListFooter loading={loading} hasMore={hasMore} />
+        {/* 只有有数据时才显示 ListFooter */}
+        {cards.length > 0 && <ListFooter loading={loading} hasMore={hasMore} />}
 
         {error && <div className="error-message">{error}</div>}
       </div>

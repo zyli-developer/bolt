@@ -10,7 +10,7 @@ import { encodeMessage, decodeMessage } from '../utils/protobufHelper';
 
 // 基础URL，可以根据环境变量配置
 const BASE_URL = process.env.REACT_APP_API_BASE_URL || "";
-
+console.log("rocess.env.REACT_APP_API_BASE_URL",process.env.REACT_APP_API_BASE_URL)
 // 是否使用Protocol Buffers格式
 // 注意：实际项目中应该根据后端API要求设置
 // 这里提供一个开关，方便在开发阶段切换

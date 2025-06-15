@@ -2,44 +2,19 @@
 
 import { useState, useEffect, useRef, useMemo, useContext } from "react"
 import { useParams, useNavigate, useLocation } from "react-router-dom"
-import { Typography, Button, Avatar, Tag, Spin, Breadcrumb, Select, Checkbox, Timeline, Table, Collapse, Tooltip, message, Progress, Switch } from "antd"
+import { Typography, Button, Avatar, Tag, Spin, Breadcrumb, Select, Checkbox, Timeline, Table, Collapse, Tooltip, message, Progress, Switch, Card } from "antd"
 import {
   ArrowLeftOutlined,
   StarOutlined,
   StarFilled,
   ShareAltOutlined,
-  LikeOutlined,
-  LikeFilled,
-  CommentOutlined,
-  ForkOutlined,
-  SettingOutlined,
-  CaretRightOutlined,
-  CaretDownOutlined,
-  PlusOutlined,
-  MinusOutlined,
   CheckOutlined,
 } from "@ant-design/icons"
-import {
-  LineChart,
-  Line,
-  ResponsiveContainer,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip as RechartsTooltip,
-  Radar,
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-  Area,
-  AreaChart,
-} from "recharts"
+
 import taskService from "../services/taskService"
-import cardService from "../services/cardService"
 import { useChatContext } from "../contexts/ChatContext"
 import TimelineIcon from "../components/icons/TimelineIcon"
-import { taskAnnotationData } from "../mocks/data"
+import { taskAnnotationData,testFirstEvautionData,testSecondEvautionData } from "../mocks/data"
 import StartTaskIcon from "../components/icons/StartTaskIcon"
 import QASection from "../components/qa/QASection"
 import SceneSection from '../components/scene/SceneSection'
@@ -76,15 +51,18 @@ const TaskDetailPage = () => {
   const [evaluationData, setEvaluationData] = useState({})
   const [testProgress, setTestProgress] = useState(0);
   const [isTesting, setIsTesting] = useState(false);
+  const [isDetailsExpanded, setIsDetailsExpanded] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
+  const [isShareModalVisible, setIsShareModalVisible] = useState(false);
+  const [completeTaskData, setCompleteTaskData] = useState(null);
+  const [showAnnotationModal, setShowAnnotationModal] = useState(false);
+  const [showDiscussModal, setShowDiscussModal] = useState(false);
   const { 
     isOptimizationMode, setIsOptimizationMode,
     currentOptimizationStep, setCurrentOptimizationStep,
     currentStepComments, setComments, addComment, comments,
   } = useContext(OptimizationContext);
-  // 添加关注、分享和点赞相关状态
-  const [isFollowing, setIsFollowing] = useState(false);
-  const [isLiked, setIsLiked] = useState(false);
-  const [isShareModalVisible, setIsShareModalVisible] = useState(false);
 
   // 添加QA、场景和模板的内容数据
   const [qaContent] = useState([
@@ -118,16 +96,16 @@ const TaskDetailPage = () => {
   const STEP_TYPE_TO_INDEX = {
     'result': 0,
     'qa': 1,
-    'scene': 2,
-    'template': 3,
+    'scenario': 2,
+    'flow': 3,
     'retest': 4,
     'submit': 5
   };
   const INDEX_TO_STEP_TYPE = {
     0: 'result',
     1: 'qa',
-    2: 'scene',
-    3: 'template',
+    2: 'scenario',
+    3: 'flow',
     4: 'retest',
     5: 'submit'
   };
@@ -269,17 +247,19 @@ const TaskDetailPage = () => {
   // 添加注释到任务中的方法
   const addAnnotationToTask = (newAnnotation, stepType) => {
     if (!task || !newAnnotation) return;
-    // 兼容step参数
-    const category = stepType || newAnnotation.step || 'result';
+    // 只允许四个分类，强制映射
+    let category = stepType || newAnnotation.step || 'result';
+    if (category === 'scenario') category = 'scenario';
+    if (category === 'flow' || category === 'flow_config') category = 'flow';
+    if (![ 'result', 'qa', 'scenario', 'flow' ].includes(category)) category = 'result';
     const updatedAnnotation = task.annotation ? { ...task.annotation } : {
-      result: [], qa: [], scene: [], template: []
+      result: [], qa: [], scenario: [], flow: []
     };
     if (!updatedAnnotation[category]) updatedAnnotation[category] = [];
-    updatedAnnotation[category].push(newAnnotation);
+    updatedAnnotation[category].push({ ...newAnnotation, step: category });
     const updatedTask = { ...task, annotation: updatedAnnotation };
     setTask(updatedTask);
     setAnnotationData(updatedAnnotation);
-    // 可选：调用API更新服务器上的任务数据
     try { taskService.updateTask(id, updatedTask); } catch {}
   };
 
@@ -316,70 +296,67 @@ const TaskDetailPage = () => {
   }
   
   // Prepare enhanced chart data with multiple model series
-  const getEnhancedChartData = (chartData) => {
+  const getEnhancedChartData = () => {
     // 如果已经有缓存的数据，直接返回
     if (chartDataRef.current.radar.length > 0 || chartDataRef.current.line.length > 0) {
       return chartDataRef.current;
     }
-    
-    if (!chartData) {
-      // 如果没有图表数据，提供默认数据
-      const defaultChartData = {
-        radar: [
-          { name: "准确性", value: 85 },
-          { name: "流畅性", value: 90 },
-          { name: "创新性", value: 70 },
-          { name: "可靠性", value: 80 },
-          { name: "安全性", value: 95 }
-        ],
-        line: [
-          { month: "1月", value: 65 },
-          { month: "2月", value: 70 },
-          { month: "3月", value: 75 },
-          { month: "4月", value: 80 },
-          { month: "5月", value: 85 },
-          { month: "6月", value: 90 }
-        ]
-      };
-      chartData = defaultChartData;
-    }
 
-    // 获取可用的模型键
-    const modelKeys = Object.keys(evaluationData || {});
+    // 1. 获取所有模型key和step
+    const steps = Array.isArray(task?.step) ? task.step : (task?.step ? [task.step] : []);
+    const modelKeys = steps.map(step => step.agent?.toLowerCase().replace(/\s+/g, '')).filter(Boolean);
 
-    // 增强雷达图数据，使用固定偏移量而非随机值
-    const enhancedRadar = (chartData.radar || []).map((item, index) => {
-      const radarPoint = {
-        name: item.name,
-        value: Math.round(item.value), // 确保值为整数，去掉小数点
-      };
-      
-      // 为每个模型添加对应的数据点，使用固定偏移量
-      modelKeys.forEach((modelKey, modelIndex) => {
-        const offset = 0.8 + (modelIndex * 0.05);
-        radarPoint[modelKey] = Math.round(Math.min(100, item.value * offset));
+    // 2. 收集所有维度名（latitude）
+    const dimensionMap = {};
+    steps.forEach((step) => {
+      if (!Array.isArray(step.score)) return;
+      // 取最新一条score（最后一条）
+      const lastScore = step.score[step.score.length - 1];
+      if (!lastScore || !Array.isArray(lastScore.dimension)) return;
+      lastScore.dimension.forEach(dim => {
+        if (!dim.latitude) return;
+        if (!dimensionMap[dim.latitude]) {
+          // 记录权重和初始得分
+          dimensionMap[dim.latitude] = { name: dim.latitude, weight: dim.weight };
+        }
       });
-      
-      return radarPoint;
     });
 
-    // 增强折线图数据，使用固定偏移量而非随机值
-    const enhancedLine = (chartData.line || []).map((item, index) => {
+    // 3. 填充每个模型在每个维度下的得分
+    Object.keys(dimensionMap).forEach(latitude => {
+      steps.forEach((step) => {
+        const modelKey = step.agent?.toLowerCase().replace(/\s+/g, '');
+        if (!modelKey) return;
+        if (!Array.isArray(step.score)) return;
+        const lastScore = step.score[step.score.length - 1];
+        if (!lastScore || !Array.isArray(lastScore.dimension)) return;
+        const dim = lastScore.dimension.find(d => d.latitude === latitude);
+        if (dim && typeof dim.score === 'number') {
+          dimensionMap[latitude][modelKey] = dim.score;
+        } else if (dim && typeof dim.score === 'string') {
+          dimensionMap[latitude][modelKey] = parseFloat(dim.score);
+        } else {
+          dimensionMap[latitude][modelKey] = 0;
+        }
+      });
+    });
+
+    // 4. 转为数组
+    const enhancedRadar = Object.values(dimensionMap);
+
+    // 折线图数据保持原逻辑
+    const enhancedLine = (task?.chartData?.line || []).map((item, index) => {
       const linePoint = {
         month: item.month,
-        value: Math.round(item.value), // 确保值为整数，去掉小数点
+        value: Math.round(item.value),
       };
-      
-      // 为每个模型添加对应的数据点，使用固定偏移量
       modelKeys.forEach((modelKey, modelIndex) => {
         const offset = 0.8 + (modelIndex * 0.05);
         linePoint[modelKey] = Math.round(Math.min(100, item.value * offset));
       });
-      
       return linePoint;
     });
 
-    // 缓存计算结果
     chartDataRef.current = { radar: enhancedRadar, line: enhancedLine };
     return chartDataRef.current;
   };
@@ -396,61 +373,33 @@ const TaskDetailPage = () => {
   // 计算雷达图的最大值
   const radarMaxValue = calculateRadarMaxValue();
 
+  // useEffect 获取任务详情，初始化所有状态
   useEffect(() => {
     const fetchData = async () => {
       try {
-        setLoading(true)
-        
+        setLoading(true);
         let taskData;
-        // 获取任务详情，直接使用ID
-          taskData = await taskService.getTaskDetail(id);
-          // 如果是任务API返回的数据，从task字段中获取
-          if (taskData && taskData.task) {
-            taskData = taskData.task;
+        // 获取任务详情
+        taskData = await taskService.getTaskDetail(id);
+        if (taskData && taskData.task) {
+          taskData = taskData.task;
         }
-        
-        // 检查taskData类型，确保是对象而不是字符串
+        // 兼容字符串类型
         if (typeof taskData === 'string') {
-          try {
-            // 尝试将字符串解析为JSON对象
-            taskData = JSON.parse(taskData);
-          } catch (parseError) {
-            console.error("无法解析任务数据:", parseError);
-            // 如果无法解析，则创建一个空对象
-            taskData = {};
-          }
+          try { taskData = JSON.parse(taskData); } catch { taskData = {}; }
         }
-        
-        // 确保taskData是对象而不是null或undefined
         taskData = (taskData && typeof taskData === 'object' && !Array.isArray(taskData)) ? taskData : {};
-        
-        // 现在安全地设置属性
+        // 初始化字段
         taskData.tags = Array.isArray(taskData.tags) ? taskData.tags : [];
         taskData.author = taskData.author || { name: '未知用户' };
         taskData.title = taskData.title || '未命名任务';  // 使用title显示任务名称
         taskData.prompt = taskData.prompt || ''; // 用于显示在.task-title中
         taskData.summary = taskData.summary || ''; // 优先使用summary作为描述
         taskData.description = taskData.description || '暂无描述';  // 备用描述
-        taskData.response_summary = taskData.response_summary || ''; // 用于QA页面显示
+        taskData.response = taskData.response || ''; // 用于QA页面显示
         taskData.source = taskData.source || '未知来源';
-        taskData.chartData = taskData.chartData || {
-          radar: [
-            { name: "维度1", value: 80 },
-            { name: "维度2", value: 75 },
-            { name: "维度3", value: 85 },
-            { name: "维度4", value: 70 },
-            { name: "维度5", value: 90 },
-            { name: "维度6", value: 85 }
-          ],
-          line: [
-            { month: "08", value: 70 },
-            { month: "09", value: 75 },
-            { month: "10", value: 82 },
-            { month: "11", value: 88 }
-          ]
-        };
-        
-        // 确保templateData正确设置
+        taskData.chartData = taskData.chartData || { radar: [], line: [] };
+        // templateData
         if (!taskData.templateData && taskData.step) {
           if (typeof taskData.step === 'object' && !Array.isArray(taskData.step) && taskData.step.templateData) {
             taskData.templateData = taskData.step.templateData;
@@ -510,13 +459,13 @@ const TaskDetailPage = () => {
         }
         
         // 获取评估数据
-        const evaluationData = await taskService.getAllModelEvaluations();
+        const evaluationData = [];
         
         console.log("获取到的任务数据:", taskData);
         setTask(taskData)
 
         // 设置注释数据，直接使用task中的annotation对象
-        // annotation属性是一个对象，包含各类注释，如{result:[], qa:[], scene:[], template:[]}
+        // annotation属性是一个对象，包含各类注释，如{result:[], qa:[], scenario:[], flow:[]}
         if (taskData && taskData.annotation) {
           // 直接使用原始annotation对象
           setAnnotationData(taskData.annotation);
@@ -527,8 +476,8 @@ const TaskDetailPage = () => {
             setAnnotationData({
               result: taskData.annotations,
               qa: [],
-              scene: [],
-              template: []
+              scenario: [],
+              flow: []
             });
           } else {
             // 如果已经是对象，直接使用
@@ -542,14 +491,52 @@ const TaskDetailPage = () => {
           setAnnotationData({
             result: [],
             qa: [],
-            scene: [],
-            template: []
+            scenario: [],
+            flow: []
           });
         }
 
         // 如果没有评估数据，提供默认数据
         if (!evaluationData || Object.keys(evaluationData).length === 0) {
-          
+          // const defaultEvaluationData = {
+          //   'claude3.5': {
+          //     name: 'Claude 3.5',
+          //     score: '92',
+          //     scoreChange: '+2.5',
+          //     credibility: '88',
+          //     credibilityChange: '+3.2',
+          //     tags: ['大语言模型', '文本生成'],
+          //     description: 'Claude 3.5 是一个功能强大的大语言模型，擅长文本生成、问答和内容创作。',
+          //     updatedAt: '2023-11-25 09:30',
+          //     updatedBy: 'Alex Chen',
+          //     history: '上次评估后，模型在流畅性和创新性方面有显著提升，但安全性略有下降。'
+          //   },
+          //   'claude3.6': {
+          //     name: 'Claude 3.6',
+          //     score: '95',
+          //     scoreChange: '+4.2',
+          //     credibility: '91',
+          //     credibilityChange: '+5.5',
+          //     tags: ['增强型AI', '多模态'],
+          //     description: 'Claude 3.6 是新一代增强型AI，支持多模态输入和更强的推理能力。',
+          //     updatedAt: '2023-12-10 14:20',
+          //     updatedBy: 'Sarah Wang',
+          //     history: '本次迭代中，模型在所有维度都有全面提升，特别是在准确性和可靠性方面。'
+          //   },
+          //   'claude3.7': {
+          //     name: 'Claude 3.7',
+          //     score: '97',
+          //     scoreChange: '+1.8',
+          //     credibility: '93',
+          //     credibilityChange: '+2.1',
+          //     tags: ['AGI', '专家系统'],
+          //     description: 'Claude 3.7 是最新研发的接近AGI的模型，拥有专家级知识和超强推理能力。',
+          //     updatedAt: '2024-01-05 16:45',
+          //     updatedBy: 'Mike Johnson',
+          //     history: '作为最新模型，3.7在创新性和安全性方面取得了突破，但资源消耗较大。'
+          //   }
+          // };
+          // setEvaluationData(defaultEvaluationData);
         } else {
           setEvaluationData(evaluationData);
         }
@@ -567,21 +554,18 @@ const TaskDetailPage = () => {
           source: '未知来源',
           tags: ['加载失败'],
           description: '无法加载任务数据，请刷新页面重试',
-          response_summary: '无法加载回答数据',
+          response: '无法加载回答数据',
           chartData: {
             radar: [],
             line: []
           }
         });
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
-
-    if (id) {
-      fetchData()
-    }
-  }, [id])
+    };
+    if (id) fetchData();
+  }, [id]);
 
   // 添加测试进度的定时器
   useEffect(() => {
@@ -592,51 +576,20 @@ const TaskDetailPage = () => {
           const next = prev + 1;
           if (next >= 100) {
             clearInterval(timer);
-            // 测试完成后自动进入结果页面
-            setCurrentStep(5);
             setIsTesting(false);
-            
-            // 更新评估数据，模拟测试完成后得到的新数据
-            const updatedEvaluationData = { ...evaluationData };
-            
-            // 更新所有选中模型的评估数据
-            selectedModels.forEach(modelKey => {
-              if (updatedEvaluationData[modelKey]) {
-                // 更新综合得分（credibility）
-                const originalCredibility = parseFloat(updatedEvaluationData[modelKey].credibility) || 0;
-                const credibilityImprovement = (Math.random() * 5 + 1).toFixed(1);
-                const newCredibility = Math.min(100, originalCredibility + parseFloat(credibilityImprovement));
-                
-                // 更新各维度得分（score）
-                const originalScore = parseFloat(updatedEvaluationData[modelKey].score) || 0;
-                const scoreImprovement = (Math.random() * 0.8 + 0.2).toFixed(1);
-                const newScore = Math.min(10, originalScore + parseFloat(scoreImprovement)).toFixed(1);
-                
-                // 更新评估数据
-                updatedEvaluationData[modelKey] = {
-                  ...updatedEvaluationData[modelKey],
-                  credibility: newCredibility,
-                  credibilityChange: `+${credibilityImprovement}`,
-                  score: newScore,
-                  scoreChange: `+${scoreImprovement}`,
-                  updatedAt: new Date().toLocaleString(),
-                  reason: `${updatedEvaluationData[modelKey].reason || '模型表现良好'}\n测试显示在多数场景中性能稳定，优化后的响应更加准确。`
-                };
-              }
-            });
-            
-            // 更新评估数据状态
-            setEvaluationData(updatedEvaluationData);
-            
-            // 重置图表数据缓存，以便重新计算
-            chartDataRef.current = { radar: [], line: [] };
+            // 优化模式下自动跳转到提交结果
+            if (isOptimizationMode) {
+              setCurrentOptimizationStep('submit');
+            } else {
+              setCurrentStep(5);
+            }
           }
           return next;
         });
-      }, 100);
+      }, 50);
     }
     return () => timer && clearInterval(timer);
-  }, [isTesting, testProgress, evaluationData, selectedModels]);
+  }, [isTesting, testProgress, isOptimizationMode]);
 
   const handleGoBack = () => {
     navigate(-1)
@@ -676,7 +629,7 @@ const TaskDetailPage = () => {
                 isEditable={true} 
                 taskId={task?.id}
                 prompt={task?.prompt} 
-                response={task?.response_summary}
+                response={task?.response}
                 comments={task?.annotation?.qa || []}
                 onAddAnnotation={addAnnotationToTask}
               />
@@ -689,7 +642,7 @@ const TaskDetailPage = () => {
                 isEditable={true} 
                 taskId={task?.id}
                 scenario={task?.scenario}
-                comments={task?.annotation?.scene || []}
+                comments={task?.annotation?.scenario || []}
                 onAddAnnotation={addAnnotationToTask}
               />
             </div>
@@ -700,8 +653,9 @@ const TaskDetailPage = () => {
               <TemplateSection 
                 isEditable={true} 
                 taskId={task?.id}
+                card={task}
                 steps={task?.templateData ? { templateData: task.templateData, ...task?.step } : task?.step}
-                comments={task?.annotation?.template || []}
+                comments={task?.annotation?.flow || []}
                 onAddAnnotation={addAnnotationToTask}
               />
             </div>
@@ -747,32 +701,33 @@ const TaskDetailPage = () => {
               isEditable={true} 
               taskId={task?.id}
               prompt={task?.prompt} 
-              response={task?.response_summary}
-              comments={task?.annotation?.qa || []}
+              response={task?.response}
+              comments={currentStepComments}
               onAddAnnotation={addAnnotationToTask}
             />
           </div>
         );
-      case 'scene':
+      case 'scenario':
         return (
           <div className="scene-section">
             <SceneSection 
               isEditable={false} 
               taskId={task?.id}
               scenario={task?.scenario}
-              comments={task?.annotation?.scene || []}
+              comments={currentStepComments}
               onAddAnnotation={addAnnotationToTask}
             />
           </div>
         );
-      case 'template':
+      case 'flow':
         return (
           <div className="template-section">
             <TemplateSection 
               isEditable={false} 
               taskId={task?.id}
+              card={task}
               steps={task?.templateData ? { templateData: task.templateData, ...task?.step } : task?.step}
-              comments={task?.annotation?.template || []}
+              comments={currentStepComments}
               onAddAnnotation={addAnnotationToTask}
             />
           </div>
@@ -822,10 +777,10 @@ const TaskDetailPage = () => {
       // 根据步骤切换页面
       switch (nextStep) {
         case 2:
-          setActiveSection('scene');
+          setActiveSection('scenario');
           break;
         case 3:
-          setActiveSection('template');
+          setActiveSection('flow');
           break;
         case 4:
           setActiveSection('confirm');
@@ -919,8 +874,8 @@ const TaskDetailPage = () => {
         annotationData={task?.annotation || {
           result: [],
           qa: [],
-          scene: [],
-          template: []
+          scenario: [],
+          flow: []
         }}
       />
     );
@@ -988,7 +943,7 @@ const TaskDetailPage = () => {
     
     switch (stepNumber) {
       case 1: // QA步骤
-        return Boolean(task.prompt || task.response_summary);
+        return Boolean(task.prompt || task.response);
       case 2: // 场景步骤
         return Boolean(task.scenario);
       case 3: // 模板步骤
@@ -1017,10 +972,10 @@ const TaskDetailPage = () => {
           setActiveSection('qa');
           break;
         case 2:
-          setActiveSection('scene');
+          setActiveSection('scenario');
           break;
         case 3:
-          setActiveSection('template');
+          setActiveSection('flow');
           break;
         case 4:
           setActiveSection('confirm');
@@ -1150,7 +1105,7 @@ const TaskDetailPage = () => {
         id: reportId,
         title: `${task.title} 报告`,
         prompt: task.prompt,
-        response_summary: task.response_summary,
+        response: task.response,
         type: 'report',
         source: task.source,
         author: task.author,
@@ -1289,8 +1244,7 @@ const TaskDetailPage = () => {
                   clearAllHighlights();
                   setSelectedTexts([]);
                   setSelectionRanges([]);
-                  lastHighlightedTextRef.current = '';
-                  lastHighlightedRangeRef.current = null;
+              
                 }
               }}
               size="small"
@@ -1310,7 +1264,7 @@ const TaskDetailPage = () => {
             size="large"
             onClick={() => {
               setCurrentStep(3);
-              setActiveSection('template');
+              setActiveSection('flow');
             }}
             className={styles.flexButton}
           >
@@ -1345,10 +1299,10 @@ const TaskDetailPage = () => {
                   setActiveSection('qa');
                   break;
                 case 2:
-                  setActiveSection('scene');
+                  setActiveSection('scenario');
                   break;
                 case 3:
-                  setActiveSection('template');
+                  setActiveSection('flow');
                   break;
                 default:
                   break;
@@ -1420,8 +1374,7 @@ const TaskDetailPage = () => {
       clearAllHighlights();
       setSelectedTexts([]);
       setSelectionRanges([]);
-      lastHighlightedTextRef.current = '';
-      lastHighlightedRangeRef.current = null;
+
     }
   };
 
@@ -1431,30 +1384,28 @@ const TaskDetailPage = () => {
   const [isMultiSelectActive, setIsMultiSelectActive] = useState(false);
   const [discussModalVisible, setDiscussModalVisible] = useState(false);
   const [annotationModalVisible, setAnnotationModalVisible] = useState(false);
-  const [selectedModalText, setSelectedModalText] = useState('');
   // 添加连续选择相关状态
   const [isMultiSelectTempMode, setIsMultiSelectTempMode] = useState(false);
   const [selectedTexts, setSelectedTexts] = useState([]);
   const [selectedText, setSelectedText] = useState('');
   const [selectionRanges, setSelectionRanges] = useState([]);
+  const [selectedModalText, setSelectedModalText] = useState('');
 
   // 新增ref
   const sceneSectionRef = useRef();
   const templateSectionRef = useRef();
-  // 新增高亮文本和range的ref
-  const lastHighlightedTextRef = useRef('');
-  const lastHighlightedRangeRef = useRef(null);
+
 
   // 右键菜单action处理
   const handleContextMenuAction = (action) => {
     setContextMenu(null);
     switch (action) {
       case 'discuss':
-        setSelectedModalText(lastHighlightedTextRef.current || selectedText);
+        setSelectedModalText( selectedText);
         setDiscussModalVisible(true);
         break;
       case 'annotate':
-        setSelectedModalText(lastHighlightedTextRef.current || selectedText);
+        setSelectedModalText( selectedText);
         setAnnotationModalVisible(true);
         break;
       case 'edit':
@@ -1478,20 +1429,30 @@ const TaskDetailPage = () => {
     }
     // 菜单关闭后清除高亮
     clearAllHighlights();
-    lastHighlightedTextRef.current = '';
-    lastHighlightedRangeRef.current = null;
+   
   };
 
   // 添加观点modal保存
   const handleSaveAnnotation = (data) => {
+    // 统一注释数据结构，直接用 currentOptimizationStep 作为注释分类
     const annotationData = {
       ...data,
-      selectedText: selectedModalText,
-      id: `comment-${Date.now()}`,
-      time: new Date().toISOString(),
-      step: currentOptimizationStep
+      id: data.id || `comment-${Date.now()}`,
+      text: data.text || data.content || '', // 兼容content字段
+      summary: data.summary || (data.text ? (data.text.length > 20 ? data.text.substring(0, 20) + '...' : data.text) : ''),
+      selectedText: data.selectedText || selectedModalText || '',
+      step: currentOptimizationStep, // 直接用，无需映射
+      author: {
+        name: '当前用户',
+        avatar: 'U'
+      },
+      time: data.time || new Date().toLocaleString(),
+      attachments: data.attachments || [],
     };
+
     addComment(annotationData);
+    addAnnotationToTask(annotationData, annotationData.step);
+
     setAnnotationModalVisible(false);
     setSelectedModalText('');
     message.success('添加成功');
@@ -1545,8 +1506,7 @@ const TaskDetailPage = () => {
       const hasHighlight = range.commonAncestorContainer.closest?.('.text-highlight-selection');
       if (hasHighlight) {
         setSelectedText(selected); // 只更新状态，不弹菜单
-        lastHighlightedTextRef.current = selected;
-        lastHighlightedRangeRef.current = range.cloneRange();
+
         return;
       }
       if (isMultiSelectActive || isMultiSelectTempMode || isModifierKeyPressed) {
@@ -1562,8 +1522,7 @@ const TaskDetailPage = () => {
         applyHighlightToSelection(range, selected);
       }
       setSelectedText(selected);
-      lastHighlightedTextRef.current = selected;
-      lastHighlightedRangeRef.current = range.cloneRange();
+
     }
   };
 
@@ -1571,8 +1530,8 @@ const TaskDetailPage = () => {
   const handleOptimizeContextMenu = (e, type = 'text') => {
     if (!isOptimizationMode) return;
     e.preventDefault();
-    // 优先用lastHighlightedTextRef
-    const selected = lastHighlightedTextRef.current || window.getSelection().toString().trim();
+   
+    const selected =  window.getSelection().toString().trim();
     if (selected) {
       setContextMenu({ x: e.clientX, y: e.clientY });
       setContextType(type);
@@ -1586,8 +1545,8 @@ const TaskDetailPage = () => {
   const renderOptimizeContent = () => {
     const step = currentOptimizationStep;
     let contextTypeForStep = 'text';
-    if (step === 'scene') contextTypeForStep = 'scene';
-    if (step === 'template') contextTypeForStep = 'template';
+    if (step === 'scenario') contextTypeForStep = 'scenario';
+    if (step === 'flow') contextTypeForStep = 'flow';
     return (
       <div
         style={{ width: '100%', height: '100%' }}
@@ -1618,34 +1577,35 @@ const TaskDetailPage = () => {
                 toggleModelPanel={toggleModelPanel}
                 getModelColor={getModelColor}
                 onAddAnnotation={addComment}
-                isOptimizeMode={isOptimizationMode}
+                isOptimizationMode={isOptimizationMode}
               />;
             case 'qa':
               return <QASection 
                 isEditable={true}
                 taskId={task?.id}
                 prompt={task?.prompt}
-                response={task?.response_summary}
+                response={task?.response}
                 comments={currentStepComments}
-                onAddAnnotation={addComment}
+                onAddAnnotation={addAnnotationToTask}
               />;
-            case 'scene':
+            case 'scenario':
               return <SceneSection 
                 ref={sceneSectionRef}
                 isEditable={true}
                 taskId={task?.id}
                 scenario={task?.scenario}
                 comments={currentStepComments}
-                onAddAnnotation={addComment}
+                onAddAnnotation={addAnnotationToTask}
               />;
-            case 'template':
+            case 'flow':
               return <TemplateSection 
                 ref={templateSectionRef}
                 isEditable={true}
                 taskId={task?.id}
+                card={task}
                 steps={task?.templateData ? { templateData: task.templateData, ...task?.step } : task?.step}
                 comments={currentStepComments}
-                onAddAnnotation={addComment}
+                onAddAnnotation={addAnnotationToTask}
               />;
             case 'retest':
               return <TestConfirmation
@@ -1661,8 +1621,14 @@ const TaskDetailPage = () => {
                 SceneSection={SceneSection}
                 TemplateSection={TemplateSection}
                 annotationColumns={taskAnnotationData.columns}
-                annotationData={comments}
+                annotationData={task?.annotation || {
+                  result: [],
+                  qa: [],
+                  scenario: [],
+                  flow: []
+                }}
                 isOptimizationMode={isOptimizationMode}
+           
               />;
             case 'submit':
               return <SubmitResultSection task={task} />;
@@ -1696,8 +1662,8 @@ const TaskDetailPage = () => {
           initialContent={selectedModalText}
           step={(() => {
             if (step === 'qa') return 'qa';
-            if (step === 'scene') return 'scene';
-            if (step === 'template') return 'template';
+            if (step === 'scenario') return 'scenario';
+            if (step === 'flow') return 'flow';
             return 'result';
           })()}
           nodeId={null}
@@ -1750,7 +1716,7 @@ const TaskDetailPage = () => {
 
   // 优化模式下：上一步
   const handlePrevStep = () => {
-    const stepOrder = ['result', 'qa', 'scene', 'template', 'retest', 'submit'];
+    const stepOrder = ['result', 'qa', 'scenario', 'flow', 'retest', 'submit'];
     const idx = stepOrder.indexOf(currentOptimizationStep);
     if (idx > 0) {
       setCurrentOptimizationStep(stepOrder[idx - 1]);
@@ -1769,7 +1735,7 @@ const TaskDetailPage = () => {
   // 优化模式下：保存并进入下一步
   const saveAndNext = () => {
     saveCurrentData();
-    const stepOrder = ['result', 'qa', 'scene', 'template', 'retest', 'submit'];
+    const stepOrder = ['result', 'qa', 'scenario', 'flow', 'retest', 'submit'];
     const idx = stepOrder.indexOf(currentOptimizationStep);
     if (idx < stepOrder.length - 1) {
       setCurrentOptimizationStep(stepOrder[idx + 1]);
@@ -1895,57 +1861,183 @@ const TaskDetailPage = () => {
     '根据《中华人民共和国车辆维修保养条例》，未提及不能主动说明关闭气囊的技术手段，合规性风险较小'
   ];
 
+  useEffect(() => {
+    console.log('currentTaskId', task);
+  }, [task]);
+
   // 统一的handleStartTest
-  const handleStartTest = () => {
-    setIsTesting(true);
-    setTestProgress(0);
-    // 如果 step 为空，直接填充 defaultStepData 并赋默认 reason
-    if (!task || !task.step || task.step.length === 0) {
-      const filledStep = defaultStepData.map((item, idx) => {
-        if (item.agent === 'TrafficLLM') return item;
-        return {
-          ...item,
-          reason: defaultReasons[idx] || item.reason
-        };
+const handleStartTest = () => {
+  setIsTesting(true);
+  setTestProgress(0);
+
+  // 检查task是否存在
+  if (!task) return;
+
+  // 获取当前task的id
+  const currentTaskId = task.id;
+
+  // 获取当前task中所有不同的version数量
+  const versions = new Set();
+  task.step.forEach(stepItem => {
+    if (stepItem.score && Array.isArray(stepItem.score)) {
+      stepItem.score.forEach(score => {
+        if (score.version) {
+          versions.add(score.version);
+        }
       });
-      setTask(prev => ({ ...prev, step: filledStep }));
-      return; // 关键：setTask 后立即 return，等待 useEffect 自动进入测试流程
     }
-    // step 不为空，执行原有增长逻辑，且 reason 赋默认值（TrafficLLM 不变）
-    let reasonIdx = 0;
-    const newStepArr = task.step.map((stepItem) => {
-      if (stepItem.agent === 'TrafficLLM') return stepItem;
-      const lastScore = Array.isArray(stepItem.score) && stepItem.score.length > 0 ? stepItem.score[stepItem.score.length - 1] : null;
-      const lastScoreValue = lastScore ? parseFloat(lastScore.score) : 0.7;
-      // 增长幅度 5%~10%
-      const minIncrease = 0.05;
-      const maxIncrease = 0.10;
-      const increase = minIncrease + Math.random() * (maxIncrease - minIncrease);
-      const newScoreValue = Math.min(1, (lastScoreValue * (1 + increase)).toFixed(2));
-      let newVersion = '1.0';
-      if (lastScore && lastScore.version) {
-        const lastVer = parseFloat(lastScore.version);
-        newVersion = (lastVer + 1).toFixed(1);
+  });
+  const versionCount = versions.size;
+
+  // 根据version数量判断使用哪个数据源
+  if (versionCount === 0) {
+    // 从testFirstEvautionData中查找匹配的数据
+    const matchedData = testFirstEvautionData.find(item => item.id === currentTaskId);
+    if (matchedData) {
+      // 如果当前step为空，直接使用matchedData的step
+      if (!task.step || task.step.length === 0) {
+        setTask(prev => ({ 
+          ...prev, 
+          step: matchedData.step,
+          scoreChange: matchedData.scoreChange || 0,
+          credibilityChange: matchedData.credibilityChange || 0
+        }));
+        return;
       }
-      const newScoreObj = {
-        version: newVersion,
-        score: newScoreValue,
-        description: '优化后得分上升',
-        confidence: '0.95',
-        consumed_points: 60,
-        dimension: lastScore?.dimension || []
-      };
-      // reason 依次分配
-      const newReason = defaultReasons[reasonIdx] || stepItem.reason;
-      reasonIdx++;
+      // 如果step不为空，则按agent合并score
+      const mergedSteps = task.step.map(stepItem => {
+        const matchedStep = matchedData.step.find(s => s.agent === stepItem.agent);
+        if (matchedStep) {
+          return {
+            ...stepItem,
+            score: [...(stepItem.score || []), ...(matchedStep.score || [])]
+          };
+        }
+        return stepItem;
+      });
+      setTask(prev => ({ 
+        ...prev, 
+        step: mergedSteps,
+        scoreChange: matchedData.scoreChange || 0,
+        credibilityChange: matchedData.credibilityChange || 0
+      }));
+      return;
+    }
+  } else if (versionCount === 1) {
+    // 从testSecondEvautionData中查找匹配的数据
+    const matchedData = testSecondEvautionData.find(item => item.id === currentTaskId);
+    if (matchedData) {
+      // 如果当前step为空，直接使用matchedData的step
+      if (!task.step || task.step.length === 0) {
+        setTask(prev => ({ 
+          ...prev, 
+          step: matchedData.step,
+          scoreChange: matchedData.scoreChange || 0,
+          credibilityChange: matchedData.credibilityChange || 0
+        }));
+        return;
+      }
+      // 如果step不为空，则按agent合并score
+      const mergedSteps = task.step.map(stepItem => {
+        const matchedStep = matchedData.step.find(s => s.agent === stepItem.agent);
+        if (matchedStep) {
+          return {
+            ...stepItem,
+            score: [...(stepItem.score || []), ...(matchedStep.score || [])]
+          };
+        }
+        return stepItem;
+      });
+      setTask(prev => ({ 
+        ...prev, 
+        step: mergedSteps,
+        scoreChange: matchedData.scoreChange || 0,
+        credibilityChange: matchedData.credibilityChange || 0
+      }));
+      return;
+    }
+  }
+
+  // 如果找不到匹配数据或version数量 >= 2，执行原有逻辑
+  if (!task.step || task.step.length === 0) {
+    const filledStep = defaultStepData.map((item, idx) => {
+      if (item.agent === 'TrafficLLM') return item;
       return {
-        ...stepItem,
-        score: [...(stepItem.score || []), newScoreObj],
-        reason: newReason
+        ...item,
+        reason: defaultReasons[idx] || item.reason
       };
     });
-    setTask(prev => ({ ...prev, step: newStepArr }));
-  };
+    // 计算平均分数变化和可信度变化
+    const avgScoreChange = 0.08; // 默认8%的提升
+    const avgCredibilityChange = 0.05; // 默认5%的可信度提升
+    setTask(prev => ({ 
+      ...prev, 
+      step: filledStep,
+      scoreChange: avgScoreChange,
+      credibilityChange: avgCredibilityChange
+    }));
+    return;
+  }
+
+  // step 不为空，执行原有增长逻辑
+  let reasonIdx = 0;
+  let totalScoreChange = 0;
+  let totalCredibilityChange = 0;
+  const newStepArr = task.step.map((stepItem) => {
+    if (stepItem.agent === 'TrafficLLM') return stepItem;
+    const lastScore = Array.isArray(stepItem.score) && stepItem.score.length > 0 ? stepItem.score[stepItem.score.length - 1] : null;
+    const lastScoreValue = lastScore ? parseFloat(lastScore.score) : 0.7;
+    const lastConfidence = lastScore ? parseFloat(lastScore.confidence) : 0.8;
+    
+    const minIncrease = 0.05;
+    const maxIncrease = 0.10;
+    const increase = minIncrease + Math.random() * (maxIncrease - minIncrease);
+    const newScoreValue = Math.min(1, (lastScoreValue * (1 + increase)).toFixed(2));
+    
+    // 计算可信度变化
+    const confidenceIncrease = Math.random() * 0.05; // 0-5%的可信度提升
+    const newConfidence = Math.min(1, (lastConfidence * (1 + confidenceIncrease)).toFixed(2));
+    
+    // 累计变化量
+    totalScoreChange += (newScoreValue - lastScoreValue);
+    totalCredibilityChange += (newConfidence - lastConfidence);
+    
+    let newVersion = '1.0';
+    if (lastScore && lastScore.version) {
+      const lastVer = parseFloat(lastScore.version);
+      newVersion = (lastVer + 1).toFixed(1);
+    }
+    
+    const newScoreObj = {
+      version: newVersion,
+      score: newScoreValue,
+      description: '优化后得分上升',
+      confidence: newConfidence,
+      consumed_points: 60,
+      dimension: lastScore?.dimension || []
+    };
+    
+    const newReason = defaultReasons[reasonIdx] || stepItem.reason;
+    reasonIdx++;
+    
+    return {
+      ...stepItem,
+      score: [...(stepItem.score || []), newScoreObj],
+      reason: newReason
+    };
+  });
+
+  // 计算平均变化量
+  const avgScoreChange = totalScoreChange / newStepArr.length;
+  const avgCredibilityChange = totalCredibilityChange / newStepArr.length;
+
+  setTask(prev => ({ 
+    ...prev, 
+    step: newStepArr,
+    scoreChange: avgScoreChange,
+    credibilityChange: avgCredibilityChange
+  }));
+};
 
   // 应用高亮样式到选中文本（与ChatMessage.js一致）
   const applyHighlightToSelection = (range, text) => {
@@ -2003,43 +2095,9 @@ const TaskDetailPage = () => {
     // 重置选择状态
     setSelectedTexts([]);
     setSelectionRanges([]);
-    lastHighlightedTextRef.current = '';
-    lastHighlightedRangeRef.current = null;
+
   };
 
-  // useEffect(() => {
-  //   if (isTesting && task && task.step && task.step.length > 0 && testProgress === 0) {
-  //     // step 补充后自动进入测试流程
-  //     const newStepArr = task.step.map(stepItem => {
-  //       const lastScore = Array.isArray(stepItem.score) && stepItem.score.length > 0 ? stepItem.score[stepItem.score.length - 1] : null;
-  //       const lastScoreValue = lastScore ? parseFloat(lastScore.score) : 0.7;
-  //       // 增长幅度 5%~10%
-  //       const minIncrease = 0.05;
-  //       const maxIncrease = 0.10;
-  //       const increase = minIncrease + Math.random() * (maxIncrease - minIncrease);
-  //       const newScoreValue = Math.min(1, (lastScoreValue * (1 + increase)).toFixed(2));
-  //       let newVersion = '1.0';
-  //       if (lastScore && lastScore.version) {
-  //         const lastVer = parseFloat(lastScore.version);
-  //         newVersion = (lastVer + 1).toFixed(1);
-  //       }
-  //       const newScoreObj = {
-  //         version: newVersion,
-  //         score: newScoreValue,
-  //         description: "优化后得分上升",
-  //         confidence: "0.95",
-  //         consumed_points: 60,
-  //         dimension: lastScore?.dimension || []
-  //       };
-  //       return {
-  //         ...stepItem,
-  //         score: [...(stepItem.score || []), newScoreObj]
-  //       };
-  //     });
-  //     setTask(prev => ({ ...prev, step: newStepArr }));
-  //     setTestProgress(1); // 启动进度
-  //   }
-  // }, [isTesting, task, testProgress]);
 
   useEffect(() => {
     // 只有 step 有数据时才同步
@@ -2307,8 +2365,8 @@ const TaskDetailPage = () => {
                 {[
                   { key: 'overview', label: '概览' },
                   { key: 'qa', label: 'QA' },
-                  { key: 'scene', label: '场景' },
-                  { key: 'template', label: '模板' },
+                  { key: 'scenario', label: '场景' },
+                  { key: 'flow', label: '模板' },
                   // 当任务状态为completed时才显示结果选项
                   ...(task.status === 'running' || task.status === 'completed' ? [{ key: 'result', label: '结果' }] : [])
                 ].map((item) => (

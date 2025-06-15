@@ -485,7 +485,7 @@ const TaskPage = () => {
         />
       </div>
 
-      <div className="tasks-container" style={{width: isChatOpen ? "" : "832px"}}>
+      <div className="tasks-container" style={{width: isChatOpen ? "100%" : "832px"}}>
         {tasks.length > 0 ? (
           <div className="tasks-grid">
             {tasks.map((task, idx) => (
@@ -497,7 +497,7 @@ const TaskPage = () => {
         ) : !loading ? (
           <Empty description="暂无任务数据" />
         ) : null}
-        <ListFooter loading={loading} hasMore={hasMore} />
+        {tasks.length > 0 && <ListFooter loading={loading} hasMore={hasMore} />}
         {error && <div className="error-message">{error}</div>}
       </div>
     </div>

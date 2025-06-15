@@ -28,9 +28,9 @@ import { worker } from "./mocks/browser"
 // 应用动态主题色 - 在引入样式之后调用
 applyColorTheme();
 
-if (process.env.NODE_ENV === "development") {
-  worker.start()
-}
+// if (process.env.NODE_ENV === "development") {
+//   worker.start()
+// }
 
 const root = ReactDOM.createRoot(document.getElementById("root"))
 root.render(

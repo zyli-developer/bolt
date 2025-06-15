@@ -2,10 +2,7 @@
 
 import { useState, useEffect, useRef, useContext, useMemo } from "react"
 import { useParams, useNavigate, useLocation } from "react-router-dom"
-import {  Button, Avatar, Tag, Spin, Select, Checkbox, Breadcrumb, Switch, Steps, message, Tooltip, Card } from "antd"
-import { transparentScrollbarStyle, hideScrollbarStyle } from "../styles/scrollbarStyles"
-import { evaluationModelInfoStyle, evaluationLeftSectionStyle, evaluationRightSectionStyle, evaluationSectionStyle } from "../styles/evaluation-styles"
-import colorToken from "../styles/utils/colorToken"
+import {  Button, Avatar, Tag, Spin, Select,  Breadcrumb, Switch, Steps, message, Tooltip, Card } from "antd"
 import {
   ArrowLeftOutlined,
   StarOutlined,
@@ -16,28 +13,12 @@ import {
   CommentOutlined,
   ForkOutlined,
   SettingOutlined,
-  PlusOutlined,
-  MinusOutlined,
   FileTextOutlined,
   CloseCircleOutlined,
   SendOutlined,
   DownOutlined,
   UpOutlined,
 } from "@ant-design/icons"
-import {
-  Area,
-  AreaChart,
-  ResponsiveContainer,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip as RechartsTooltip,
-  Radar,
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-} from "recharts"
 import taskService from "../services/taskService"
 import cardService from "../services/cardService"
 import { useChatContext } from "../contexts/ChatContext"
@@ -71,6 +52,7 @@ import { OptimizationContext } from "../contexts/OptimizationContext"
 
 // 导入通用评论列表组件
 import CommentsList from "../components/common/CommentsList";
+import useTextHighlight from '../hooks/useTextHighlight';
 
 const { Option } = Select
 
@@ -89,8 +71,8 @@ const STEP_TITLES = [
 const STEP_TYPE_TO_INDEX = {
   'result': 0,
   'qa': 1,
-  'scene': 2,
-  'template': 3,
+  'scenario': 2,
+  'flow': 3,
   'retest': 4,
   'submit': 5
 };
@@ -122,50 +104,53 @@ const OptimizationSteps = ({ currentStep, onStepChange }) => {
 };
 
 // QA优化界面组件
-const QAOptimizationSection = ({ comments = [], card }) => {
-  return (
-    <div className="qa-optimization-content" style={{ width: "100%" }}>
-      <QASection 
-        isEditable={true} 
-        taskId={card?.id}
-        card={card}
-        prompt={card?.prompt} 
-        response={card?.response_summary} 
-        comments={comments}
-      />
-    </div>
-  );
-};
+// const QAOptimizationSection = ({ card, comments }) => {
+//   return (
+//     <div className="qa-optimization-content" style={{ width: "100%" }}>
+//       <QASection 
+//         isEditable={true} 
+//         taskId={card?.id}
+//         card={card}
+//         prompt={card?.prompt} 
+//         response={card?.response } 
+//         comments={comments} // 传递 currentStepComments
+//       />
+//     </div>
+//   );
+// };
 
 // 场景优化界面组件
-const SceneOptimizationSection = ({ comments = [], card }) => {
-  return (
-    <div className="scene-optimization-content" style={{ width: "100%" }}>
-      <SceneSection 
-        isEditable={true} 
-        taskId={card?.id}
-        scenario={card?.scenario} 
-        comments={comments}
-        card={card}
-      />
-    </div>
-  );
-};
+// const SceneOptimizationSection = ({ card }) => {
+//   console.log('SceneOptimizationSection', card);
+//   return (
+//     <div className="scene-optimization-content" style={{ width: "100%" }}>
+//       <SceneSection 
+//         isEditable={true} 
+//         taskId={card?.id}
+//         scenario={card?.scenario} 
+//         comments={card?.annotation?.scenario || []} // 统一用 annotation
+//         card={card}
+//         onAddAnnotation={addAnnotationToTask} // 修复：传递注释添加方法
+//       />
+//     </div>
+//   );
+// };
 
 // 模板优化界面组件
-const TemplateOptimizationSection = ({ comments = [], card }) => {
-  return (
-    <div className="template-optimization-content" style={{ width: "100%" }}>
-      <TemplateSection 
-        isEditable={true} 
-        taskId={card?.id}
-        steps={card?.templateData ? { templateData: card.templateData, ...card?.step } : card?.step} 
-        comments={comments}
-        card={card}
-      />
-    </div>
-  );
-};
+// const TemplateOptimizationSection = ({ card }) => {
+//   console.log('TemplateOptimizationSection', card);
+//   return (
+//     <div className="template-optimization-content" style={{ width: "100%" }}>
+//       <TemplateSection 
+//         isEditable={true} 
+//         taskId={card?.id}
+//         steps={card?.flow_config ? { flow: card.flow_config, ...card?.step } : card?.step} 
+//         comments={card?.annotation?.flow || []} // 统一用 annotation
+//         card={card}
+//       />
+//     </div>
+//   );
+// };
 
 
 
@@ -208,11 +193,10 @@ const CardDetailPage = () => {
   const [isTaskStarted, setIsTaskStarted] = useState(false);
   
   // 添加右键菜单和讨论模态框相关状态
-  const [contextMenu, setContextMenu] = useState(null);
   const [selectedText, setSelectedText] = useState('');
-  const [discussModalVisible, setDiscussModalVisible] = useState(false);
-  const [annotationModalVisible, setAnnotationModalVisible] = useState(false);
-  const evaluationTextRef = useRef(null);
+  const [contextMenu, setContextMenu] = useState(null); // {x, y}
+  const [showAnnotationModal, setShowAnnotationModal] = useState(false);
+  const [showDiscussModal, setShowDiscussModal] = useState(false);
 
   // 添加注释展开状态
   const [expandedComment, setExpandedComment] = useState(null);
@@ -303,12 +287,12 @@ const CardDetailPage = () => {
         nextStep = 'qa';
         break;
       case 'qa':
-        nextStep = 'scene';
+        nextStep = 'scenario';
         break;
-      case 'scene':
-        nextStep = 'template';
+      case 'scenario':
+        nextStep = 'flow';
         break;
-      case 'template':
+      case 'flow':
         nextStep = 'retest';
         break;
       case 'retest':
@@ -334,10 +318,10 @@ const CardDetailPage = () => {
         stepType = 'qa';
         break;
       case 2:
-        stepType = 'scene';
+        stepType = 'scenario';
         break;
       case 3:
-        stepType = 'template';
+        stepType = 'flow';
         break;
       case 4:
         stepType = 'retest';
@@ -390,14 +374,14 @@ const CardDetailPage = () => {
       case 'qa':
         prevStep = 'result';
         break;
-      case 'scene':
+      case 'scenario':
         prevStep = 'qa';
         break;
-      case 'template':
-        prevStep = 'scene';
+      case 'flow':
+        prevStep = 'scenario';
         break;
       case 'retest':
-        prevStep = 'template';
+        prevStep = 'flow';
         break;
       case 'submit':
         prevStep = 'retest';
@@ -408,14 +392,14 @@ const CardDetailPage = () => {
         return;
     }
     
-    saveCurrentData(); // 先保存当前步骤数据
-    
-    // 关闭连续选择模式并清除高亮
-    if (isMultiSelectActive) {
-      setIsMultiSelectActive(false);
-      clearAllHighlights();
-    }
-    
+      saveCurrentData(); // 先保存当前步骤数据
+      
+      // 关闭连续选择模式并清除高亮
+      if (isMultiSelectActive) {
+        setIsMultiSelectActive(false);
+        clearAllHighlights();
+      }
+      
     setCurrentOptimizationStep(prevStep);
   };
 
@@ -429,8 +413,7 @@ const CardDetailPage = () => {
         
         // 检查ID格式，确定使用哪个API获取数据
         // 如果ID是数字格式（如"1001"），则使用getExplorationDetail
-        // 否则使用getCardDetail
-        if (/^\d+$/.test(id)) {
+        
           // 获取探索详情
           console.log(`正在获取ID为 ${id} 的探索详情...`);
           const response = await cardService.getExplorationDetail(id);
@@ -443,15 +426,6 @@ const CardDetailPage = () => {
           
           console.log(`获取到的探索详情数据:`, cardData);
           console.log(`获取到的模型评估数据:`, evaluationData);
-        } else {
-          // 获取普通卡片详情
-          console.log(`正在获取ID为 ${id} 的普通卡片详情...`);
-          cardData = await cardService.getCardDetail(id);
-          console.log(`获取到的普通卡片详情数据:`, cardData);
-        
-        // 获取模型评估数据
-          evaluationData = await taskService.getAllModelEvaluations();
-        }
         
         // 确保templateData正确设置
         if (!cardData.templateData && cardData.step) {
@@ -471,6 +445,24 @@ const CardDetailPage = () => {
             cardData.chartData.line = [];
           }
         }
+        // 自动从 step[].score[].dimension 生成 chartData.radar
+        if (cardData.chartData && (!cardData.chartData.radar || cardData.chartData.radar.length === 0)) {
+          let dimensionArr = null;
+          if (Array.isArray(cardData.step)) {
+            for (const step of cardData.step) {
+              if (Array.isArray(step.score) && step.score.length > 0 && step.score[0].dimension && step.score[0].dimension.length > 0) {
+                dimensionArr = step.score[0].dimension;
+                break;
+              }
+            }
+          }
+          if (dimensionArr) {
+            cardData.chartData.radar = dimensionArr.map((dim, idx) => ({
+              name: dim.latitude || `维度${idx+1}`,
+              value: typeof dim.weight === 'number' ? dim.weight * 100 : 0
+            }));
+          }
+        }
         
         console.log("获取到的卡片数据:", cardData);
         setCard(cardData)
@@ -488,30 +480,30 @@ const CardDetailPage = () => {
           setSelectedModel(availableModels[0]); // 设置第一个模型为当前选中的模型
         }
         
-        // 设置注释数据，确保正确使用task.annotation中的对应字段
+        // 设置注释数据，确保正确使用task.annotations中的对应字段
         if (isFromExplore || id) {
-          // 确保annotation对象存在，如果不存在则创建一个空的
+          // 确保 annotation 对象存在，如果不存在则创建一个空的
           if (!cardData.annotation) {
             cardData.annotation = {
               result: [],
               qa: [],
-              scene: [],
-              template: []
+              scenario: [],
+              flow: []
             };
           }
           
-                    // 使用步骤字符串确保直接映射到task.annotation对应字段
+          // 使用步骤字符串确保直接映射到 annotation 对应字段
           if (currentOptimizationStep === 'result' || currentOptimizationStep === 0) {
             setComments(Array.isArray(cardData.annotation.result) ? cardData.annotation.result : []);
           // QA优化 - 对应 qa 注释  
           } else if (currentOptimizationStep === 'qa' || currentOptimizationStep === 1) {
             setComments(Array.isArray(cardData.annotation.qa) ? cardData.annotation.qa : []);
-          // 场景优化 - 对应 scene 注释
-          } else if (currentOptimizationStep === 'scene' || currentOptimizationStep === 2) {
-            setComments(Array.isArray(cardData.annotation.scene) ? cardData.annotation.scene : []);
-          // 模板优化 - 对应 template 注释
-          } else if (currentOptimizationStep === 'template' || currentOptimizationStep === 3) {
-            setComments(Array.isArray(cardData.annotation.template) ? cardData.annotation.template : []);
+          // 场景优化 - 对应 scenario 注释
+          } else if (currentOptimizationStep === 'scenario' || currentOptimizationStep === 2) {
+            setComments(Array.isArray(cardData.annotation.scenario) ? cardData.annotation.scenario : []);
+          // 模板优化 - 对应 flow 注释
+          } else if (currentOptimizationStep === 'flow' || currentOptimizationStep === 3) {
+            setComments(Array.isArray(cardData.annotation.flow) ? cardData.annotation.flow : []);
           }
         }
         
@@ -701,12 +693,12 @@ const CardDetailPage = () => {
   // 处理分支为新任务按钮点击
   const handleForkTask = () => {
     // 确保传递完整的卡片数据，包含问题描述和答案描述
-    // 正确映射字段名：问题描述(questionDescription)对应prompt，回答描述(answerDescription)对应response_summary
+    // 正确映射字段名：问题描述(questionDescription)对应prompt，回答描述(answerDescription)对应response
     const newCompleteCardData = {
       ...card,
-      // 正确映射字段：使用prompt作为问题描述，response_summary作为答案描述
+      // 正确映射字段：使用prompt作为问题描述，response作为答案描述
       questionDescription: card.prompt || card.qa?.question || "基于卡片创建的问题描述。\n\n请在此处描述您想要测试或评估的内容。",
-      answerDescription: card.response_summary || card.summary || card.qa?.answer || "基于卡片创建的答案描述。\n\n请在此处描述预期的测试结果或评估标准。"
+      answerDescription: card.response || card.summary || card.qa?.answer || "基于卡片创建的答案描述。\n\n请在此处描述预期的测试结果或评估标准。"
     }
     // 保存到状态中
     setCompleteCardData(newCompleteCardData)
@@ -887,33 +879,29 @@ const CardDetailPage = () => {
   // 使用card中的annotation数据构建任务注释数据对象
   const getAllAnnotations = (card) => {
     if (!card?.annotation) return [];
-    
-    // 合并所有类型的注释数据
     const allAnnotations = [];
-    
-    // 遍历annotation对象的所有属性（result、qa、scene、template等）
-    Object.keys(card?.annotation || {}).forEach(key => {
+    ['result', 'qa', 'scenario', 'flow'].forEach(key => {
       const categoryAnnotations = card.annotation[key];
-      // 确保是数组再添加
       if (Array.isArray(categoryAnnotations)) {
         allAnnotations.push(...categoryAnnotations);
       }
     });
-    
     return allAnnotations;
   };
   
-  // 获取原始annotation对象
+  // 获取原始annotation对象（只用 result、qa、scenario、flow 四类）
   const getAnnotationObject = (card) => {
     if (!card?.annotation || typeof card.annotation !== 'object') {
       return {
+        result: [],
         qa: [],
-        scene: [],
-        template: [],
-        result: []
+        scenario: [],
+        flow: []
       };
     }
-    return card.annotation;
+    // 只保留四个字段
+    const { result = [], qa = [], scenario = [], flow = [] } = card.annotation;
+    return { result, qa, scenario, flow };
   };
   
   const taskAnnotationData = {
@@ -950,7 +938,7 @@ const CardDetailPage = () => {
     }
     setIsTesting(true);
     setTestProgress(0);
-
+    
     // 1. 发起API调用，模拟生成新version
     try {
       let newStepArr = Array.isArray(card?.step) ? [...card.step] : [];
@@ -1034,7 +1022,7 @@ const CardDetailPage = () => {
       selectedModels: selectedModels ? [...selectedModels] : [], // 深拷贝选中的模型
       // 添加卡片的原始数据
       description: card?.description || card?.summary || "",
-      response_summary: card?.response_summary || "",
+      response: card?.response || "",
       prompt: card?.prompt || "",
       scenario: card?.scenario ? JSON.parse(JSON.stringify(card.scenario)) : {},
       templateData: card?.templateData ? JSON.parse(JSON.stringify(card.templateData)) : {},
@@ -1044,8 +1032,8 @@ const CardDetailPage = () => {
       annotation: card?.annotation ? JSON.parse(JSON.stringify(card.annotation)) : {
         result: [],
         qa: [],
-        scene: [],
-        template: []
+        scenario: [],
+        flow: []
       },
       // 保留原始卡片的所有step信息并深拷贝
       step: Array.isArray(card?.step) ? JSON.parse(JSON.stringify(card.step)) : (card?.step ? JSON.parse(JSON.stringify(card.step)) : {}),
@@ -1065,15 +1053,15 @@ const CardDetailPage = () => {
       optimizationData: optimizationData,
       // 确保所有必要的字段都被正确映射
       questionDescription: card.prompt || "",
-      answerDescription: card.response_summary || card.summary || "",
+      answerDescription: card.response || card.summary || "",
       // 确保所有字段都被深拷贝
       scenario: card?.scenario ? JSON.parse(JSON.stringify(card.scenario)) : {},
       templateData: card?.templateData ? JSON.parse(JSON.stringify(card.templateData)) : {},
       annotation: card?.annotation ? JSON.parse(JSON.stringify(card.annotation)) : {
         result: [],
         qa: [],
-        scene: [],
-        template: []
+        scenario: [],
+        flow: []
       },
       step: Array.isArray(card?.step) ? JSON.parse(JSON.stringify(card.step)) : 
             (card?.step ? JSON.parse(JSON.stringify(card.step)) : {})
@@ -1200,7 +1188,7 @@ const CardDetailPage = () => {
     setSelectedModalText(textToShow);
     
     // 显示模态框
-    setAnnotationModalVisible(true);
+    setShowAnnotationModal(true);
   };
 
   // 处理右键菜单项点击
@@ -1213,7 +1201,7 @@ const CardDetailPage = () => {
           const combinedText = Array.from(new Set(selectedTexts)).join('\n\n');
           setSelectedText(combinedText);
         }
-        setDiscussModalVisible(true);
+        setShowDiscussModal(true);
         
         // 讨论后关闭连续选择模式
         setIsMultiSelectActive(false);
@@ -1346,39 +1334,35 @@ const CardDetailPage = () => {
 
   // 处理添加注释的逻辑
   const handleSaveAnnotation = (data) => {
-    console.log('handleSaveAnnotation----------data', data);
-    try {
-      // 如果是多选模式，使用合并的文本
-      const textToSave = isMultiSelectActive || isMultiSelectTempMode ? selectedTexts.join('\n\n') : selectedText;
-      
-      if (!textToSave) {
-        message.error('请选择文本');
-        return;
-      }
-
+    console.log('handleSaveAnnotation', data);
+    // 只允许新四类，直接用 currentOptimizationStep
+    let step = currentOptimizationStep;
+    if (step === 'scene') step = 'scenario'; // 兼容旧值，强制为新值
       const annotationData = {
         ...data,
-        selectedText: textToSave,
-        id: `comment-${Date.now()}`, // 生成唯一ID
-        time: new Date().toISOString()
-      };
-
-      // 添加到全局上下文中
+      id: data.id || `comment-${Date.now()}`,
+      text: data.text || data.content || '',
+      summary: data.summary || (data.text ? (data.text.length > 20 ? data.text.substring(0, 20) + '...' : data.text) : ''),
+      selectedText: data.selectedText || selectedModalText || '',
+      step,
+      author: {
+        name: '当前用户',
+        avatar: 'U'
+      },
+      time: data.time || new Date().toLocaleString(),
+      attachments: data.attachments || [],
+    };
       addComment(annotationData);
-      
-      setAnnotationModalVisible(false);
-      setContextMenu(null);
-      
-      // 清除高亮和选择
-      if (isMultiSelectActive || isMultiSelectTempMode) {
-        clearAllHighlights();
-      }
-      
-      message.success('添加成功');
-    } catch (error) {
-      console.error('添加注释失败', error);
-      message.error('添加失败');
+    addAnnotationToTask(annotationData, step); // 这里 step 只会是 result/qa/scenario/flow
+    // 立即同步当前分类注释到 currentStepComments
+    if (card && card.annotation && card.annotation[step]) {
+      setComments([...card.annotation[step], annotationData]);
+    } else {
+      setComments([annotationData]);
     }
+    setShowAnnotationModal(false);
+    setSelectedModalText('');
+      message.success('添加成功');
   };
 
   // 添加一个mouseup事件处理函数，用于处理在连续选择状态下无需右键也能自动高亮
@@ -1471,7 +1455,7 @@ const CardDetailPage = () => {
         id: reportId,
         title: `${card.title} 报告`,
         prompt: card.prompt,
-        response_summary: card.response_summary || card.summary,
+        response: card.response || card.summary,
         type: 'report',
         source: card.source,
         author: card.author,
@@ -1543,6 +1527,52 @@ const CardDetailPage = () => {
     }
   };
 
+  // 假设 messages 是 [{id, text}] 或类似结构
+  const messages = Array.isArray(card?.step)
+    ? card.step.map((s, i) => ({
+        id: s.id || i,
+        text: s.text || s.prompt || s.description || ''
+      }))
+    : [];
+
+  // 受控高亮 hook
+  const { highlightMap, addHighlight, clearHighlights, renderHighlightedText } = useTextHighlight();
+
+  // 鼠标松开时添加高亮
+  const handleMouseUp = (msgId, text) => {
+    const selection = window.getSelection();
+    if (!selection || selection.isCollapsed) return;
+    const anchorNode = selection.anchorNode;
+    if (!anchorNode || anchorNode.nodeType !== Node.TEXT_NODE) return;
+    const start = selection.anchorOffset;
+    const end = selection.focusOffset;
+    if (start === end) return;
+    const s = Math.min(start, end);
+    const e = Math.max(start, end);
+    const msgHighlights = highlightMap[msgId] || [];
+    if (msgHighlights.some(hl => s >= hl.start && e <= hl.end)) return;
+    addHighlight(msgId, s, e);
+    selection.removeAllRanges();
+  };
+
+  // 添加注释到卡片中的方法
+  const addAnnotationToTask = (newAnnotation, stepType) => {
+    console.log('addAnnotationToTask', newAnnotation, stepType);
+    if (!card || !newAnnotation) return;
+    // 只允许四个分类
+    let category = stepType || newAnnotation.step || 'result';
+    if (![ 'result', 'qa', 'scenario', 'flow' ].includes(category)) category = 'result';
+    const updatedAnnotation = card.annotation ? { ...card.annotation } : {
+      result: [], qa: [], scenario: [], flow: []
+    };
+    if (!updatedAnnotation[category]) updatedAnnotation[category] = [];
+    updatedAnnotation[category].push({ ...newAnnotation, step: category });
+    const updatedCard = { ...card, annotation: updatedAnnotation };
+    setCard(updatedCard);
+    // 立即同步当前分类注释到 currentStepComments
+    setComments(updatedAnnotation[category]);
+  };
+
   if (loading) {
     return (
       <div className={`card-detail-page ${isChatOpen ? "chat-open" : "chat-closed"}`}>
@@ -1565,7 +1595,21 @@ const CardDetailPage = () => {
   }
 
   return (
-    <div className={`card-detail-page ${isChatOpen ? "chat-open" : "chat-closed"} ${isMultiSelectActive ? 'multi-select-mode' : ''}`}>
+    <div
+      className={`card-detail-page ${isChatOpen ? "chat-open" : "chat-closed"} ${isMultiSelectActive ? 'multi-select-mode' : ''}`}
+      onContextMenu={e => {
+        if (!isOptimizationMode) return;
+        e.preventDefault();
+        const sel = window.getSelection();
+        const text = sel ? sel.toString().trim() : '';
+        if (text) {
+          setSelectedText(text);
+          setContextMenu({ x: e.clientX, y: e.clientY });
+        } else {
+          setContextMenu(null);
+        }
+      }}
+    >
       {/* 隐藏头部的community/workspace/peison的tab */}
       <div className="hide-tabs-nav" style={{ display: 'none' }}>
         {/* 这里本应显示tab，但现在设置为不显示 */}
@@ -1592,7 +1636,7 @@ const CardDetailPage = () => {
       {/* 卡片标题和信息 */}
       <div className="task-detail-title-section" style={{ padding: "6px", marginBottom: "4px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <h1 className="task-title" style={{ fontSize: "18px", margin: "0 0 4px 0" }}>{card.title}</h1>
+        <h1 className="task-title">  {card.prompt}</h1>
           <Button 
             type="text"
             icon={isDetailsExpanded ? <UpOutlined /> : <DownOutlined />}
@@ -1605,19 +1649,19 @@ const CardDetailPage = () => {
         <div className="task-creator-section" style={{ padding: "4px", gap: "8px" }}>
           <div className="task-creator-info" style={{ gap: "8px" }}>
             <Avatar size={24} className="creator-avatar">
-              {card.author?.name?.charAt(0)}
+              {card.created_by?.charAt ? card.created_by.charAt(0) : ''}
             </Avatar>
             <span className="creator-text" style={{ fontSize: "12px" }}>
-              by <span className="creator-name">{card.author?.name}</span> from{" "}
-              <span className="creator-source">{card.source}</span>
+              by <span className="creator-name">{card.created_by}</span> from{" "}
+              <span className="creator-source">{card.created_from}</span>
             </span>
           </div>
           <div className="task-tags" style={{ gap: "4px" }}>
-            {card.tags.map((tag, index) => (
-              <Tag key={index} className="task-dimension-tag">
-                {tag}
-              </Tag>
+            <div>
+              {(card.keyword || []).map((tag, idx) => (
+                <Tag className="task-dimension-tag" key={idx}>{tag}</Tag>
             ))}
+            </div>
           </div>
           <div className="task-actions-top">
             <Button 
@@ -1667,7 +1711,7 @@ const CardDetailPage = () => {
             <div style={{ marginBottom: "16px" }}>
               <div style={{ display: "flex" }}>
                 <div style={{ width: "80px", color: "var(--color-text-tertiary)", fontSize: "13px" }}>描述</div>
-                <div style={{ flex: 1, fontSize: "13px", lineHeight: "1.6" }}>{card.description || card.summary || card.response_summary || "无描述"}</div>
+                <div style={{ flex: 1, fontSize: "13px", lineHeight: "1.6" }}>{card.description }</div>
               </div>
             </div>
 
@@ -1692,7 +1736,7 @@ const CardDetailPage = () => {
 
                 <div style={{ display: "flex", marginBottom: "12px" }}>
                   <div style={{ width: "80px", color: "var(--color-text-tertiary)", fontSize: "13px" }}>完成期限</div>
-                  <div style={{ flex: 1, fontSize: "13px" }}>{card.deadline || "未设置"}</div>
+                  <div style={{ flex: 1, fontSize: "13px" }}>{card.due_date || "未设置"}</div>
                 </div>
               </div>
 
@@ -1746,12 +1790,12 @@ const CardDetailPage = () => {
             />
             
             {/* 优化模式内容区域 */}
-            <div className="optimization-content" style={{ display: "flex", gap: "4px" }}>
+            <div className="optimization-content" style={{ display: "flex", gap: "4px"  }}>
               {currentOptimizationStep === 'result' ? (
                 // 结果质询界面
                 <>
                   {/* 左侧评估结果区域 - 使用ResultPage组件 */}
-                  <div style={{ flex: currentStepComments.length > 0 ? 2 : 3, display: "flex", flexDirection: "column", gap: "4px" }}>
+                  <div style={{ flex: currentStepComments.length > 0 ? 2 : 3, display: "flex", flexDirection: "column", gap: "4px",width: "100%" }}>
                     <ResultPage 
                       task={card}
                       enhancedChartData={enhancedChartData}
@@ -1768,17 +1812,45 @@ const CardDetailPage = () => {
                       comments={currentStepComments}
                     />
                   </div>
-        
+                  
                 </>
               ) : currentOptimizationStep === 'qa' ? (
                 // QA优化界面
-                <QAOptimizationSection comments={currentStepComments} card={card} />
-              ) : currentOptimizationStep === 'scene' ? (
+                // <QAOptimizationSection card={card} comments={currentStepComments} />
+                <div className="qa-optimization-content" style={{ width: "100%" }}>
+                <QASection 
+                  isEditable={true} 
+                  taskId={card?.id}
+                  card={card}
+                  prompt={card?.prompt} 
+                  response={card?.response } 
+                  comments={currentStepComments} // 传递 currentStepComments
+                />
+              </div>
+              ) : currentOptimizationStep === 'scenario' ? (
                 // 场景优化界面
-                <SceneOptimizationSection comments={currentStepComments} card={card} />
-              ) : currentOptimizationStep === 'template' ? (
+                <div className="scene-optimization-content" style={{ width: "100%" }}>
+                  <SceneSection 
+                    isEditable={true} 
+                    taskId={card?.id}
+                    scenario={card?.scenario} 
+                    comments={currentStepComments} // 统一用 context
+                    card={card}
+                    onAddAnnotation={addAnnotationToTask} // 修复：传递注释添加方法
+                  />
+                </div>
+              ) : currentOptimizationStep === 'flow' ? (
                 // 模板优化界面
-                <TemplateOptimizationSection comments={currentStepComments} card={card} />
+                <div className="template-optimization-content" style={{ width: "100%" }}>
+                  <TemplateSection 
+                    isEditable={true} 
+                    taskId={card?.id}
+                    steps={card?.flow_config ? { flow: card.flow_config, ...card?.step } : card?.step} 
+                    comments={currentStepComments} // 统一用 context
+                    card={card}
+                    onAddAnnotation={addAnnotationToTask} // 修复：传递注释添加方法
+                  />
+                </div>
               ) : currentOptimizationStep === 'retest' ? (
                 // 再次测试界面
                 <div style={{ width: "100%", display: "flex", flex: 1 }}>
@@ -2131,36 +2203,23 @@ const CardDetailPage = () => {
           y={contextMenu.y}
           onAction={handleContextMenuAction}
           onClose={() => setContextMenu(null)}
-          isMultiSelectActive={isMultiSelectActive}
         />
       )}
-      
-      {/* 讨论模态框 */}
-      <DiscussModal
-        visible={discussModalVisible}
-        onClose={() => {
-          setDiscussModalVisible(false);
-          // 关闭讨论窗口后，如果是连续选择模式，清除所有高亮
-          if (isMultiSelectActive) {
-            clearAllHighlights();
-          }
-        }}
-        selectedText={(isMultiSelectActive || isMultiSelectTempMode) && selectedTexts.length > 0
-          ? Array.from(new Set(selectedTexts)).join('\n\n') // 使用Set去重
-          : selectedText}
-      />
 
-      {/* 添加观点模态框 */}
+      {/* 添加观点弹窗 */}
       <AnnotationModal
-        visible={annotationModalVisible}
-        onClose={() => {
-          setAnnotationModalVisible(false);
-          clearAllHighlights();
-        }}
+        visible={showAnnotationModal}
+        onClose={() => setShowAnnotationModal(false)}
         onSave={handleSaveAnnotation}
-        selectedText={selectedModalText}
-        initialContent={selectedModalText}
-        step={currentOptimizationStep}
+        selectedText={selectedText}
+        initialContent={selectedText}
+        step={currentOptimizationStep || 'result'}
+      />
+      {/* 讨论弹窗 */}
+      <DiscussModal
+        visible={showDiscussModal}
+        onClose={() => setShowDiscussModal(false)}
+        selectedText={selectedText}
       />
       
       {/* 分享模态框 */}

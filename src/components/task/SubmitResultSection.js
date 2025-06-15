@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Typography, 
+
+
   Avatar, 
-  Tag, 
+
+
   Select,
   Checkbox,
   Spin
@@ -12,20 +14,8 @@ import {
   PlusOutlined,
   MinusOutlined
 } from '@ant-design/icons';
-import {
-  Area,
-  AreaChart,
-  ResponsiveContainer,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip as RechartsTooltip,
-  Radar,
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-} from 'recharts';
+import LineChartSection from '../card/LineChartSection';
+import RadarChartSection from '../card/RadarChartSection';
 
 const { Option } = Select;
 
@@ -53,7 +43,17 @@ const SubmitResultSection = ({ task }) => {
           modelKeys.push(modelKey);
           
           // 获取评分数据（默认使用第一个评分记录）
-          const scoreData = step.score && step.score.length > 0 ? step.score[0] : {};
+          let scoreData = {};
+          let matchedReason = '暂无评估原因';
+          if (Array.isArray(step.score) && step.score.length > 0) {
+            // 优先查找与task.version匹配的score
+            scoreData = step.score.find(s => s.version === task.version) || step.score[0];
+            if (scoreData && scoreData.version === task.version && scoreData.reason) {
+              matchedReason = scoreData.reason;
+            } else if (scoreData && scoreData.reason) {
+              matchedReason = scoreData.reason;
+            }
+          }
           
           modelData[modelKey] = {
             name: step.agent,
@@ -62,14 +62,20 @@ const SubmitResultSection = ({ task }) => {
             credibility: scoreData.confidence || "0.0",
             credibilityChange: scoreData.credibilityChange || "+0.0%",
             tags: scoreData.dimension ? scoreData.dimension.map(d => d.latitude) : ['未知维度'],
-            description: step.reason || '暂无评估原因',
+            description: matchedReason,
+            description: matchedReason,
             updatedAt: scoreData.updated_at ? new Date(scoreData.updated_at.seconds * 1000).toLocaleDateString() : '未知时间',
             updatedBy: '系统',
-            history: ''
+            history: '',
+            reason: matchedReason
           };
         }
       });
     }
+    
+    console.log("modelData",modelData)
+    
+    console.log("modelData",modelData)
     
     // 设置评估数据
     setEvaluationData(modelData);
@@ -95,130 +101,75 @@ const SubmitResultSection = ({ task }) => {
 
   // 准备图表数据
   const prepareChartData = () => {
-    if (!task || !task.chartData) return;
-    
-    try {
-      // 获取雷达图数据
-      const radarData = task.chartData.radar || [];
-      
-      // 创建增强的雷达图数据
-      const enhancedRadar = radarData.map(item => {
-        const radarPoint = {
-          name: item.name || '未知维度',
-          value: Math.round(item.value || 0),
-        };
-        
-        // 为每个模型添加对应的数据点
-        if (Array.isArray(task.step)) {
-          task.step.forEach((step, modelIndex) => {
-            if (step && step.agent) {
-              const modelKey = step.agent.toLowerCase().replace(/\s+/g, '');
-              // 使用偏移量来区分不同模型的数据点
-              const offset = 0.8 + (modelIndex * 0.05);
-              radarPoint[modelKey] = Math.round(Math.min(100, (item.value || 0) * offset));
+    if (!task || !task.step) return;
+
+    // 1. 收集所有维度
+    const steps = Array.isArray(task.step) ? task.step : [];
+    const modelKeys = steps.map(step => step.agent?.toLowerCase().replace(/\s+/g, '')).filter(Boolean);
+    const dimensionMap = {};
+
+    steps.forEach((step) => {
+      const modelKey = step.agent?.toLowerCase().replace(/\s+/g, '');
+      if (!modelKey || !Array.isArray(step.score)) return;
+      // 只取最新一条score
+      const lastScore = step.score[step.score.length - 1];
+      if (!lastScore || !Array.isArray(lastScore.dimension)) return;
+      lastScore.dimension.forEach(dim => {
+        if (!dim.latitude) return;
+        if (!dimensionMap[dim.latitude]) {
+          dimensionMap[dim.latitude] = { name: dim.latitude };
+        }
+        // 百分比显示 - 确保使用dimension中的score值
+        const scoreValue = dim.score;
+        dimensionMap[dim.latitude][modelKey] =
+          typeof scoreValue === 'number'
+            ? Math.round(scoreValue )
+            : Math.round((parseFloat(scoreValue) || 0));
+      });
+    });
+
+    const enhancedRadar = Object.values(dimensionMap);
+
+    // 计算雷达图的动态最大值
+    let maxRadarValue = 0;
+    enhancedRadar.forEach(dimension => {
+      Object.keys(dimension).forEach(key => {
+        if (key !== 'name' && typeof dimension[key] === 'number') {
+          maxRadarValue = Math.max(maxRadarValue, dimension[key]);
+        }
+      });
+    });
+    // 设置一个合理的最大值，向上取整到最近的10的倍数
+    const dynamicMaxValue = maxRadarValue > 0 ? Math.ceil(maxRadarValue / 10) * 10 : 100;
+
+    // 折线图数据保持原逻辑
+    let lineData = [];
+    if (Array.isArray(task.step) && task.step.length > 0) {
+      task.step.forEach(step => {
+        if (step && Array.isArray(step.score) && step.score.length > 0) {
+          step.score.forEach(scoreData => {
+            if (!scoreData.version) return;
+            const existingPoint = lineData.find(point => point.month === scoreData.version);
+            const modelKey = step.agent?.toLowerCase().replace(/\s+/g, '');
+            const scoreValue = parseFloat(scoreData.score || 0) * 100;
+            if (existingPoint) {
+              if (modelKey) existingPoint[modelKey] = Math.round(scoreValue);
+            } else {
+              const newPoint = { month: scoreData.version, value: Math.round(scoreValue) };
+              if (modelKey) newPoint[modelKey] = Math.round(scoreValue);
+              lineData.push(newPoint);
             }
           });
         }
-        
-        return radarPoint;
-      });
-      
-      // 创建折线图数据
-      let lineData = [];
-      
-      // 从task.step中的version数据创建折线图数据
-      if (Array.isArray(task.step) && task.step.length > 0) {
-        task.step.forEach(step => {
-          if (step && Array.isArray(step.score) && step.score.length > 0) {
-            // 获取所有包含version的评分数据
-            const versionsData = step.score
-              .filter(scoreData => scoreData && scoreData.version)
-              .map(scoreData => ({
-                version: scoreData.version,
-                score: parseFloat(scoreData.score || 0) * 100
-              }));
-            
-            // 为每个版本创建数据点
-            versionsData.forEach(versionData => {
-              // 检查此版本是否已存在于lineData中
-              const existingPoint = lineData.find(point => point.month === versionData.version);
-              
-              if (existingPoint) {
-                // 如果已存在，为当前模型添加数据
-                if (step.agent) {
-                  const modelKey = step.agent.toLowerCase().replace(/\s+/g, '');
-                  existingPoint[modelKey] = Math.round(versionData.score);
-                }
-              } else {
-                // 创建新的数据点
-                const newPoint = {
-                  month: versionData.version,
-                  value: Math.round(versionData.score),
-                };
-                
-                // 为当前模型添加数据
-                if (step.agent) {
-                  const modelKey = step.agent.toLowerCase().replace(/\s+/g, '');
-                  newPoint[modelKey] = Math.round(versionData.score);
-                }
-                
-                lineData.push(newPoint);
-              }
-            });
-          }
-        });
-      }
-      
-      // 如果没有足够的折线图数据，使用task.chartData.line
-      if (lineData.length < 2 && task.chartData.line) {
-        const enhancedLine = task.chartData.line.map((item, index) => {
-          const linePoint = {
-            month: item.month || `V${index+1}`,
-            value: Math.round(item.value || 0),
-          };
-          
-          // 为每个模型添加对应的数据点
-          if (Array.isArray(task.step)) {
-            task.step.forEach((step, modelIndex) => {
-              if (step && step.agent) {
-                const modelKey = step.agent.toLowerCase().replace(/\s+/g, '');
-                const offset = 0.8 + (modelIndex * 0.05);
-                linePoint[modelKey] = Math.round(Math.min(100, (item.value || 0) * offset));
-              }
-            });
-          }
-          
-          return linePoint;
-        });
-        
-        lineData = enhancedLine;
-      }
-      
-      // 排序折线图数据，确保按版本顺序显示
-      lineData.sort((a, b) => {
-        // 尝试提取版本号进行数字比较
-        const versionA = parseFloat(a.month.replace(/[^0-9.]/g, '')) || 0;
-        const versionB = parseFloat(b.month.replace(/[^0-9.]/g, '')) || 0;
-        return versionA - versionB;
-      });
-      
-      setEnhancedChartData({ radar: enhancedRadar, line: lineData });
-    } catch (error) {
-      console.error("处理图表数据时出错:", error);
-      // 设置默认图表数据
-      setEnhancedChartData({
-    radar: [
-          { name: "维度1", value: 70 },
-          { name: "维度2", value: 65 },
-          { name: "维度3", value: 80 }
-    ],
-    line: [
-          { month: "V1", value: 60 },
-          { month: "V2", value: 70 },
-          { month: "V3", value: 80 }
-        ]
       });
     }
+    lineData.sort((a, b) => {
+      const versionA = parseFloat(a.month.replace(/[^0-9.]/g, '')) || 0;
+      const versionB = parseFloat(b.month.replace(/[^0-9.]/g, '')) || 0;
+      return versionA - versionB;
+    });
+
+    setEnhancedChartData({ radar: enhancedRadar, line: lineData, maxValue: dynamicMaxValue });
   };
 
   // 获取所有可用的模型选项
@@ -334,7 +285,17 @@ const SubmitResultSection = ({ task }) => {
                         </div>
                         <div className="model-tags" style={{ gap: "4px" }}>
                           <span className="model-tag" style={{ padding: "0 4px", fontSize: "11px" }}>
-                            {task.paramCount || '未知参数'}
+                            {
+                              (() => {
+                                const step = Array.isArray(task.step)
+                                  ? task.step.find(s => s.agent && s.agent.toLowerCase().replace(/\s+/g, '') === modelKey)
+                                  : null;
+                                const consumed = step && Array.isArray(step.score) && step.score[0]
+                                  ? step.score[0].consumed_points
+                                  : undefined;
+                                return consumed !== undefined ? `${consumed} tokens` : '未知消耗';
+                              })()
+                            }
                             </span>
                         </div>
                       </div>
@@ -347,7 +308,17 @@ const SubmitResultSection = ({ task }) => {
                   {expandedModel === modelKey && (
                     <div className="model-panel-content" style={{ padding: "0 8px 8px" }}>
                       <div className="evaluation-content" style={{ padding: "8px" }}>
-                        <p className="evaluation-text" style={{ fontSize: "12px", margin: 0, lineHeight: "1.4" }}>{evaluationData[modelKey]?.description}</p>
+                        <p className="evaluation-text" style={{ fontSize: "12px", margin: 0, lineHeight: "1.4" }}>
+                          {
+                            evaluationData[modelKey]?.reason ||
+                            (() => {
+                              const step = Array.isArray(task.step)
+                                ? task.step.find(s => s.agent && s.agent.toLowerCase().replace(/\s+/g, '') === modelKey)
+                                : null;
+                              return step?.reason || '暂无描述';
+                            })()
+                          }
+                        </p>
                       </div>
                     </div>
                   )}
@@ -371,59 +342,17 @@ const SubmitResultSection = ({ task }) => {
             </div>
 
             <div className="line-chart-container" style={{ height: "150px", marginTop: "4px" }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart 
-                  data={enhancedChartData.line} 
-                  margin={{ top: 2, right: 5, left: 0, bottom: 2 }}
-                >
-                  {/* 渐变定义 */}
-                  <defs>
-                    {Object.keys(evaluationData).map(modelKey => (
-                      <linearGradient key={modelKey} id={`color${modelKey}`} x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor={getModelColor(modelKey)} stopOpacity={0.2}/>
-                        <stop offset="95%" stopColor={getModelColor(modelKey)} stopOpacity={0}/>
-                      </linearGradient>
-                    ))}
-                  </defs>
-                  <CartesianGrid 
-                    vertical={false} 
-                    horizontal={true}
-                    stroke={colorToken.colorBorderSecondary}
-                  />
-                  <XAxis 
-                    dataKey="month" 
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 10, fill: colorToken.colorTextTertiary }}
-                  />
-                  <YAxis 
-                    hide={true}
-                    domain={[0, 'dataMax + 20']}
-                  />
-                  <RechartsTooltip 
-                    cursor={false}
-                    contentStyle={{
-                      background: colorToken.colorBgContainer,
-                      border: 'none',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                      borderRadius: '4px',
-                      padding: '4px 8px'
-                    }}
-                  />
-                  {selectedModels.map(modelKey => (
-                    <Area
-                      key={modelKey}
-                      type="monotone"
-                      dataKey={modelKey}
-                      name={evaluationData[modelKey]?.name || modelKey}
-                      stroke={getModelColor(modelKey)}
-                      strokeWidth={1.5}
-                      fill={`url(#color${modelKey})`}
-                      dot={false}
-                    />
-                  ))}
-                </AreaChart>
-              </ResponsiveContainer>
+              <LineChartSection 
+                card={{
+                  ...task,
+                  step: task.step,
+                  chartData: { line: enhancedChartData.line }
+                }}
+                showLinearGradient={true}
+                height={150}
+                selectedModels={selectedModels}
+              />
+
             </div>
           </div>
 
@@ -433,39 +362,29 @@ const SubmitResultSection = ({ task }) => {
               <div className="metric-item" style={{ padding: "8px" }}>
                 <div className="metric-label" style={{ fontSize: "12px", marginBottom: "4px" }}>综合得分</div>
                 <div className="metric-value" style={{ fontSize: "20px" }}>{currentEvaluation.score || "0.0"}</div>
-                <div className={`metric-change ${(currentEvaluation.scoreChange || "").startsWith("+") ? "positive" : "negative"}`} style={{ fontSize: "12px" }}>
-                  {currentEvaluation.scoreChange || "+0.0%"}
+                <div className={`metric-change ${String(task.scoreChange || "").startsWith("+") ? "positive" : "negative"}`} style={{ fontSize: "12px" }}>
+                  {task.scoreChange || "+0.0%"}
                 </div>
               </div>
 
               <div className="metric-item" style={{ padding: "8px" }}>
-                <div className="metric-label" style={{ fontSize: "12px", marginBottom: "4px" }}>各维度得分</div>
+                <div className="metric-label" style={{ fontSize: "12px", marginBottom: "4px" }}>置信度得分</div>
                 <div className="metric-value" style={{ fontSize: "20px" }}>{currentEvaluation.credibility || "0.0"}</div>
-                <div className={`metric-change ${(currentEvaluation.credibilityChange || "").startsWith("+") ? "positive" : "negative"}`} style={{ fontSize: "12px" }}>
-                  {currentEvaluation.credibilityChange || "+0.0%"}
+                <div className={`metric-change ${String(task.credibilityChange || "").startsWith("+") ? "positive" : "negative"}`} style={{ fontSize: "12px" }}>
+                  {task.credibilityChange || "+0.0%"}
                 </div>
               </div>
             </div>
 
             {/* 雷达图 */}
             <div className="radar-chart-content" style={{ height: "220px" }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <RadarChart data={enhancedChartData.radar}>
-                  <PolarGrid stroke={colorToken.colorBorderSecondary} />
-                  <PolarAngleAxis dataKey="name" tick={{ fontSize: 10, fill: colorToken.colorTextTertiary }} />
-                  <PolarRadiusAxis domain={[0, 100]} tick={{ fontSize: 9, fill: colorToken.colorTextTertiary }} axisLine={false} />
-                  {selectedModels.map(modelKey => (
-                    <Radar 
-                      key={modelKey}
-                      name={evaluationData[modelKey]?.name || modelKey} 
-                      dataKey={modelKey} 
-                      stroke={getModelColor(modelKey)} 
-                      fill={getModelColor(modelKey)} 
-                      fillOpacity={0.2} 
+              <RadarChartSection 
+                radarData={enhancedChartData.radar}
+                modelKeys={selectedModels}
+                maxValue={enhancedChartData.maxValue || 100}
+                height={220}
                     />
-                  ))}
-                </RadarChart>
-              </ResponsiveContainer>
+      
             </div>
           </div>
 
@@ -476,4 +395,4 @@ const SubmitResultSection = ({ task }) => {
   );
 };
 
-export default SubmitResultSection; 
+export default SubmitResultSection;

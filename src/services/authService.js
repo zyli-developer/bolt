@@ -77,7 +77,7 @@ export const clearAuth = () => {
 export const login = async (credentials) => {
   return new Promise((resolve, reject) => {
     // 支持admin账号
-    if (credentials.username === 'admin@explore.com' && credentials.password === 'Admin@123456') {
+    if (credentials.username === 'admin@example.com' && credentials.password === 'Admin@123456') {
       const mockResponse = {
         token: 'mock_jwt_token',
         user: {
@@ -96,14 +96,14 @@ export const login = async (credentials) => {
       return resolve(mockResponse);
     }
     // 支持 test@explore.com 账号，workspace 用 Baidu
-    if (credentials.username === 'test@explore.com' && credentials.password === 'Test@123456') {
-      const baiduWorkspace = workspacesData.find(ws => ws.name === '智能座舱');
+    if (credentials.username === 'test@example.com' && credentials.password === 'Test@123456') {
+      const baiduWorkspace = workspacesData.find(ws => ws.name === 'Baidu');
       const mockResponse = {
         token: 'mock_jwt_token',
         user: {
           id: 'test-1411', // IM userID
           name: '测评员-2',
-          email: 'test@explore.com',
+          email: 'test@example.com',
           role: 'user',
           workspace: baiduWorkspace,
           user_signature: 'eJwtzLEOgjAUheF36VolvZVSIGHCQRLBQRfcjC14VRRLAxLju4vAeL4-OR9y2O6dVhsSEu4wshg3Kv2wWODIVjd2CS7AHBt1O9U1KhKCxxiTQeCJqeh3jUYPLoTgQ5rUYvU36fqBy6XvzS9YDt-XNMvjzuyqtLhv2iN9nhMGeU9pX8LqksS*jTNa6vULuoh8f7nnMeU_'
