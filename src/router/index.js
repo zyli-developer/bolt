@@ -6,6 +6,7 @@ import CardDetailPage from "../pages/CardDetailPage"
 import EvaluationPage from "../pages/EvaluationPage"
 import AssetsPage from "../pages/AssetsPage"
 import ScenesPage from "../pages/ScenesPage"
+import PersonalInfoPage from "../pages/personal-info"
 
 // 子路由配置
 const taskRoutes = [
@@ -70,6 +71,10 @@ const mainRoutes = [
   {
     path: "/scenes",
     element: <ScenesPage />,
+  },
+  {
+    path: "/personal-info",
+    element: <PersonalInfoPage />,
   },
 ]
 

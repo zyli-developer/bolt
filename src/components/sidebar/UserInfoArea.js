@@ -155,7 +155,7 @@ const UserInfoArea = ({ isCollapsed }) => {
         <div className="flex justify-between items-center">
           <div className="flex items-center">
             <UserOutlined className="mr-3 text-gray-600" />
-            <span>个人信息</span>
+            <span style={{ cursor: 'pointer' }} onClick={() => { window.location.href = '/personal-info'; }}>个人信息</span>
           </div>
           <Tag color="success" className="m-0">
             完善信息得奖励

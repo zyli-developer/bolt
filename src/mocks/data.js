@@ -3440,3 +3440,22 @@ export const mockImportData = [
         "response": "一，请通过欧洲专利局（EPO）检索确认设计未侵犯现有专利；二，若宣传图包含车辆品牌元素（如中控屏UI、车标），需获得车企授权；三，确保宣传内容符合欧盟《不公平商业行为指令》，不涉及虚假宣传或危害驾驶安全的场景。建议咨询当地知识产权律师，完善法律风险防控。"
     },
 ];
+
+// 个人信息mock数据
+export const personalInfoMock = {
+  name: '张三',
+  avatar: '',
+  intro: '热爱AI，喜欢分享知识。',
+  tags: ['AI', '前端', '产品'],
+  follow: 123,
+  fans: 456,
+  likes: 789,
+};
+
+export const personalHonorMock = [
+  { type: 'badge', label: '徽章', count: 3 },
+  { type: 'certificate', label: '证书', count: 2 },
+  { type: 'shop', label: '商店', count: 1 },
+  { type: 'agent', label: 'Agent', count: 2 },
+  { type: 'template', label: '模板', count: 5 },
+];

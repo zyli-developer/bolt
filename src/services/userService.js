@@ -5,7 +5,7 @@
 
 import api from "./api"
 import endpoints from "./endpoints"
-import { currentUser as mockUser } from "../mocks/data"
+import { currentUser as mockUser, personalInfoMock, personalHonorMock } from "../mocks/data"
 
 // 将 mock 数据转换为符合 API 文档的格式
 const convertToApiFormat = (user) => {
@@ -116,6 +116,30 @@ const userService = {
       // 发生错误时返回 mock 数据，避免前端报错
       return convertToApiFormat({...mockUser, id});
     }
+  },
+
+  // 获取个人信息
+  getPersonalInfo: async () => {
+    const useMock = process.env.REACT_APP_USE_MOCK_DATA === 'true';
+    if (useMock) {
+      return personalInfoMock;
+    }
+    // 真实接口
+    const res = await fetch('/api/users/current');
+    if (!res.ok) throw new Error('获取个人信息失败');
+    return await res.json();
+  },
+
+  // 获取个人荣誉
+  getPersonalHonor: async () => {
+    const useMock = process.env.REACT_APP_USE_MOCK_DATA === 'true';
+    if (useMock) {
+      return personalHonorMock;
+    }
+    // 真实接口（假设有该接口）
+    const res = await fetch('/api/users/current/honor');
+    if (!res.ok) throw new Error('获取个人荣誉失败');
+    return await res.json();
   },
 }
 

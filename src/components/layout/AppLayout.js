@@ -19,6 +19,7 @@ const AppLayout = ({ children }) => {
   
   // 判断是否为详情页面
   const isDetailPage = location.pathname.includes('/detail/')
+  const hideHeader = location.pathname === '/personal-info'
 
   // 不再需要监听窗口大小变化
   // useEffect(() => {
@@ -61,12 +62,12 @@ const AppLayout = ({ children }) => {
               style={{ width: isChatOpen ? "calc(100% - 380px)" : "100%" }}
             >
               {/* 顶部搜索框 */}
-              {!isDetailPage && <SearchBar className="search-bar" />}
+              {!isDetailPage && !hideHeader && <SearchBar className="search-bar" />}
 
               {/* 顶部导航栏 */}
 
               {/* 内容导航 */}
-              {!isDetailPage && <ContentNav />}
+              {!isDetailPage && !hideHeader && <ContentNav />}
 
               {/* 主内容区域 */}
               <Content className="main-content">{children}</Content>
