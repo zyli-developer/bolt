@@ -1,3 +1,4 @@
+import { menuData as latestMenuData } from '../mocks/data';
 /**
  * 菜单管理工具 - 管理保存的视图菜单
  */
@@ -40,11 +41,47 @@ export const unregisterMenuChangeListener = (callback) => {
   return false;
 };
 
-// 获取保存的菜单数据
+// 新增：合并菜单数据（递归合并children）
+export const mergeMenuData = (localMenu, latestMenu) => {
+  if (!Array.isArray(localMenu) || !Array.isArray(latestMenu)) return latestMenu;
+  // 以id+title为主键合并
+  const map = new Map();
+  latestMenu.forEach(item => map.set(item.id + '|' + item.title, { ...item }));
+  localMenu.forEach(item => {
+    const key = item.id + '|' + item.title;
+    if (map.has(key)) {
+      // 合并children
+      if (Array.isArray(item.children) && Array.isArray(map.get(key).children)) {
+        map.get(key).children = mergeMenuData(item.children, map.get(key).children);
+      }
+      // 保留本地的expanded等UI状态
+      map.set(key, { ...map.get(key), ...item });
+    } else {
+      // id或title有冲突，直接新增为新项
+      map.set(key + '_local', item);
+    }
+  });
+  return Array.from(map.values());
+};
+
+// 修改getMenuData，自动合并最新菜单
 export const getMenuData = () => {
   try {
     const menuDataJson = localStorage.getItem(MENU_STORAGE_KEY);
-    return menuDataJson ? JSON.parse(menuDataJson) : null;
+    const localMenu = menuDataJson ? JSON.parse(menuDataJson) : null;
+    const latestMenu = latestMenuData;
+    if (localMenu && latestMenu && latestMenu.length > 0) {
+      const merged = mergeMenuData(localMenu, latestMenu);
+      // 始终更新localStorage为合并后的最新数据
+      saveMenuData(merged);
+      return merged;
+    }
+    // 如果localMenu为空，直接保存并返回最新菜单
+    if (latestMenu && latestMenu.length > 0) {
+      saveMenuData(latestMenu);
+      return latestMenu;
+    }
+    return localMenu;
   } catch (error) {
     console.error('获取菜单数据失败:', error);
     return null;

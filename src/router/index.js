@@ -7,6 +7,8 @@ import EvaluationPage from "../pages/EvaluationPage"
 import AssetsPage from "../pages/AssetsPage"
 import ScenesPage from "../pages/ScenesPage"
 import PersonalInfoPage from "../pages/personal-info"
+import ProposalSquarePage from "../pages/ProposalSquarePage"
+import FindFriendsPage from "../pages/FindFriendsPage"
 
 // 子路由配置
 const taskRoutes = [
@@ -59,6 +61,14 @@ const mainRoutes = [
   {
     path: "/explore",
     element: <ExplorePage />,
+  },
+  {
+    path: "/explore/proposals",
+    element: <ProposalSquarePage />,
+  },
+  {
+    path: "/explore/friends",
+    element: <FindFriendsPage />,
   },
   {
     path: "/tasks",

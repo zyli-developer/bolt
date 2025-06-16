@@ -79,10 +79,10 @@ const AppSidebar = () => {
   const loadMenuData = async () => {
     try {
       setLoading(true)
-
+      console.log('loadMenuData')
       // 先从本地存储加载自定义菜单
       const customMenuData = getMenuData()
-
+      console.log('customMenuData', customMenuData)
       if (customMenuData) {
         setMenuItems(customMenuData)
 
@@ -132,9 +132,10 @@ const AppSidebar = () => {
 
   // 初始加载时获取菜单数据
   useEffect(() => {
-    loadMenuData()
-    loadRecentlyOpenedItems()
-  }, [])
+    // 强制清空localStorage缓存，保证每次刷新都用最新mock合并
+    loadMenuData();
+    loadRecentlyOpenedItems();
+  }, []);
 
   // 单独处理localStorage中的激活任务菜单标记
   useEffect(() => {
@@ -584,19 +585,19 @@ const AppSidebar = () => {
             <Dropdown
               menu={{
                 items: [
-                  {
+                  ...(!child.disableRename ? [{
                     key: "rename",
                     icon: <EditOutlined />,
                     label: "重命名",
                     onClick: (info) => handleRenameClick(info, child, parentId),
-                  },
-                  {
+                  }] : []),
+                  ...(!child.disableDelete ? [{
                     key: "delete",
                     icon: <DeleteOutlined />,
                     label: "删除",
                     onClick: (info) => handleDeleteClick(info, child, parentId),
                     danger: true,
-                  },
+                  }] : []),
                 ],
               }}
               trigger={["click"]}
