@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Avatar, Button, Tag, Tabs, Breadcrumb, Spin, message } from 'antd';
 import { ShareAltOutlined, PlusOutlined, EditOutlined, SettingOutlined, PaperClipOutlined, LeftOutlined } from '@ant-design/icons';
 import userService from '../services/userService';
+import CreateTemplateModal from '../components/modals/CreateTemplateModal';
 
 const { TabPane } = Tabs;
 
@@ -9,6 +10,7 @@ const PersonalInfoPage = () => {
   const [user, setUser] = useState(null);
   const [honors, setHonors] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
@@ -82,9 +84,8 @@ const PersonalInfoPage = () => {
       <div className="flex gap-4 mt-6 mb-8">
         {honors.map(h => (
           <div key={h.type} className="flex flex-col items-center bg-white rounded-xl shadow-md px-6 py-4 min-w-[100px]">
-            <div className="mb-1"><PaperClipOutlined className="text-xl text-[#58BD6D]" /></div>
-            <div className="text-lg font-bold text-[#58BD6D]">{h.count}</div>
             <div className="text-sm text-gray-500">{h.label}</div>
+            <div className="text-lg font-bold text-[#58BD6D]">{h.count}</div>
           </div>
         ))}
       </div>
@@ -129,8 +130,10 @@ const PersonalInfoPage = () => {
           icon={<PlusOutlined />}
           className="w-8 h-8 text-lg bg-gradient-to-br from-[#58BD6D] to-[#36cfc9] border-none flex items-center justify-center shadow-2xl pointer-events-auto hover:scale-110 hover:from-[#7be09a] hover:to-[#5cdbd3] transition-all duration-200 ease-in-out rounded-full"
           style={{ boxShadow: '0 8px 32px 0 rgba(88,189,109,0.25)' }}
+          onClick={() => setShowCreateModal(true)}
         />
       </div>
+      <CreateTemplateModal visible={showCreateModal} onCancel={() => setShowCreateModal(false)} onSubmit={() => setShowCreateModal(false)} />
     </div>
   );
 };
